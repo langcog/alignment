@@ -23,4 +23,8 @@ Ste ps:
 				3) return P(B says M)*P(A says M)/(P(B says M))
 			b) Aggregate the results of 3.c.4.a together
 
-P(B says M | A says M) = P(A says M and B says M)/P(B says M)
+Code examples
+	- Reading in a csv
+		https://docs.python.org/2/library/csv.html
+	- Grouping list of dictionaries
+		https://www.daniweb.com/software-development/python/code/216750/group-a-list-of-dictionaries-python
