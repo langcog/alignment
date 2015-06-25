@@ -1,3 +1,6 @@
+Bugs/ Special modifications
+	Need to change all ","s to "comma" so that the csv file gets parsed properly 
+
 Message = utterance
 Ste ps:
 1) Read in csv file

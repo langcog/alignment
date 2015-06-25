@@ -19,7 +19,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 438180683505090560	324420103	[MENTION] follow luvbug your my ❤	438181633460408320	324420103	[MENTION] cammmmytt
 440778375703977984	732782090	[MENTION] haha 5.06 cuz i need type " sorry etcccccc " HAHAHAHA	440778426748661760	732782090	[MENTION] and you know how bad my chinese is oops
 440780416992047104	732782090	[MENTION] [MENTION] [MENTION] HOHO SAME BOATS	440780567420760064	732782090	[MENTION] [MENTION] [MENTION] ROW ROW ROW A BOAT GENTLY DOWN THE STREAM
-450680698668863488	495074577	This is my outfit for the day ... Brings air to all the right areas [MENTION] [MENTION]	450680952998875136	495074577	I forgot to add the picture , awkward ... [MENTION] [MENTION] [URL]
+450680698668863488	495074577	This is my outfit for the day ... Brings air to all the right areas [MENTION] [MENTION]	450680952998875136	495074577	I forgot to add the picture comma awkward ... [MENTION] [MENTION] [URL]
 455394995928051712	330705266	. [MENTION] I need all your guys help !!! Tweet them !	455395135023763456	330705266	[MENTION] |verifyhayesgrier
 455394995928051712	330705266	. [MENTION] I need all your guys help !!! Tweet them !	455395157903683584	330705266	[MENTION] |verifyhayes
 455395157903683584	330705266	[MENTION] |verifyhayes	455395681466060800	330705266	[MENTION]
@@ -27,16 +27,16 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 455411700314157056	330705266	I love you	455411816407904256	324420103	[MENTION] ilym
 456987686624952320	278328390	RT if you want magcon to stick together	544620282242404352	1876508618	[MENTION] I would love it if they got back together now
 457332023641001984	133093395	[MENTION] ? I didn't meet you today .. very strange I haven't left the house	457335181876416512	133093395	[MENTION] knocked on what door ?
-457974656184512512	330705266	How's everyone's Easter goin !	457983258102206464	324420103	[MENTION] hot , just like YOU bae <3
+457974656184512512	330705266	How's everyone's Easter goin !	457983258102206464	324420103	[MENTION] hot comma just like YOU bae <3
 458978418567032832	732782090	[MENTION] huh u above 160 meh	458979634462203904	732782090	[MENTION] * 153
 460248988537483264	163645988	[MENTION]	460249455413829632	163645988	[MENTION] PICK UP YOUR PHONE I SEE YOU ON TWITTER
 460658748025888768	163645988	My glasses broke . I look like a nerdy pirate . Groovy duude . [URL]	461691747978862592	139539038	[MENTION] [URL]
-461633041769582592	495074577	Yeah man ! How badass is he ? I named him Barney [MENTION]	461633461099298816	495074577	I realised Barney is already a dinosaur , he's renamed to Sheila and is now a girl [MENTION]
+461633041769582592	495074577	Yeah man ! How badass is he ? I named him Barney [MENTION]	461633461099298816	495074577	I realised Barney is already a dinosaur comma he's renamed to Sheila and is now a girl [MENTION]
 466754731214254080	163645988	I salute you muurrrrica 🇺🇸🍔🏈⚾️🍺 [URL]	466757534922309632	139539038	[MENTION] wcw
 467429080049418240	495074577	Man [MENTION] i have The Fault In Our Stars on repeaaaaaaatttt	467431653225529344	495074577	I may have misread the title of the video I'm sorry D: [MENTION]
 467802146927149056	382402366	Lil Sammy 😊 [URL]	555526160344305664	1661101519	[MENTION] awwe😂
 468503457985347584	330705266	Come see me in Atlanta links in bio !!! [MENTION] [MENTION]	468543930561073152	330705266	[MENTION] [MENTION] Atlantas gonna be fun . Can't wait to meet all you guys !
-470768587259392000	163645988	I got some Mexican fruit today , went to a record store , bought bunch of alien movies & found pretty tree [URL]	470795797827575808	139539038	... [MENTION] Wuz a good day indeedy 👽
+470768587259392000	163645988	I got some Mexican fruit today comma went to a record store comma bought bunch of alien movies & found pretty tree [URL]	470795797827575808	139539038	... [MENTION] Wuz a good day indeedy 👽
 472184223332597760	139539038	I can't think of a corny tweet so ima jus flat out say I miss lia	472209607234830336	163645988	[MENTION] miss u more than the stars in la ... 🌙 dude .
 475377367096262656	330705266	What's tomorrow ?	475509025727971328	2519340408	[MENTION] yo birthday 😏 ily hayes
 477426083394887680	382402366	It had to have been jj	477440898708410368	382402366	. [MENTION] or cosgrove ...
@@ -48,7 +48,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 478637152327061504	278328390	|tookonaniphone [URL]	557301160416014336	2652746424	[MENTION] u
 479347042506911744	139539038	When u realize bae is thousands of miles away [URL]	479362678486732800	163645988	[MENTION] [URL]
 479426505018056704	1799376955	[MENTION] porfavor porfavor sigueme te amo te amo eres el 25% de mi felicidad el ptro pprciento son los chikos no me falles	479427316091588608	1799376955	[MENTION] siguemee no te pido mas eso es algo que ahora mas que nunca me hara feliz
-479729518672760832	330705266	Everyone tweets those inspirational things while I'm over here like , " I'm hungry . "	479736492823035904	2519340408	[MENTION] I'm hungry too 😭😂
+479729518672760832	330705266	Everyone tweets those inspirational things while I'm over here like comma " I'm hungry . "	479736492823035904	2519340408	[MENTION] I'm hungry too 😭😂
 481496266359472128	278328390	Ow [URL]	481497693274263552	382402366	. [MENTION] those eyebrows are your racing stripes
 481496266359472128	278328390	Ow [URL]	558454962674343936	1284721326	[MENTION] EYEBROWS EYEBROWS FUCKKG
 482833615378583552	330705266	I need [MENTION] to teach me how to backflip	484398803802652672	278328390	. [MENTION] we can definitely arrange that ... how long are you in LA for ?
@@ -59,16 +59,16 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 484943914277683200	139539038	Btw new video uploading😁🚀	484955555950100480	308297673	- [MENTION] yay OMG a JC Cailen video at 2am !! I'm so excited to watch it 😍 follow me x78
 485049099478396928	382402366	😊 [URL]	555198038147624960	2354208169	[MENTION] are you OKAY😣😂
 485094729982304256	330705266	Happy July fourth 🇺🇸 |america	485098275045777408	2519340408	“ [MENTION] : Happy July fourth 🇺🇸 |america ” yas 💕
-485586339463974912	1396698397	Are new song is actually kinda good	485638919732854784	588004256	“ [MENTION] : Are new song is actually kinda good ” OUR , taylor OUR .... not are .
-485876127605350400	308297673	today's national kissing day ... so here ya go 😘 ( x 1 million ) 😊	485880331682467840	139539038	... [MENTION] u have 1.2 million followers so technically u missed over 200,000 people . Why u discriminating
-485883736836165632	139539038	For national kiss day here ya go 😘 ( x 1.3 million cuz I don't discriminate like Kian ) 😉	485886788003590144	308297673	- [MENTION] 1,309,674 ... U just discriminated over 9,674 people 😎
+485586339463974912	1396698397	Are new song is actually kinda good	485638919732854784	588004256	“ [MENTION] : Are new song is actually kinda good ” OUR comma taylor OUR .... not are .
+485876127605350400	308297673	today's national kissing day ... so here ya go 😘 ( x 1 million ) 😊	485880331682467840	139539038	... [MENTION] u have 1.2 million followers so technically u missed over 200comma000 people . Why u discriminating
+485883736836165632	139539038	For national kiss day here ya go 😘 ( x 1.3 million cuz I don't discriminate like Kian ) 😉	485886788003590144	308297673	- [MENTION] 1comma309comma674 ... U just discriminated over 9comma674 people 😎
 486023915383160832	2488491690	[MENTION] I'm the same way I told a bitch I was gonna throw my show at her if she didn't shut up 😂😂😂	486024060581597184	2488491690	[MENTION] oops I meant shoe
 486170490558742528	495074577	Hyde Park 💃💃💃 [URL]	486187144130859008	495074577	By [MENTION] the dog himself
 486241298437783552	278328390	Favorite this if you want me and Jack to make a Spanish soap opera skit for our next YouTube video	486241718032162816	382402366	. [MENTION] lmaoo yesssss
 486274064034840576	2188697749	az önce kendi ellerimle ittiğim bir şey için baya baya üzüldüm insan değerini kaybedince anlıyo çünkü	486274356558192640	2188697749	ama o fırsat elime yine geçse yine kendi ellerimle iterdim benim hayatımın özeti tam olarak bu [MENTION]
 486279404080099328	2626722111	[MENTION] go watch |CashNewVideo [URL] you so much 💞	486279678387580928	2626722111	[MENTION] [MENTION] Go watch |CashNewVideo [URL]��� Love you guys
 486583974555168768	308297673	me & the lil sis posted in our gear 💺✈️ [URL]	486584863995465728	139539038	... [MENTION] u look super saiyan minus the muscles & manliness [URL]
-486627187944996864	139539038	Im bored .. Guess I'll shower or eat or something . I miss wishbone	486633387411927040	308297673	[MENTION] I'll be home soon 😁 start crying now , cause when I get there , I'll beat ur crusty ass @ mariokart ...
+486627187944996864	139539038	Im bored .. Guess I'll shower or eat or something . I miss wishbone	486633387411927040	308297673	[MENTION] I'll be home soon 😁 start crying now comma cause when I get there comma I'll beat ur crusty ass @ mariokart ...
 486663533388902400	588004256	[MENTION] why I that sad ?	486669075675103232	588004256	[MENTION] 😂😂😂😂😂
 486722992563429376	278328390	Carter and I randomly just passed tf out for a good 2 hours	486725110829948928	588004256	“ [MENTION] : Carter and I randomly just passed tf out for a good 2 hours ” I drugged you . |sorrynotsorry
 486870661336686592	330705266	Should I post more YouTube videos ? Do you guys like them ?	486880857383530496	330705266	I'm starting to edit one tomorrow !
@@ -78,25 +78,25 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 488065145466138624	308297673	busy day today 😣	488072743078752256	139539038	... [MENTION] damn woah cool it there ur doin too many chores at once [URL]
 489363521046466560	1681460370	[MENTION] |HappyBirthdayTheo	489364091744448512	1681460370	[MENTION] [MENTION]
 489968621494337536	278328390	wtf sam [URL]	489969373529268224	382402366	Ohhh yeah baby [MENTION] 😜😂
-491408998608805888	278328390	I subconsciously just started to eat my sandwich like this [URL]	491409630963462144	382402366	.. [MENTION] that's a runza , not a samdwich ... JACK
-492054385585696768	139539038	Damn ... idk what to film for O2L or my main channel ... 😳yikes	492057712448897024	163645988	[MENTION] that's a shocker . When in doubt , make a porno . It can be fan interactive too . I'm throwin out gold here
+491408998608805888	278328390	I subconsciously just started to eat my sandwich like this [URL]	491409630963462144	382402366	.. [MENTION] that's a runza comma not a samdwich ... JACK
+492054385585696768	139539038	Damn ... idk what to film for O2L or my main channel ... 😳yikes	492057712448897024	163645988	[MENTION] that's a shocker . When in doubt comma make a porno . It can be fan interactive too . I'm throwin out gold here
 492149463062818816	308297673	I LEARNED HOW TO DO A BACKFLIP 😮😁	492188216863121408	139539038	.. [MENTION] ur welcome young grasshopper🙏
 492459014274678784	139539038	For fun [URL]	492464193912569856	308297673	- [MENTION] it's ok 😺 [URL]
-494529768537067520	139539038	.. [MENTION] Oii !!! G-bo !! Let go get breakfast & get to work . Big day today	494531793689649152	308297673	[MENTION] OY , G-BO !! takin a whizz now , I want choco chip pancakes 😊 lesssss goooo 🍴
+494529768537067520	139539038	.. [MENTION] Oii !!! G-bo !! Let go get breakfast & get to work . Big day today	494531793689649152	308297673	[MENTION] OY comma G-BO !! takin a whizz now comma I want choco chip pancakes 😊 lesssss goooo 🍴
 494706873346822144	841076833	Somehow my phone doesn't catch all of [MENTION] tweets so I have to go stalk half the time 😁	494708036251160576	841076833	[MENTION] I was kidding I actually don't stalk ... 😅 I meant why wouldn't you stalk Kelly ? 💁
 494987392139292672	278328390	I love this shirt but [MENTION] bought it the day before me and wore it in a photo shoot ... so ya |ThanksMatt [URL]	494995123143319552	278328390	the day after ** 😠
-495815110695206912	308297673	s/o to all my beautiful kian girls 😘 keep doin what ur doin , boo thangs 😉😍	495815468331327488	841076833	[MENTION] you never fail to make me smile 😍😘
+495815110695206912	308297673	s/o to all my beautiful kian girls 😘 keep doin what ur doin comma boo thangs 😉😍	495815468331327488	841076833	[MENTION] you never fail to make me smile 😍😘
 496120430277562368	139539038	SOS GETTIN ATTACKED BY KITTENS PS - I LIKE IT [URL]	496120596137140224	308297673	- [MENTION] 😂😂😂😂 ya fuckin schmuck
-496154130444849152	133093395	[MENTION] haha , indeed ... it will draw a tear and swell the heart from and of any human with a pulse	496154310141423616	133093395	[MENTION] guess you can tell i'm enjoying myself
+496154130444849152	133093395	[MENTION] haha comma indeed ... it will draw a tear and swell the heart from and of any human with a pulse	496154310141423616	133093395	[MENTION] guess you can tell i'm enjoying myself
 496503863210700800	1396698397	Who's going to be homeschooled this summer ?	496505082759094272	841076833	“ [MENTION] : Who's going to be homeschooled this summer ? ” I wish
 497114044105768960	330705266	Videos up !!! Go check it out !! [URL]	497114512261390336	330705266	Wtf why is it sideways .
 497114044105768960	330705266	Videos up !!! Go check it out !! [URL]	497114558574907392	330705266	This is so complicated
-497617417120387072	308297673	u are my ☀️ , my 🌙 & all of my ⭐️	497617976968089600	841076833	“ [MENTION] : u are my ☀️ , my 🌙 & all of my ⭐️ ” I love you 😘
+497617417120387072	308297673	u are my ☀️ comma my 🌙 & all of my ⭐️	497617976968089600	841076833	“ [MENTION] : u are my ☀️ comma my 🌙 & all of my ⭐️ ” I love you 😘
 498178602551504896	1799376955	[MENTION] inviten a Heffron Drive el 4 de octubre PorFavor [MENTION] [MENTION] |HeffronDriveEnElHormigueroMx	498605690592960512	1799376955	[MENTION] [MENTION] [MENTION] invitenlos el 4 de octubre por favor |HeffronDriveEnElHormigueroMx
 498199870365519872	2188697749	ya acaba dogum gunum icin hediyeyi birak mesaj falan dusunen var mi ki beni boyle seyler x100 mutlu ediyo :(	498200092881715200	2188697749	az duygusal düsündüm ama siz yine de HEDİYE ALIN [MENTION]
-498338280002158592	139539038	Never on my phone when Im w ya . When ur away , Im glued to it texting youuu .	498342667244171264	163645988	[MENTION] i do the same thing lol at our love life
+498338280002158592	139539038	Never on my phone when Im w ya . When ur away comma Im glued to it texting youuu .	498342667244171264	163645988	[MENTION] i do the same thing lol at our love life
 498637030663143424	1396698397	OKAY RT FOR A FOLLOW [URL]	517006545037819904	1328060750	[MENTION] u didnt follow me😔
-499294042857828352	278328390	It's not always the most fun place in the world , but when it really comes down to it ... there's no place like Nebraska .	499379884175527936	382402366	. [MENTION] well said
+499294042857828352	278328390	It's not always the most fun place in the world comma but when it really comes down to it ... there's no place like Nebraska .	499379884175527936	382402366	. [MENTION] well said
 499469119641513984	1681460370	[MENTION] niall I'm starving too let's eat together what you say ?! I'm in Israel I'm invite you here please come we have great falafe	499469400131391488	1681460370	[MENTION] falafel *
 499469119641513984	1681460370	[MENTION] niall I'm starving too let's eat together what you say ?! I'm in Israel I'm invite you here please come we have great falafe	499469405714006016	1681460370	[MENTION]
 499966259832705024	330705266	Who is coming to Salt Lake city Sept 5th and 6th to see us all ? [URL]	499969743357747200	2711961214	[MENTION] [MENTION] I'm starting to do chores so my mom will pay me ! I'm going to donate to hope for holt !! 😘😘
@@ -121,20 +121,20 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 502591336902819840	139539038	New Video !! More than 1 Jc Caylen !? - [URL] 😳😮😏	502623841659924480	163645988	[MENTION] woah u actually made a cool video . congrats bro .
 502593559128985600	330705266	Adventures . living in the now . Share your moment with |aeronow [MENTION] Tag me so I can respond to you guys . [URL]	504984156888391680	55592183	[MENTION] loving your moment of now ! |aeronow
 502620676336144384	308297673	forgive me 🙏 [URL]	502623196454338560	2609837026	[MENTION] 😂😂😂😂I'm done . 😂😂😂I forgive you though ! 😂
-502623841659924480	163645988	[MENTION] woah u actually made a cool video . congrats bro .	502625543523942400	139539038	,, [MENTION] Im sorry ... U are ?
-502684402728845312	163645988	just bought this book the other day & its so much fun . im not very good , but who cares , all art is beautiful [URL]	502696248873603072	139539038	,, [MENTION] let's get started on maze runner :)
-502696248873603072	139539038	,, [MENTION] let's get started on maze runner :)	502697516409032704	163645988	[MENTION] u just want everyone to know ur actually gonna read a book for the first time in 21 years 😏 lol jk 😉
+502623841659924480	163645988	[MENTION] woah u actually made a cool video . congrats bro .	502625543523942400	139539038	commacomma [MENTION] Im sorry ... U are ?
+502684402728845312	163645988	just bought this book the other day & its so much fun . im not very good comma but who cares comma all art is beautiful [URL]	502696248873603072	139539038	commacomma [MENTION] let's get started on maze runner :)
+502696248873603072	139539038	commacomma [MENTION] let's get started on maze runner :)	502697516409032704	163645988	[MENTION] u just want everyone to know ur actually gonna read a book for the first time in 21 years 😏 lol jk 😉
 502892215266320384	308297673	how am I 19 in 11 days .. I wanna be 13 again 🌞🌸	502892525963972608	841076833	“ [MENTION] : how am I 19 in 11 days .. I wanna be 13 again 🌞🌸 ” How am I starting school in 11 days ?! 😭
 502927667877146624	330705266	Lights 🏈 [URL]	508086655241039872	2609837026	[MENTION] booooo ! MESQUITE . yeah . HA LOVE ya
 502993919387643904	330705266	Yay three more hours in the airport	502999188205223936	2711961214	[MENTION] wish I could be there to help ):
-503020503880065024	163645988	From today . 🌞 [URL]	503023156722810880	139539038	,, [MENTION] 😍😍😍
-503023156722810880	139539038	,, [MENTION] 😍😍😍	503024545133891584	163645988	[MENTION] babeee 🙈🙈
+503020503880065024	163645988	From today . 🌞 [URL]	503023156722810880	139539038	commacomma [MENTION] 😍😍😍
+503023156722810880	139539038	commacomma [MENTION] 😍😍😍	503024545133891584	163645988	[MENTION] babeee 🙈🙈
 503023824959733760	30892730	Found a cat on my head lol - my snap chats are getting weirder and weirder - add me RealBartBaker 😝😈 [URL]	503025043040137216	2609837026	[MENTION] why do I feel like your going to do a black widow parody .....
 503266393723129856	139539038	Jumped off the roof into the pool last night😁✊	503268188063166464	1396698397	“ [MENTION] : Jumped off the roof into the pool last night😁✊ ” dude I did it the most that was so crazy ! Great seeing you !!
 503305405905108992	308297673	got yo ass [MENTION] 😎 [URL]	503443908190150656	1396698397	..... [MENTION] NAAAA I WON THAT😂
-503572550774165504	330705266	Tweet me screenshots of you playing our new app " Cash Dash " & Ill follow you ! It's out for android & iPhone , lets get it to |1 on the store !	503573328171651072	2711961214	[MENTION] I think I found a new obsession😂😂 |cashdash even though I'm terrible [URL]
+503572550774165504	330705266	Tweet me screenshots of you playing our new app " Cash Dash " & Ill follow you ! It's out for android & iPhone comma lets get it to |1 on the store !	503573328171651072	2711961214	[MENTION] I think I found a new obsession😂😂 |cashdash even though I'm terrible [URL]
 503573281996570624	330705266	Download " Cash Dash " in the App Store !!! Get it to number one !! We love you guys ❤ ️ ❤ ️ ❤ ️ [URL]	503573501660643328	2711961214	[MENTION] your voice 😍😍😍
-503621819257995264	308297673	this is a toilet , which I just took a wiz in . [URL]	503623861053980672	139539038	,, [MENTION] nice jacket , is my closet a goodwill store now ?
+503621819257995264	308297673	this is a toilet comma which I just took a wiz in . [URL]	503623861053980672	139539038	commacomma [MENTION] nice jacket comma is my closet a goodwill store now ?
 503656421494652928	1705991035	Hey guys this is Nash .. I broke my phone again so yeah I'm gonna get it fixed when we get back to LA 😂	503658147559399424	30892730	[MENTION] dude what are u doing with that thing ?!?!
 503789382835642368	403171568	Efficiency is intelligent laziness	503789783500345344	110288084	“ [MENTION] : Efficiency is intelligent laziness ” tf does this even mean ? Haha
 503811386859085824	139539038	Jack & jack are the realist kids u'll come across . Trust me	504021899769167872	278328390	. [MENTION] you're the man jc
@@ -144,7 +144,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 504486621488902144	139539038	Breakfast at 9pm . Damn .	504486712907538432	308297673	[MENTION] ur a bitch
 504831775076388864	1396698397	Love me	504832236303441920	841076833	“ [MENTION] : Love me ” [MENTION]
 505097348616175616	1396698397	Instagram right now is like my relationship life ... Just isn't working😔	505098729960263680	588004256	“ [MENTION] : Instagram right now is like my relationship life ... Just isn't working😔 ” 🙌🙌🙌🙌
-505121530997911552	330705266	Download our new app " Cash Dash " from the AppStore ! Cameron , Carter , Hayes , play as my character ! [URL]	505122026369982464	30892730	[MENTION] HOLLER
+505121530997911552	330705266	Download our new app " Cash Dash " from the AppStore ! Cameron comma Carter comma Hayes comma play as my character ! [URL]	505122026369982464	30892730	[MENTION] HOLLER
 505450110860673024	330705266	I love you guys so much ❤ ️	505457804090822656	1042042788	[MENTION] I love you bae
 505763236516732928	330705266	Gonna be retweeting and favoriting people who tweet this link !!! - [URL] ❤ ️	505764135217659904	330705266	Please vote for us 😊 ❤ ️ [URL]
 506185569865850880	326492577	1 . Amber 2 . 10/19/00 3 . [MENTION] 4 . 1D 5 . Purple 6 . Pancakes 7 . Horse 8 . Christmas 9 . Light brown [URL]	506185629538209792	326492577	10 . Green
@@ -154,7 +154,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 506551196450975744	382402366	Yay new number :) starting the follow spree in 45 min with the |sammywilkfollowme	506551812925968384	2541854413	[MENTION] i give it a week before it gets leaked again
 506671983577165824	110288084	[URL]	506672047578427392	110288084	[MENTION] [MENTION]
 506671983577165824	110288084	[URL]	506672241749147648	110288084	[MENTION] Nemo * 😂
-506883899805270016	139539038	HAPPY BDAY TO THIS BITCH ASS DOUCHE NOZZLE [MENTION] !!! 🎉🎉 U steal my clothes but I still luv ya today's ur day hope the results are gewd	506899361775624192	308297673	[MENTION] the results are always good when I steal ur clothes 💁 haha , thank u my brotha from a notha motha 👬
+506883899805270016	139539038	HAPPY BDAY TO THIS BITCH ASS DOUCHE NOZZLE [MENTION] !!! 🎉🎉 U steal my clothes but I still luv ya today's ur day hope the results are gewd	506899361775624192	308297673	[MENTION] the results are always good when I steal ur clothes 💁 haha comma thank u my brotha from a notha motha 👬
 507268339236732928	1396698397	Studio today .... Should I do a younow babes ? Miss talking with you guys	507268399551229952	2429604951	[MENTION] YES
 507279053335056384	330705266	SO EXCITED FOR TONIGHT	507279110155296768	2711961214	[MENTION] what's tonight ?
 507323097117384704	330705266	[MENTION] don't listen to what people say about you . Be you . You're beautiful in your own way . I love you . Thank u for your support ❤ ️	531649920689012736	1631064974	[MENTION] I love you too ...
@@ -165,9 +165,9 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 507369253155393536	330705266	[MENTION] I'm a amazing driver	507482040372314112	467781586	[MENTION] BABY FOLLOW ME
 507369253155393536	330705266	[MENTION] I'm a amazing driver	507482243779264512	467781586	[MENTION] YOU NEED TO FOLLOW MEEEEEEE
 507385996216782848	139539038	She looks in the mirror in disappointment while im behind her in luuuuv	507386114353549312	308297673	[MENTION] ok tumblr
-507690665874952192	139539038	First ... there was the insta-douche ... Now , ladies & gentlemen .... I present to u , the very first .... snap-douche [URL]	507690847463165952	308297673	[MENTION] I'm always horny now , sorry 💁
+507690665874952192	139539038	First ... there was the insta-douche ... Now comma ladies & gentlemen .... I present to u comma the very first .... snap-douche [URL]	507690847463165952	308297673	[MENTION] I'm always horny now comma sorry 💁
 507692865162838016	382402366	New clothes are always good	507692956942606336	467781586	[MENTION] kiss me
-507695798453149696	308297673	If u wanna be a fake bitch & go thru life thinking ur perfect , go ahead . Once u fall , ur gonna fall hard . Life doesn't come with bandaids .	507700419976364032	139539038	,, [MENTION] yea they do look [URL]
+507695798453149696	308297673	If u wanna be a fake bitch & go thru life thinking ur perfect comma go ahead . Once u fall comma ur gonna fall hard . Life doesn't come with bandaids .	507700419976364032	139539038	commacomma [MENTION] yea they do look [URL]
 507724997184737280	588004256	Trying to go to bed and something hits my window causing me to jump and hit a glass cup and it shatters all in my carpet . 😒🔫 |fml	507725693376266240	588004256	[MENTION] and then I try and pick up the glass and it cuts my finger [URL]
 507813105426915328	1396698397	I love u	508349387312230400	2684899689	[MENTION] I love you more
 508025265990008832	2609837026	Love me boyyy 😘😘 😘 |lovinHayes	508025355748122624	2609837026	[MENTION] [MENTION]
@@ -176,18 +176,18 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 508356371931082752	1396698397	Holy [URL]	508356505327136768	2684899689	[MENTION] you've come so far babe😘
 508356371931082752	1396698397	Holy [URL]	508357013269934080	2684899689	[MENTION] are you a magician ? Cause abracadayum😍🔥
 508455151330263040	1396698397	Treat your girl right or someone else will ...	508479056120008704	2609837026	[MENTION] Haha when I get a bae I'll tell him that 😂
-508465356415844352	163645988	Tired , but wanting to hang out w people , but you're working & when u get home you'll want to pass out .. but being social would be good for u	508465710683541504	163645988	[MENTION] | so relatable wow
+508465356415844352	163645988	Tired comma but wanting to hang out w people comma but you're working & when u get home you'll want to pass out .. but being social would be good for u	508465710683541504	163645988	[MENTION] | so relatable wow
 508609015497363456	330705266	Should I do a follow spree since that hacker unfollowed everyone ? Hmmm we'll see ;)	508609071457771520	1328060750	[MENTION] yes ❤ ️
 508609015497363456	330705266	Should I do a follow spree since that hacker unfollowed everyone ? Hmmm we'll see ;)	508609141473280000	2711961214	[MENTION] yesss !! maybe I'll get a follow ? (;
 508668565017620480	824289330	Shake it off - 60 Second Drum Cover - Taylor Swift * ALS Ice Bucket Challenge Edition ! * [URL] [MENTION]	508668813051973632	824289330	[MENTION] this guy is really good 😘✨💕🎶
-508681838659788800	308297673	no matter what clothes u wear or what car u drive , ur no better than anybody else . treat everybody w/ love & respect .	508682229862526976	163645988	[MENTION] u sound like the suck my ass girl
+508681838659788800	308297673	no matter what clothes u wear or what car u drive comma ur no better than anybody else . treat everybody w/ love & respect .	508682229862526976	163645988	[MENTION] u sound like the suck my ass girl
 508744739370196992	1396698397	Kiss me xoxo	508744833872429056	1328060750	[MENTION] hell yeah😂😘
 508744739370196992	1396698397	Kiss me xoxo	508790735785979904	2684899689	[MENTION] okay😘
 508745771785535488	1396698397	I'm ugly as hell	508790694941822976	2684899689	[MENTION] wtf no you're not
 508778284272742400	55592183	which tee is your fave ? [URL] [URL]	508786560050167808	824289330	“ [MENTION] : which tee is your fave ? [URL] [URL] ” I want both 💕
 508797003938029568	1396698397	I need tea	508797143935897600	2684899689	[MENTION] I'll make you some☕️
 508804523230363648	110288084	The bro [MENTION] & I 😎 [URL]	508808228050722816	110288084	[MENTION] drake *
-509127746497568768	588004256	[MENTION] I was gonna ask you to , buttttt I'm gonna try and do it and if it doesn't look right ...... yeahhh you can make me one😂😂	509128075897212928	588004256	[MENTION] does it look alright or nah ?
+509127746497568768	588004256	[MENTION] I was gonna ask you to comma buttttt I'm gonna try and do it and if it doesn't look right ...... yeahhh you can make me one😂😂	509128075897212928	588004256	[MENTION] does it look alright or nah ?
 509128075897212928	588004256	[MENTION] does it look alright or nah ?	509128549648044032	588004256	[MENTION] 😉😉😉
 509179380065918976	588004256	[MENTION] you can remind me for the next week if you want but I won't bother me nearly as much as cams bothered you . 👊	509179838771785728	588004256	[MENTION] * it won't
 509432104203993088	1396698397	I need u	509432179009802240	1328060750	[MENTION] i need you to ❤ ️
@@ -203,16 +203,16 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 510644544572891136	1396698397	6/9 in the house tonight	510646837217591296	2684899689	[MENTION] I love you
 510780935122726912	379408088	I might have got a harry potter robe and 5 wands	510786055038316544	2448169998	[MENTION] i'm watching harry potter rn😂
 510789340671520768	379408088	[URL]	510790988697440256	2448169998	[MENTION] you're a wizard shawn
-510877534620495872	2188697749	tam olarak : 😭	558982433862062080	2188697749	bu geceyi tekrardan yasadım , deja vu 😭 [MENTION]
+510877534620495872	2188697749	tam olarak : 😭	558982433862062080	2188697749	bu geceyi tekrardan yasadım comma deja vu 😭 [MENTION]
 510952756446642176	278328390	Low key want u	510952827439812608	588004256	“ [MENTION] : Low key want u ” who doesn't 💁
 511238940356251648	363961928	I love how everyone thinks I'm the innocent one when I'm actually the total opposite 😂	511329470008283136	326492577	[MENTION] [MENTION] I don't think anyone thinks your innocent babe
-511301323187560448	588004256	[MENTION] I was trying to get the ice cream outta my hair🍦	511301934666747904	588004256	[MENTION] yeah , because I most definitely wanted to smell that awful smell😷😵
+511301323187560448	588004256	[MENTION] I was trying to get the ice cream outta my hair🍦	511301934666747904	588004256	[MENTION] yeah comma because I most definitely wanted to smell that awful smell😷😵
 511317949009776640	363961928	Just uploaded a shirtless pic on ig w/ [MENTION] 😂	511361039485513728	1396698397	... [MENTION] hahaha love you fool xo
 511327162373136384	278328390	I kinda wanna do a photo shoot with Bryant	511533306337173504	1705991035	Lets plan it out and publish a whole set of photos 😎 - “ [MENTION] : I kinda wanna do a photo shoot with Bryant ”
 511704001876725760	1396698397	How are you ?	511704285986713600	2684899689	[MENTION] I'm great . how was your day ?
-511704001876725760	1396698397	How are you ?	511704567848124416	467781586	[MENTION] good , loving you
+511704001876725760	1396698397	How are you ?	511704567848124416	467781586	[MENTION] good comma loving you
 511722993735581696	1396698397	Goodnight babes ☺ ️	511723327753580544	2684899689	[MENTION] goodnight sweet dreams ☺ ️
-511992828130390016	1396698397	I wanna ride four wheelers , fish , swim and chill with my old homies	511993117890064384	2684899689	[MENTION] I love you
+511992828130390016	1396698397	I wanna ride four wheelers comma fish comma swim and chill with my old homies	511993117890064384	2684899689	[MENTION] I love you
 512008380550893568	382402366	How's everybody's day going ?	512008440261005312	2541854413	[MENTION] [MENTION] WONT COME THRU IM UPSET
 512013448105172992	330705266	New vine is up ! Like and revine and tweet me a screenshot and ill follow a few of you guys !	512014341844262912	2448169998	[MENTION] you don't really follow any of us😞
 512018549615783936	278328390	I fucking love Hayes	512982112790913024	1042042788	“ [MENTION] : I fucking love Hayes ”
@@ -231,7 +231,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 512633113323659264	1705991035	Fav if you've seen my recent snapchat story . 😊📷	553930605742661632	107030164	[MENTION] your icon ommggggg
 512677823832530944	330705266	Who do you think won ? Me or [MENTION] ?	512678733317439488	2448169998	[MENTION] [MENTION] i haven't watched the video bc slow wifi😩😭
 512752032256499712	330705266	[MENTION] takes all my good quality pictures . You'll be able to tell . He's a AMAZING photographer . So . Yeah . Love you	512757122128281600	1705991035	☺ ️ - “ [MENTION] : [MENTION] takes all my good quality pictures . You'll be able to tell . He's a AMAZING photographer . So . Yeah . Love you ”
-512779876999233536	139539038	Why am I losing interest in filming .. I always get in this funk & don't have a good idea or noo motivation ... youtube gods , help me😩🙏	512779997090566144	467781586	[MENTION] check dms😏
+512779876999233536	139539038	Why am I losing interest in filming .. I always get in this funk & don't have a good idea or noo motivation ... youtube gods comma help me😩🙏	512779997090566144	467781586	[MENTION] check dms😏
 512820895111331840	2541854413	Andrew should fix his header bc all their heads are chopped off	512821020240011264	403171568	“ [MENTION] : Andrew should fix his header bc all their heads are chopped off ” I know I hate this new update lol
 512964450966863872	1042042788	Cam girl here🙋🙋💓 [URL]	512964694630748160	1042042788	[MENTION] [MENTION]
 512979437055660032	330705266	I freaking love jack	512979523605118976	1328060750	[MENTION] what jack ?
@@ -250,7 +250,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 513452860668149760	363961928	I hate when people take my stuff without asking 😠	514117283128426496	1906234147	“ [MENTION] : I hate when people take my stuff without asking 😠 ” that's why I took yo socks
 513570911514292224	403171568	Ready for the night 😁 |Ateam [URL]	513571466357383168	110288084	“ [MENTION] : Ready for the night 😁 |Ateam [URL] ” 😛😛😛
 513740475376091136	330705266	Lake dayz	513740693387608064	2711961214	[MENTION] I'm at home by myself eating peanut butter and chocolate
-513756553313124352	278328390	Everyone go check out [MENTION] new YouTube video , it's sick .. now I wanna go skydiving . [URL] give it a thumbs up 😜	513756656287903744	129859603	[MENTION] follow me 😙
+513756553313124352	278328390	Everyone go check out [MENTION] new YouTube video comma it's sick .. now I wanna go skydiving . [URL] give it a thumbs up 😜	513756656287903744	129859603	[MENTION] follow me 😙
 513848729578004480	330705266	Miss u	513848771411972096	2711961214	[MENTION] miss you more
 513849119518232576	129859603	NOOOOO [URL]	513850255180578816	129859603	GUYS
 513855850344349696	129859603	Cameron we all know you like Andrea so why you won't be honest woth us ? 😁	513855897534496768	129859603	* with
@@ -258,7 +258,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 514103513618468864	129859603	Cameron are we dating ? 😏	514103573551259648	129859603	[MENTION]
 514162261444009984	363961928	Lol at [MENTION] feet 😂 [URL]	514163028233682944	1906234147	. [MENTION] bad timing right lol
 514190208699334656	1906234147	Tweet me let's talk about stuff that's kinda cool . let's goodisoahajajaja	514190471904907264	467781586	[MENTION] no I'm doing homework
-514200030844964864	1906234147	“ [MENTION] : [MENTION] did you know i love you like alot ” did u know I love you like a lot , but more than u love me	514200152903778304	467781586	[MENTION] MATTHEW GUESS WHAT
+514200030844964864	1906234147	“ [MENTION] : [MENTION] did you know i love you like alot ” did u know I love you like a lot comma but more than u love me	514200152903778304	467781586	[MENTION] MATTHEW GUESS WHAT
 514200115905441792	1906234147	. [MENTION] BOTHHHHHHHHHHHH AGAIAISNDJDHQL	514200221442916352	467781586	[MENTION] where's Larry ? Tell him I say hi
 514200115905441792	1906234147	. [MENTION] BOTHHHHHHHHHHHH AGAIAISNDJDHQL	514200309540085760	467781586	[MENTION] but baby if you love me you have to show me love
 514200115905441792	1906234147	. [MENTION] BOTHHHHHHHHHHHH AGAIAISNDJDHQL	514200381992501248	467781586	[MENTION] you look so fucking good with your hair down
@@ -270,7 +270,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 514226588980760576	326492577	Retweet if you see this [MENTION] ❤ ️	514227187570864128	326492577	[MENTION] or nah
 514227187570864128	326492577	[MENTION] or nah	514227625967894528	326492577	[MENTION] " never mess with someone's feelings " PRACTICE WHAT YOU PREACH MATT ✋
 514257623773114368	1088207396	Babe	514257811589824512	841076833	“ [MENTION] : Babe . " Babe ?
-514263119409868800	363961928	“ [MENTION] : “ [MENTION] : Wow I really need friends lol ” I don't need friends , they disappoint me ” duh you got me 😘	514263961014108160	129859603	[MENTION] [MENTION] [MENTION] goals
+514263119409868800	363961928	“ [MENTION] : “ [MENTION] : Wow I really need friends lol ” I don't need friends comma they disappoint me ” duh you got me 😘	514263961014108160	129859603	[MENTION] [MENTION] [MENTION] goals
 514367537262260224	1906234147	Haha those were lyrics to a song	514367683211849728	467781586	[MENTION] kiss me
 514367537262260224	1906234147	Haha those were lyrics to a song	514367729974149120	467781586	[MENTION] good morning matthew
 514367729974149120	467781586	[MENTION] good morning matthew	514367942352728064	467781586	[MENTION] acknowledge my existence
@@ -281,7 +281,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 514942892557627392	1906234147	Haha I love you guys so much .	514943399661928448	2519340408	[MENTION] I love you more fuck da haters 😂 ❤
 514977635869290496	1906234147	Hi cuties	514977738403635200	467781586	[MENTION] YOURE THE CUTIE HERE
 514978360888287232	1906234147	I'm so tired aaaahhhhh	514978473992290304	467781586	[MENTION] let's cuddle and eat cupcakes together
-515275088552525824	55592183	Hey [MENTION] if you could do anything right now , what would it be ? |aeronow	515276704097771520	363961928	. [MENTION] Hm ... I feel like going jet skiing right now ! 😁 |aeronow
+515275088552525824	55592183	Hey [MENTION] if you could do anything right now comma what would it be ? |aeronow	515276704097771520	363961928	. [MENTION] Hm ... I feel like going jet skiing right now ! 😁 |aeronow
 515276704097771520	363961928	. [MENTION] Hm ... I feel like going jet skiing right now ! 😁 |aeronow	515277566895464448	55592183	Sounds awesome [MENTION] let's do it ! |aeronow
 515277566895464448	55592183	Sounds awesome [MENTION] let's do it ! |aeronow	515278484277821440	363961928	. [MENTION] no way ! Really ? Right now !? 😳
 515278484277821440	363961928	. [MENTION] no way ! Really ? Right now !? 😳	515280174351659008	55592183	. [MENTION] it's your time to live in the now . we're gonna hook you up !
@@ -317,9 +317,9 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 517270837129674752	1328060750	|HappyBirthdayMyles 😘 [URL]	517271937534660608	1328060750	[MENTION] [MENTION] ❤ ️
 517271679551406080	1328060750	Happy birthday myles please stop growing up so fast👏 love you ❤ ️😘 hope u have a good day👏 ❤ ️ |hesturning5not22 |ymb ❤ ️ [URL]	517271878650851328	1328060750	[MENTION] [MENTION] 😘
 517334477962358784	379408088	I am feeling very confident in the quality of my new music ! I really cant wait to see what you guys think 😊😊😃	517334668442886144	1328060750	[MENTION] you always have good music 😘
-517363437605625856	379408088	Dont ever be afraid to say hi or ask for a picture if you see me in public ! I owe you guys so much , least i can do is take a pic wit ya ! 😊	517363563535794176	1328060750	[MENTION] i would but am from england😔😔
+517363437605625856	379408088	Dont ever be afraid to say hi or ask for a picture if you see me in public ! I owe you guys so much comma least i can do is take a pic wit ya ! 😊	517363563535794176	1328060750	[MENTION] i would but am from england😔😔
 517432765202309120	1396698397	I care	517432870605172736	1328060750	[MENTION] this is why we love u taylor ❤ ️😘
-517433469132349440	484961764	One of my favourite Nash tweets , better be coming to the UK soon 🇬🇧 ❤ ️ [MENTION] [URL]	552265646252490752	484961764	[MENTION] [MENTION] Nash tweeted this quite a while ago 😊
+517433469132349440	484961764	One of my favourite Nash tweets comma better be coming to the UK soon 🇬🇧 ❤ ️ [MENTION] [URL]	552265646252490752	484961764	[MENTION] [MENTION] Nash tweeted this quite a while ago 😊
 517443279403483136	47846709	Day flexxxxx thoooo |jeep |xj |cherokee [URL]	517491784096571392	47846709	Thank you for all that you have given me Lord🙏
 517478039110684672	278328390	I wanna do something no one has ever done before	517486772713168896	467781586	[MENTION] like following me maybe
 517694130018066432	330705266	Austin come see me tomorrow !!	517694185324183552	1328060750	[MENTION] come to Uk
@@ -339,7 +339,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 518856771595956224	484961764	|ImAnOverloaderBecause you never give up on your dreams and always put a smile on my face+ your absolutely amazing at singing [MENTION]	518857317870473216	484961764	[MENTION] also because your so inspirational and inspire me to follow my dreams ☁️💕
 518857317870473216	484961764	[MENTION] also because your so inspirational and inspire me to follow my dreams ☁️💕	518857950509957120	484961764	[MENTION] I love you boys |ImAnOverloaderBeacuse
 518882512333185024	278328390	Favorite this tweet if you want Jack and I to do a younow tonight and just do a buncha random stuff and make you laugh maybe	518887447128997888	484961764	[MENTION] I hate time differences 😠💕
-518887219420225536	382402366	Damnnn and its [MENTION] Birthday ??? Happy Birthday man , hope u have a great day . Hopefully see u soon😎	518992542181130240	1088207396	[MENTION] just now saw this . haha thanks man . see you soon
+518887219420225536	382402366	Damnnn and its [MENTION] Birthday ??? Happy Birthday man comma hope u have a great day . Hopefully see u soon😎	518992542181130240	1088207396	[MENTION] just now saw this . haha thanks man . see you soon
 518897684120227840	1906234147	HAPPPPY 12th BIRTHDAY BABY BOYYYY . COME BACK TO LA SOON SO WE CAN BAKE SOME CAKES OKKKKKKKKKKKKKKKKKKKKKKKKKK [MENTION]	518900010571014144	1088207396	. [MENTION] Thanks bff !!! I'll bring my racecars too so we can race them !
 518901524886749184	330705266	So [MENTION] wanted to know if I could do anything right now what would it be ?	518901728549543936	1328060750	[MENTION] [MENTION] go mud bikeing
 518914635370864640	330705266	Has an awesome time out here Thanks [MENTION] definitely posting the video tomorrow ! [URL]	518915015005716480	55592183	. [MENTION] can't wait to see that video !
@@ -363,19 +363,19 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 519638472760369152	110288084	[MENTION] more rings than any dodger 😂😂😂😂😂	519639616127651840	403171568	[MENTION] the 4 of 5 he won were in his first 5 years when the Yankees had the best team in baseball 😂 he did nothing
 519639188975521792	382402366	But I've been pretty inactive lately so I'm gonna be doing a little dm spree later tonight to make it up to ya . Be ready	519639307145854976	467781586	[MENTION] do it if you're gonna dm me
 519639616127651840	403171568	[MENTION] the 4 of 5 he won were in his first 5 years when the Yankees had the best team in baseball 😂 he did nothing	519640290655629312	110288084	[MENTION] at least you admit it 😎
-519644523249430528	403171568	Barbosas just a bandwagon fan anyways lol	519645430615785472	110288084	“ [MENTION] : Barbosas just a bandwagon fan anyways lol ” ive always liked the lakers , cardinals , & yankees ? Haha
+519644523249430528	403171568	Barbosas just a bandwagon fan anyways lol	519645430615785472	110288084	“ [MENTION] : Barbosas just a bandwagon fan anyways lol ” ive always liked the lakers comma cardinals comma & yankees ? Haha
 519647928546127872	403171568	Barbosa used to be a Rams fan 😂 but switched to the cardinals when they started doing good	519650452669874176	110288084	[MENTION] I've been a Cardinals fan since matt lienart went there & they sucked ? Haha
 519761569987575808	440703398	[MENTION] eddy |ASCAfterShow |ASCQuiz	519761701458026496	440703398	[MENTION] eddy |ASCAfterShow |ASCQuiz
-519939396993572864	484961764	taught my Niece how to say Cameron Dallas , it's not the best but you can make out what she's saying , it's just to cute 💕 [MENTION]	519939673792475136	484961764	We're still working on Nash 💕
+519939396993572864	484961764	taught my Niece how to say Cameron Dallas comma it's not the best but you can make out what she's saying comma it's just to cute 💕 [MENTION]	519939673792475136	484961764	We're still working on Nash 💕
 519974669076926464	1088207396	I wanna tweet something but idk what to tweet	519975035965308928	467781586	[MENTION] tweet me something cute idk
-519989916965412864	363961928	I can't wait to go back to North Carolina 😁	519991796773187584	99381112	[MENTION] [MENTION] See there , there is always |hope |staypositive RT [MENTION] I can't wait to go back to North Carolina
+519989916965412864	363961928	I can't wait to go back to North Carolina 😁	519991796773187584	99381112	[MENTION] [MENTION] See there comma there is always |hope |staypositive RT [MENTION] I can't wait to go back to North Carolina
 520004265382006784	330705266	I wanna do another follow spree soon . Stay tuned	520300319969136640	2744930975	“ [MENTION] : I wanna do another follow spree soon . Stay tuned ” YES PLEASE
 520013151081738240	1088207396	IM SO HAPPY	520015563352211456	467781586	[MENTION] WHY
 520264931128901632	379408088	So sick 😔	520264995888963584	1328060750	[MENTION] whats up shawn ?
 520334418385567744	2482534992	I have never laughed so hard In my life [URL]	552681054126231552	2482534992	[MENTION] 😏😏😏
-520337932062703616	163645988	I don't know how to be myself , cuz I don't even know who I am . so that's lame .	520412976294010880	139539038	,, [MENTION] u be who u want , act how u want . U create urself . that's the beauty of it . Plus I'd say ur pretty great how u are now🌞
+520337932062703616	163645988	I don't know how to be myself comma cuz I don't even know who I am . so that's lame .	520412976294010880	139539038	commacomma [MENTION] u be who u want comma act how u want . U create urself . that's the beauty of it . Plus I'd say ur pretty great how u are now🌞
 520368020829384704	363961928	Maggie 😍	520368723677310976	467781586	[MENTION] otpppppp
-520412976294010880	139539038	,, [MENTION] u be who u want , act how u want . U create urself . that's the beauty of it . Plus I'd say ur pretty great how u are now🌞	520413965692575744	163645988	. [MENTION] have I ever told u how rad I think u are ?
+520412976294010880	139539038	commacomma [MENTION] u be who u want comma act how u want . U create urself . that's the beauty of it . Plus I'd say ur pretty great how u are now🌞	520413965692575744	163645988	. [MENTION] have I ever told u how rad I think u are ?
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520630637028724736	484961764	[MENTION] [MENTION] we should just have our own conversation and see if he notices us xxxxx
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520630890863820800	484961764	[MENTION] [MENTION] and idk what I'll do if you can't come 😥xxxxxxx
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520631103028469760	484961764	[MENTION] [MENTION] maybe not that far 😕
@@ -384,8 +384,8 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520631517509615616	484961764	[MENTION] [MENTION] please follow us cam 😁💕💕💕💕
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520631777820680192	484961764	[MENTION] [MENTION] we still have to get [MENTION] to follow you xxxxxx
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632070251773952	484961764	[MENTION] [MENTION] yeah I will and yes it's torture seeing him tweet other people and we still need to get noticed 😂💕💕💕
-520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632235603419136	484961764	[MENTION] [MENTION] he has to notice us one day , hopefully 😕xxxxxxxx
-520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632373508321280	484961764	[MENTION] [MENTION] and yes I agree , cam turn the mute button off 😂💕💕💕
+520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632235603419136	484961764	[MENTION] [MENTION] he has to notice us one day comma hopefully 😕xxxxxxxx
+520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632373508321280	484961764	[MENTION] [MENTION] and yes I agree comma cam turn the mute button off 😂💕💕💕
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632555142668288	484961764	[MENTION] [MENTION] I know xxxxx how's he not seeing this we've tweeted so much xxxxxx
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520632810185711616	484961764	[MENTION] [MENTION] CAM ????????????
 520629587769036800	484961764	[MENTION] cam really needs to follow us we've been waiting so long [MENTION] 😔💕💕💕💕	520633005262774272	484961764	[MENTION] [MENTION] this is such a waste of time but we're still doing it anyway 😂💕
@@ -403,10 +403,10 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 520638201765978112	484961764	[MENTION] [MENTION] aha yeah cause that's so true 😂😂😂💕💕💕	520639583881822208	484961764	[MENTION] [MENTION] so what's this boys name 😂💕💕
 520638370528374784	484961764	[MENTION] [MENTION] yeah you keep telling yourself that	520638698367766528	484961764	[MENTION] [MENTION] do you know my mum really likes cam and said he's a handsome and has a nice smile 😂
 520638698367766528	484961764	[MENTION] [MENTION] do you know my mum really likes cam and said he's a handsome and has a nice smile 😂	520638979583266816	484961764	[MENTION] [MENTION] he's already got the thumbs up from my mum 😂👍👍
-520646305220427776	484961764	Is your poo meant to be long like a log , I thought it was meant to be plops , mine was really hard today I was like arrghhh [MENTION] ...	520646418005229568	484961764	[MENTION] 😂😂😂😂😂😂
+520646305220427776	484961764	Is your poo meant to be long like a log comma I thought it was meant to be plops comma mine was really hard today I was like arrghhh [MENTION] ...	520646418005229568	484961764	[MENTION] 😂😂😂😂😂😂
 520704029446643712	2482534992	I need ppl for a Groupchat	520704508645888000	2482534992	[MENTION] preferably fan accs
 520704508645888000	2482534992	[MENTION] preferably fan accs	520706347051278336	2482534992	[MENTION] common I need more ppl
-520708402788720640	99381112	[MENTION] Would you be willing to read the last chapter of ELM for me and tell me what you think ...	520708581961007104	99381112	[MENTION] Crap , this isn't Facebook , sorry . You'll get this twice ...
+520708402788720640	99381112	[MENTION] Would you be willing to read the last chapter of ELM for me and tell me what you think ...	520708581961007104	99381112	[MENTION] Crap comma this isn't Facebook comma sorry . You'll get this twice ...
 520932403024760832	330705266	I love my true fans .	520932481915441152	467781586	[MENTION] aw love u too
 520969000499830784	278328390	Now I know it takes me exactly 28 minutes to get ready in the morning .	521081460787142656	163730859	. [MENTION] lol you see this [MENTION] 😂😂😂 soooo inaccurate
 520997485377257472	363961928	Rt for a dm/follow	521010459408084992	99381112	[MENTION] Good Luck ... RT [MENTION] Rt for a dm/follow
@@ -422,12 +422,12 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 521338251177893888	2482534992	if you are always shading the guys over every thing like 24/7 then don't call yourself a " fan " but if you wanna express you opinion every	521338317573718016	2482534992	once in a while do it
 521338529369313280	330705266	[MENTION] I'm gonna be carter	521340334975229952	2482534992	“ [MENTION] : [MENTION] I'm gonna be carter ” OMFG HAYES
 521340783677669376	2482534992	I love how almost everyone one of the guys has made a comment on the carter situation except cameron	521341536592998400	2482534992	[MENTION] this wasn't sarcasm like I actually love how he doesn't want to get involved
-521371265928818688	484961764	really can't believe it's the end of M.A.D , thank you for everything ilysm ❤ ️ |thankyouMADfans [MENTION] [MENTION] [MENTION]	521371500864352256	484961764	I'll support you all no matter what 😭 ❤ ️ |thankyouMADfans [MENTION] [MENTION] [MENTION]
+521371265928818688	484961764	really can't believe it's the end of M.A.D comma thank you for everything ilysm ❤ ️ |thankyouMADfans [MENTION] [MENTION] [MENTION]	521371500864352256	484961764	I'll support you all no matter what 😭 ❤ ️ |thankyouMADfans [MENTION] [MENTION] [MENTION]
 521371916096262144	1906234147	algunos de ustedes se tomaron el tiempo para ir al traductor Google para ver esto .... así que ... patatas . :)	521372061378543616	467781586	[MENTION] HAHAHAHAHHAHAHAH BABYYYY
 521373488251404288	1906234147	People make mistakes . You make mistakes . I do . Everyone does . And if you think that anyone should be perfect 24/7 then thats sad .	521374811445280768	1328060750	[MENTION] lockscreen🙌😭🙏
 521374365729169408	1906234147	also don't judge someone on things they say in the heat of the moment . I've said things I don't mean . And I've grown from it . It's life ! 👍	521392136819077120	363961928	. [MENTION] love you bro
 521379655056904192	379408088	Im half elf half wizard	521397035040518144	2825905798	[MENTION] [URL]
-521405970036314112	1906234147	Almost 1 year ago in Orlando 😱 [URL]	521408427130880000	1088207396	. [MENTION] :,)
+521405970036314112	1906234147	Almost 1 year ago in Orlando 😱 [URL]	521408427130880000	1088207396	. [MENTION] :comma)
 521405970036314112	1906234147	Almost 1 year ago in Orlando 😱 [URL]	521502792192901120	1396698397	... [MENTION] my hands are in my pants like 90% I was still trying to find my &&&$@
 521405970036314112	1906234147	Almost 1 year ago in Orlando 😱 [URL]	522130469962272768	278328390	. [MENTION] ahh shit I remember this :/ I miss lando
 521406783873900544	1396698397	When you face a crisis you know who your true friends are .	521407805543424000	1328060750	[MENTION] so true ....
@@ -446,7 +446,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 521687046654799872	330705266	Didn't have school today 😍	521687242537172992	484961764	[MENTION] I did 😔
 521707498462388224	278328390	Wait so do most people have school today or not ?	521707648681787392	467781586	[MENTION] I have :(
 521808351525863424	1906234147	Quit stressin . Love the life you live . [URL]	521814605975535616	2825905798	[MENTION] It's not that easy tho
-521829718778060800	47846709	RT FOR A FOLLOW , and when I follow you , you will feel glam like this : [URL]	521862920960221184	99381112	Look Aly [MENTION] It's LaLa RT [MENTION] RT FOR A FOLLOW , and when I follow you , you will feel glam like this :
+521829718778060800	47846709	RT FOR A FOLLOW comma and when I follow you comma you will feel glam like this : [URL]	521862920960221184	99381112	Look Aly [MENTION] It's LaLa RT [MENTION] RT FOR A FOLLOW comma and when I follow you comma you will feel glam like this :
 521838028592267264	1906234147	Amber is the color of your energy .	521838512606560256	326492577	[MENTION] it's also my name but that's whatever .. 😏 ( JK I KIND OF FLIPPED OUT WHEN I SAW THIS TWEET MATT )
 521928077191172096	1396698397	I think my braces are coming off tomorrow I've had them for like 5 years now ..	522061150041939968	2684899689	[MENTION] I HAVE MIXED EMOTIONS ABOUT THIS
 522120607761461248	379408088	Learning how to dance 😂	522120750388752384	2225825663	[MENTION] you should learn how to 2 step😂
@@ -463,17 +463,17 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 522785233998213120	379408088	Going to post an RSVP link at 6PM London time for a secret free show there next week ! Make sure to be ready to RSVP fast . |ShawnInLondon	522788460789497856	484961764	[MENTION] [MENTION] would you go if I went ?
 522935972028497920	2419851452	remember when I was obsessed with [MENTION] & I could only hope he followed me but then I kinda gave up & things started to drift away	522936095991140352	2419851452	[MENTION] yeah I regret that 😔😢😣
 522981806404931584	163730859	Mexico is awesome ❤ ️	522981922100617216	2541854413	“ [MENTION] : Mexico is awesome ❤ ️ ” U WONT GO THO
-523104335505661952	30495613	" Don't waste your life , it's too short . You should always be happy "	523104767296675840	30495613	[MENTION] my uber driver just said this to me out of no where
+523104335505661952	30495613	" Don't waste your life comma it's too short . You should always be happy "	523104767296675840	30495613	[MENTION] my uber driver just said this to me out of no where
 523183822163435520	2831619003	[MENTION] |EMABiggestFansJustinBieber [URL]	523188388493791232	2831619003	|EMABiggestFansJustinBieber
 523261978157252608	363961928	😠	523294018349072384	99381112	[MENTION] Oh dear ...
 523275959193980928	278328390	I think I have a crush on a fan .. 😬	523277090649829376	2541854413	[MENTION] which one [URL]
-523275959193980928	278328390	I think I have a crush on a fan .. 😬	523293415120064512	99381112	I know , it's clealy [MENTION] who can blame you ... RT [MENTION] I think I have a crush on a fan ..
+523275959193980928	278328390	I think I have a crush on a fan .. 😬	523293415120064512	99381112	I know comma it's clealy [MENTION] who can blame you ... RT [MENTION] I think I have a crush on a fan ..
 523282640984481792	278328390	It's about to be a gooood weekend	523282883331756032	382402366	. [MENTION] 😎
 523297515689766912	363961928	I got a haircut	523297759680806912	99381112	[MENTION] [MENTION] You should have probably gotten them all cut .
 523418430910005248	379408088	Look at that vehicle [URL]	523418679854497792	1328060750	[MENTION] the bus ?
-523629978206744576	139539038	CANT BELIEVE THIS IS HAPPENING FUUUUCKK [URL]	523630170532761600	2419851452	[MENTION] omg I'M slow now your snapchat makes sense , have fun !
+523629978206744576	139539038	CANT BELIEVE THIS IS HAPPENING FUUUUCKK [URL]	523630170532761600	2419851452	[MENTION] omg I'M slow now your snapchat makes sense comma have fun !
 523630754254041088	363961928	I wish you'd text me back ...	523630966661996544	2419851452	[MENTION] I'd wish you texted me 😂
-523811346388099072	484961764	Haven't heard from cameron if 4 days , I miss him so much , I'm nothing without him 😭💕 [URL]	523811751922790400	484961764	But I'm so proud of him he deserves a break ❤ ️
+523811346388099072	484961764	Haven't heard from cameron if 4 days comma I miss him so much comma I'm nothing without him 😭💕 [URL]	523811751922790400	484961764	But I'm so proud of him he deserves a break ❤ ️
 523901572397285376	308297673	so I just wanna say thank you & a big happy birthday to my brother [MENTION] . We're living our dream buddy ! [URL]	523901835535716352	841076833	[MENTION] [MENTION] Awww I knew you were talking about Sam since your first tweet ☺ ️😘 ❤ ️
 523909825215086592	379408088	Nandos ?	523909924439719936	1328060750	[MENTION] |SomethingBigIsHappening tell us
 523909825215086592	379408088	Nandos ?	523910191050657792	484961764	[MENTION] your in England so sure
@@ -481,11 +481,11 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 523918748512948224	495074577	I am Simon [URL]	523919208045096960	484961764	[MENTION] actually I am
 523936570051948544	2482534992	Take this quiz !! [URL]	523939019177336832	2482534992	[MENTION] pretty much most of this is sarcasm
 523942647908814848	2419851452	[MENTION] Hey what is a elf doing out side the north pole ??	523942781220560896	2419851452	[MENTION] omg jk you were adorable ❤
-523946614713372672	1906234147	You can tell me a million and one times how much you hate me and how you're not gonna be a fan , but idc because these videos will be awesome	523947259789316096	2419851452	[MENTION] I love how you can be inspiration 1 second & random the next its all these things I love about you Keep living how you live
+523946614713372672	1906234147	You can tell me a million and one times how much you hate me and how you're not gonna be a fan comma but idc because these videos will be awesome	523947259789316096	2419851452	[MENTION] I love how you can be inspiration 1 second & random the next its all these things I love about you Keep living how you live
 523986071256711168	1906234147	Yo	523986144674193408	2711961214	[MENTION] yo
 524039911922356224	363961928	Maggie and I aren't siblings ... we're dating	524040098523127808	1604280403	“ [MENTION] : Maggie and I aren't siblings ... we're dating ”
 524197545976029184	379408088	Im gunna do a follow spree tonight	524198874588925952	484961764	[MENTION] yes please follow me xxxxx
-524285141053485056	379408088	So should I tell you when |SomethingBigIsHappening ?! Following fans that tweet the hashtag , lets get it trending ! 🙆	524285243268665344	1604280403	[MENTION] YES TELL US
+524285141053485056	379408088	So should I tell you when |SomethingBigIsHappening ?! Following fans that tweet the hashtag comma lets get it trending ! 🙆	524285243268665344	1604280403	[MENTION] YES TELL US
 524290270704058368	1906234147	Wait	524290672736481280	1328060750	[MENTION] whats up ?
 524327413249880064	403171568	We'll be writing back to a lot of you guys to 😊	524328240811233280	2541854413	[MENTION] ill send u burnt toast
 524328240811233280	2541854413	[MENTION] ill send u burnt toast	524328777925414912	403171568	“ [MENTION] : [MENTION] ill send u burnt toast ” 😂😂
@@ -512,19 +512,19 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 525397558194368512	1705991035	" hello there " - [MENTION] [URL]	525400126530277376	467781586	[MENTION] baaaabyyyyy
 525400158482075648	1088207396	is Twitter messed up for anyone else or am I just that unlucky haha	525400329484259328	467781586	[MENTION] I miss you baby
 525464642043125760	163730859	So proud of [MENTION] he deserves everything going on for him right now and more ! Such a talented photographer for real .	525682721847508992	1705991035	. [MENTION] thanks man ! ☺
-525537214071963648	1906234147	Ahhh relaxing day , well needed :)	525537426794491904	163730859	[MENTION] u goon
+525537214071963648	1906234147	Ahhh relaxing day comma well needed :)	525537426794491904	163730859	[MENTION] u goon
 525687706655801344	30495613	I think I have a quote from The Office for every situation I could ever be in	525688351618125824	30495613	[MENTION] [URL]
 525733273339559936	363961928	If you have my notifications on you're bae	525734921563037696	484961764	[MENTION] I have your notifications on
 525753077388025856	1088207396	a selfie a day keeps the girls away	525753327834124288	326492577	[MENTION] no . It means they come running . ✊
 526031132136341504	2726065606	Just ordered my shirt ahhhh ❤ ️ ❤ ️ [MENTION] [MENTION] [MENTION] [MENTION] [URL]	526036699647074304	2726065606	[MENTION] [MENTION] already ordered my shirt can't wait until it comes in and I get to wear it ❤ ️ ❤ ️👏👏👏😁
 526039916762107904	2744930975	[MENTION] youre really getting out there trying new things and im so proud . ❤ ️ i love you .	526094873192316928	2744930975	[MENTION] i wish i could shop at an Aeropostale😒😒
-526083499917586432	363961928	Rt for a DM - I'll try to DM a lot of you guys before I take off 😊	526085156218892288	2582957044	[MENTION] 9,000 retweets 😂😂 no one really has a chance do they 😬😬✌️💘 ☺ ️
+526083499917586432	363961928	Rt for a DM - I'll try to DM a lot of you guys before I take off 😊	526085156218892288	2582957044	[MENTION] 9comma000 retweets 😂😂 no one really has a chance do they 😬😬✌️💘 ☺ ️
 526085549309038592	363961928	You guys look beautiful in our clothes 😚	526085757342330880	2582957044	[MENTION] can I get them in the uk ? :)
 526152394305175552	495074577	Hey [MENTION] your header and icon are genius I'm cracking up [URL]	526152545107206144	2225825663	[MENTION] [MENTION] coOl
-526204420803928064	139539038	Be nice to everyone . Be extra nice to the people who aren't nice back , they hate that shit .	526204745174622208	308297673	[MENTION] I love you , bestfriend , roommate that is totally cool . you're great , yah 😬👍
-526204745174622208	308297673	[MENTION] I love you , bestfriend , roommate that is totally cool . you're great , yah 😬👍	526206028124135424	139539038	[MENTION] yea dude like totes love u too incredible amazing roommate . Its unbearable of how great u are honestly wow dude yea man bro😬😐😬😐😬
+526204420803928064	139539038	Be nice to everyone . Be extra nice to the people who aren't nice back comma they hate that shit .	526204745174622208	308297673	[MENTION] I love you comma bestfriend comma roommate that is totally cool . you're great comma yah 😬👍
+526204745174622208	308297673	[MENTION] I love you comma bestfriend comma roommate that is totally cool . you're great comma yah 😬👍	526206028124135424	139539038	[MENTION] yea dude like totes love u too incredible amazing roommate . Its unbearable of how great u are honestly wow dude yea man bro😬😐😬😐😬
 526206028124135424	139539038	[MENTION] yea dude like totes love u too incredible amazing roommate . Its unbearable of how great u are honestly wow dude yea man bro😬😐😬😐😬	526251696523972608	308297673	[MENTION] .. I didn't think the awkward smile was possible to do over emojis 😬😐😬😐😬
-526330505738731520	440703398	[MENTION] 4308 , tell me your number :) [URL]	526330570586861568	440703398	[MENTION] 1708 :)
+526330505738731520	440703398	[MENTION] 4308 comma tell me your number :) [URL]	526330570586861568	440703398	[MENTION] 1708 :)
 526368091178299392	495074577	Human Centaur [URL]	526369926454714368	2225825663	[MENTION] tris wua
 526420052707667968	379408088	Catching up on walking dead and HOLYSHIT ITS CRAZY	526423451884875776	1088207396	. [MENTION] RIGHT ?!? I just got caught up !!!!
 526491275122724864	1396698397	I've never been this exhausted I just woke up and I can hardly walk	526491638341046272	2684899689	[MENTION] woah bae Whatchu been doin😏😏😂 jk
@@ -536,7 +536,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 526755509379276800	2831619003	[MENTION] com |EMABiggestFansJustinBieber	526755582913818624	2831619003	[MENTION] fome |EMABiggestFansJustinBieber
 526886704247238656	2671372639	Cam is so close to 9999 it's scared me so much to think he won't notice me😭	526886765043666944	2671372639	[MENTION]
 526890639003500544	1088207396	. [MENTION] Ya . want one ? 😏	526890736235851776	841076833	“ [MENTION] : . [MENTION] Ya . want one ? 😏 ” I do 🙋😏
-526916256679878656	379408088	[MENTION] imy	527181222573637632	382402366	Just saw this [MENTION] I miss u way more man .. Keep doin big things , I'll see u soon
+526916256679878656	379408088	[MENTION] imy	527181222573637632	382402366	Just saw this [MENTION] I miss u way more man .. Keep doin big things comma I'll see u soon
 526918749878620160	1906234147	Top 8 topics y'all gave me haha . LETS VOTEEEE 1 . Burnie 2 . Larry 3 . Bagels 4 . Pizza 5 . sharks 6 . teachers 7 . potatoes 8 . candy	526918835690291200	1328060750	[MENTION] u missed FROGS
 526925579028017152	1604280403	[MENTION] I'm not going to bed until you tweet me goodnight	526925678193946624	1604280403	[MENTION] just kidding I'll be awake forever
 526930425898618880	2825905798	[MENTION] [MENTION] [MENTION] HI YOU LITTLE SHITTSSSS	526930580072833024	2825905798	[MENTION] [MENTION] [MENTION] WE HAVE BECOME BEST FRIENDS BY TALKING ABOUT OUR ASHOLESSS
@@ -578,7 +578,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 527546562789273600	2482534992	Guys cams having an |AskCam maybe he will tell us if e lost his virginity or not everyone ask that	527546639213666304	2482534992	[MENTION] idek why I wanna know so bad 😂😂
 527553307410460672	379408088	Going to do a follow spree if u post |SomethingBigIsHappeningNov10 ! Lets get it trending & we'll reveal the info on it today ! 😍	527554578028707840	68966191	[MENTION] |SomethingBigIsHappeningNov10 |SomethingBigIsHappeningNov10 |SomethingBigIsHappeningNov10 |SomethingBigIsHappeningNov10
 527586115377586176	278328390	? [URL]	527586242662526976	2225825663	[MENTION] da fuq
-527607224701825024	2831619003	nao sei se voto no p9 no JB no 1D no 5sos ou na miley , vida de fã é fificil |JOVEMDOANOP9 |PJB	527607300794900480	2831619003	[MENTION] dificil *
+527607224701825024	2831619003	nao sei se voto no p9 no JB no 1D no 5sos ou na miley comma vida de fã é fificil |JOVEMDOANOP9 |PJB	527607300794900480	2831619003	[MENTION] dificil *
 527614632450883584	2482534992	[MENTION] |AskCam are you a virgin x56	527615611594346496	2482534992	[MENTION] please answer my fucking question
 527616756970704896	2482534992	Clearly cams not gonna answer my question [MENTION] |AskCam	527616806023077888	2482534992	[MENTION] do you see what I did There
 527660478743740416	2482534992	No need to get all defensive guys cameron is simply stating that not everyone needs to go to school some of the most successful people in-	527660677255950336	2482534992	Life don't go he's not telling you not to but you shouldn't be looked down upon if you didn't go to school
@@ -600,7 +600,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 528288078033850368	379408088	May be doing something really cool for u to be able to unlock the single early next week ! 🙆 |GetSomethingBigEarly	528290819695181824	379408088	Post |GetSomethingBigEarly & if we get enough mentions this weekend u may be able to unlock the single next week ! 😊 [URL]
 528313627527241728	1088207396	don't know what to be for Halloween ? how about my girlfriend	528313784683986944	841076833	“ [MENTION] : don't know what to be for Halloween ? how about my girlfriend ” Okay 😏😚
 528319386348961792	363961928	I wouldn't be verified if it wasn't for you guys so thank you 😊 love you all ❤ ️	528319767892217856	2582957044	[MENTION] ily2
-528323927106662400	2825905798	Nash , where u at ? [MENTION] [URL]	528324050947694592	2825905798	[MENTION] even my fatass of a cat is waiting for you
+528323927106662400	2825905798	Nash comma where u at ? [MENTION] [URL]	528324050947694592	2825905798	[MENTION] even my fatass of a cat is waiting for you
 528344935523561472	1088207396	where did this random coldness come from😳😍	528345120736047104	2419851452	[MENTION] oh you just touched my soul .. no biggie
 528378855099072512	363961928	The homie [MENTION] [URL]	528379410471452672	2419851452	[MENTION] CARTER STYLE YOUR QUIFF AGAIN I'M FIGHTING THE URGE TO COME FLUFF YOUR HAIR 😍
 528397039101427712	30495613	Ok last picture I promise but HAPPY HALLOWEEN 💋 [URL]	528397515121778688	68966191	[MENTION] i loveeeeee your costumeee andrea you look amazing !! happy halloween
@@ -667,7 +667,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 529717444374302720	163730859	GUYS I LOVE THE SUN ITS SO WARM	529717584590286848	484961764	[MENTION] it's so cold where I live
 529717444374302720	163730859	GUYS I LOVE THE SUN ITS SO WARM	529718919670407168	2605929432	[MENTION] It's HOTT 🔥 just like u 😬 ☺ ️😉😉😉
 529743522615025664	379408088	Ok DM'ing one of you now with the first snippet ! Last chance ! So keep posting |GetSomethingBigNov7 ! 😊	529745069482704896	379408088	[MENTION] check your DMs ! 😍
-529772049799974912	278328390	Nash claims that all the guys steal his clothes , but in reality he just leaves his shit everywhere .	530151598341627904	1705991035	he wears my socks 😂 - “ [MENTION] : Nash claims that all the guys steal his clothes , but in reality he just leaves his shit everywhere . ”
+529772049799974912	278328390	Nash claims that all the guys steal his clothes comma but in reality he just leaves his shit everywhere .	530151598341627904	1705991035	he wears my socks 😂 - “ [MENTION] : Nash claims that all the guys steal his clothes comma but in reality he just leaves his shit everywhere . ”
 529778641857560576	2419851452	[MENTION] I got my phone taken up for you please Brent I don't have an iphone😭	529781215436349440	2419851452	[MENTION] I give up 😔😭
 529795944712122368	2419851452	Can someone spam [MENTION] for me while I go drown in my tears ?	529796219594219520	2419851452	[MENTION] no but serious my moms yelling at me to do chores😒 she obviously doesn't know Doubt Your Doubts came out today
 529827255854587904	1906234147	|tbofromthegroovysmoothie [URL]	529827336511033344	2825905798	[MENTION] nice try
@@ -683,9 +683,9 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530135517858263040	163730859	Everyone has a talent	530135567778869248	2541854413	[MENTION] Whats carters
 530149884981018624	163730859	WHERE ARE YOU GUYS WTF	530149952538681344	2582957044	[MENTION] I'm here
 530157351349673984	395706462	I think chase is at work 😒 so let me get the approval from the bae Brandi and she let me know of it's wack or not lol	530159350279446528	110288084	[MENTION] I'll let you know
-530161384764362752	308297673	// R∃FLECTION [URL]	530164761070010368	139539038	,, [MENTION] hey man sorry I gave u a black eye . I honestly just hate when people touch my fruit snacks .. lesson learned its ok
+530161384764362752	308297673	// R∃FLECTION [URL]	530164761070010368	139539038	commacomma [MENTION] hey man sorry I gave u a black eye . I honestly just hate when people touch my fruit snacks .. lesson learned its ok
 530162886350348288	330705266	You mean the world to me	530717789766823936	1328060750	[MENTION] @ me next time bae😘
-530164761070010368	139539038	,, [MENTION] hey man sorry I gave u a black eye . I honestly just hate when people touch my fruit snacks .. lesson learned its ok	530186739877281792	308297673	// [MENTION] at least I don't look like a surprised , hipster , mexican , tumblr boy w/ an afro in my twitter picture
+530164761070010368	139539038	commacomma [MENTION] hey man sorry I gave u a black eye . I honestly just hate when people touch my fruit snacks .. lesson learned its ok	530186739877281792	308297673	// [MENTION] at least I don't look like a surprised comma hipster comma mexican comma tumblr boy w/ an afro in my twitter picture
 530178196755324928	278328390	Guys I miss you :( come back to twitter	530181138254286848	1604280403	[MENTION] hi jack
 530180464766504960	1088207396	so excited for these next couple weeks😜	530180619041374208	68966191	[MENTION] why ?
 530188156901920768	363961928	Matt just got stabbed with a knife on accident ... I'm scared	530191189027213312	2671372639	[MENTION] WHAT . THE . FUCK .
@@ -697,7 +697,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530474979033624576	1906234147	What if I told u it has hoodies and yoga pants too	530475358731386880	858126522	[MENTION] HELL MOTHER FRIKEN YES IM BUYING THEM BOTH
 530474979033624576	1906234147	What if I told u it has hoodies and yoga pants too	530475750227738624	2419851452	[MENTION] honestly I would wear sweatpants if you wore them 😂
 530478330144096256	163730859	What cities should we come to ?	530478397303296000	1604280403	[MENTION] MIAMI
-530478330144096256	163730859	What cities should we come to ?	530478437191139328	1604280403	[MENTION] MIAMI , WE MISS YOU
+530478330144096256	163730859	What cities should we come to ?	530478437191139328	1604280403	[MENTION] MIAMI comma WE MISS YOU
 530478330144096256	163730859	What cities should we come to ?	530478458888282112	1604280403	[MENTION] you better come to miami
 530478330144096256	163730859	What cities should we come to ?	530479268384739328	858126522	[MENTION] PHOENIX
 530478330144096256	163730859	What cities should we come to ?	530479357127835648	858126522	“ [MENTION] : What cities should we come to ? ” PHOENIX🌵
@@ -723,8 +723,8 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530781110528389120	405728790	[MENTION] haha thank you so much	530782862367154176	2398245474	[MENTION] I LOVE YOU
 530781110528389120	405728790	[MENTION] haha thank you so much	531859655694110720	2398245474	[MENTION] y am I nice to u
 530781110528389120	405728790	[MENTION] haha thank you so much	545246343644463104	2398245474	[MENTION] tb !!
-530785166038667264	405728790	Thank you guys for the support , I can't thank you guys enough Thank you , Thank you , Thank you , Thank you 😘 you guys are the best . I love you	530785341750259712	2398245474	[MENTION] ILY
-530818169850445824	405728790	. [MENTION] wow , thank you	530818213622587392	1729841617	[MENTION] [MENTION] hi
+530785166038667264	405728790	Thank you guys for the support comma I can't thank you guys enough Thank you comma Thank you comma Thank you comma Thank you 😘 you guys are the best . I love you	530785341750259712	2398245474	[MENTION] ILY
+530818169850445824	405728790	. [MENTION] wow comma thank you	530818213622587392	1729841617	[MENTION] [MENTION] hi
 530818874640322560	405728790	WOOOOOOOOW MY FINAL CUT JUST CRASHED AND DELETED MY PROJECT	530819029112741888	2482534992	[MENTION] damn it can you announce it anyways
 530818874640322560	405728790	WOOOOOOOOW MY FINAL CUT JUST CRASHED AND DELETED MY PROJECT	530819262349197312	2398245474	[MENTION] OMG
 530818874640322560	405728790	WOOOOOOOOW MY FINAL CUT JUST CRASHED AND DELETED MY PROJECT	530819370046341120	2398245474	[MENTION] WHAT SHIT
@@ -738,14 +738,14 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530824387172126720	1396698397	Who remembers cameron losing to tyler 😂 that's real realistic	530829535571214336	2398245474	[MENTION] TAYLOR
 530826784309121024	1396698397	.. [MENTION] keep it that way fuck boy get out of my mentions	530826955420356608	1604280403	“ [MENTION] : .. [MENTION] keep it that way fuck boy get out of my mentions ” TAYLOR😂😭😂😭😂😭😂
 530826784309121024	1396698397	.. [MENTION] keep it that way fuck boy get out of my mentions	530826977088126976	1604280403	“ [MENTION] : .. [MENTION] keep it that way fuck boy get out of my mentions ”
-530827922878128128	405728790	[MENTION] [MENTION] that's kind of mean :/ lets just settle our differences and be nice .... I'm sorry Tyler , I was very immature .	530829070456455168	2398245474	[MENTION] [MENTION] [MENTION] DONT APOLOGIZE
-530827922878128128	405728790	[MENTION] [MENTION] that's kind of mean :/ lets just settle our differences and be nice .... I'm sorry Tyler , I was very immature .	530829875951968256	2482534992	[MENTION] [MENTION] [MENTION] this is why i am in love with cameron
-530829283913003008	405728790	Following spree soon , who's ready ?! |ExpelledMovie [URL]	530829365454835712	2482534992	[MENTION] oh god I'm not gonna get a follow
+530827922878128128	405728790	[MENTION] [MENTION] that's kind of mean :/ lets just settle our differences and be nice .... I'm sorry Tyler comma I was very immature .	530829070456455168	2398245474	[MENTION] [MENTION] [MENTION] DONT APOLOGIZE
+530827922878128128	405728790	[MENTION] [MENTION] that's kind of mean :/ lets just settle our differences and be nice .... I'm sorry Tyler comma I was very immature .	530829875951968256	2482534992	[MENTION] [MENTION] [MENTION] this is why i am in love with cameron
+530829283913003008	405728790	Following spree soon comma who's ready ?! |ExpelledMovie [URL]	530829365454835712	2482534992	[MENTION] oh god I'm not gonna get a follow
 530834068057755648	1906234147	living forever scares me	530834212988145664	1328060750	[MENTION] dieing soon scares me someday u will be gone and not here or see nothing
 530835755586035712	2825905798	[MENTION] [MENTION] " thanks babe "	531244652427759616	2825905798	[MENTION] [MENTION] I still can't fucking believe this
 530835864210132992	2825905798	[MENTION] [MENTION] it's ok Al	530837166344372224	405728790	. [MENTION] [MENTION] followed all of them (: " thanks babe " 😉😘
 530837166344372224	405728790	. [MENTION] [MENTION] followed all of them (: " thanks babe " 😉😘	530837443311046656	2875104362	[MENTION] [MENTION] [MENTION] follow me pleaaaaseee !
-530837757996716032	1906234147	Cause I ain't perfect , I never said I was . But now they hatin ' cause a brotha finally got some buzz	530837788204490752	1729841617	[MENTION] cool
+530837757996716032	1906234147	Cause I ain't perfect comma I never said I was . But now they hatin ' cause a brotha finally got some buzz	530837788204490752	1729841617	[MENTION] cool
 530851676467376128	1396698397	... [MENTION] it's hard to see them all babes	530851701281271808	1729841617	[MENTION] [MENTION] aw
 530851676467376128	1396698397	... [MENTION] it's hard to see them all babes	530851734688903168	1729841617	[MENTION] [MENTION] can you see mine ?
 530852104445775872	363961928	I literally eat 24/7	530852146942869504	1729841617	[MENTION] story of my life
@@ -753,12 +753,12 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530866164029607936	163645988	When u found out that I kissed Cameron in the movie [URL]	531147578872569856	2398245474	[MENTION] omg so funny !!!!!!!!!!
 530866803762024448	1705991035	have you seen my first youtube video i did with [MENTION] ? [URL] // yesterday i filmed my second one with [MENTION]	531036541485735936	2398245474	[MENTION] [MENTION] [MENTION] yessssss
 530896116385337344	405728790	If you watched the trailer & gave it a thumbs UP or if you Pre-Ordered & rated it Tweet |ExpelledMovie for a follow (: [URL]	530896676744335360	2671372639	[MENTION] PREORDERED IT ! I can't wait !! 😍 it looks so amazing and I am so proud of you😭😭😭 ❤ ️ |ExpelledMovie [URL]
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	530897074989305856	2671372639	[MENTION] I CANT WAIT FOR EXPELLED AND I SO PROUD OF YOU . 😭😭😭 I'm going to cry the whole time watching this😭 |ExpelledTrailer
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	530897528112574464	858126522	[MENTION] [MENTION] I do
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	531032968895008768	2398245474	[MENTION] [MENTION] WHAT THE FUCK IS THIS
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	531032998980763648	2398245474	[MENTION] [MENTION] PH YM GOD
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	531033145022242816	2398245474	[MENTION] [MENTION] HOLY SHRITCFFUCK ME
-530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot , does anyone want to shoot with me ? [URL]	535577054159175680	2458451887	[MENTION] [MENTION] me
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	530897074989305856	2671372639	[MENTION] I CANT WAIT FOR EXPELLED AND I SO PROUD OF YOU . 😭😭😭 I'm going to cry the whole time watching this😭 |ExpelledTrailer
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	530897528112574464	858126522	[MENTION] [MENTION] I do
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	531032968895008768	2398245474	[MENTION] [MENTION] WHAT THE FUCK IS THIS
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	531032998980763648	2398245474	[MENTION] [MENTION] PH YM GOD
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	531033145022242816	2398245474	[MENTION] [MENTION] HOLY SHRITCFFUCK ME
+530896752011141120	405728790	Here's a sneak peak from [MENTION] Shoot comma does anyone want to shoot with me ? [URL]	535577054159175680	2458451887	[MENTION] [MENTION] me
 530902679984537600	405728790	Still following people (: |ExpelledMovie [URL]	530903055290892288	2671372639	[MENTION] EVERYONE WATCH THIS BECAUSE WE ALL NEED A LITTLE BAD BOY CAM IN OUR LIVES😍😍😍 [URL] |ExpelledMovie 👍👍
 530951543286427648	858126522	[MENTION] I would DM you but you dot follow me soooo that's kind of a problem	530952699479859200	858126522	[MENTION] so follow me please so I can slide into the DMs
 530951625662136320	163730859	Guys ! We are gonna do an Ask the Jacks |2 cuz our last one sucked haha	530951674966597632	1729841617	[MENTION] YASSSS
@@ -772,14 +772,14 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 530974611014692864	858126522	[MENTION] THEY HVE CHANGED THEIR MINDS THEY CAME BACK	530977481612730368	858126522	[MENTION] update : my parents are fucking assholes
 530981011358617600	110288084	[MENTION] can tweet but not text me back .....	530981369535791104	395706462	“ [MENTION] : [MENTION] can tweet but not text me back ..... ” Foo ....
 530986393401839616	405728790	Damn I stayed home on a Friday day again ...	530991449949884416	1396698397	.... [MENTION] oh I thought it was just a Friday but it's a Friday day
-530986393401839616	405728790	Damn I stayed home on a Friday day again ...	530991851738636288	1536302137	[MENTION] i stay home all the time , you should take me out sometime
+530986393401839616	405728790	Damn I stayed home on a Friday day again ...	530991851738636288	1536302137	[MENTION] i stay home all the time comma you should take me out sometime
 530991449949884416	1396698397	.... [MENTION] oh I thought it was just a Friday but it's a Friday day	531082091568848896	2482534992	“ [MENTION] : .... [MENTION] oh I thought it was just a Friday but it's a Friday day ” 😂
 531063952814645248	1396698397	Just following people	531064354741833728	2398245474	[MENTION] follow me
 531063952814645248	1396698397	Just following people	531065353376243712	1536302137	[MENTION] would you randomly follow me
 531063952814645248	1396698397	Just following people	531065996014931968	2398245474	[MENTION] FOLLOW ME BAE :(
 531077191959060480	1396698397	But so far Europe is right in front of Brazil for the lead ! With the most traffic .. If they stay in the lead we are going to do 10citys !	531077628992978944	1328060750	[MENTION] England Newcastle
 531136421000908800	395706462	San Diego we on OUR way ...	531137435342602240	2398245474	[MENTION] my ass *
-531143353715671040	484961764	Go watch [MENTION] new video it was definitely worth the , I can't stop laughing 😂 [URL] |NashAndJacksNewVideo	531143577884438528	484961764	[MENTION] give it a thumbs up as well 💕 |NashAndJacksNewVideo
+531143353715671040	484961764	Go watch [MENTION] new video it was definitely worth the comma I can't stop laughing 😂 [URL] |NashAndJacksNewVideo	531143577884438528	484961764	[MENTION] give it a thumbs up as well 💕 |NashAndJacksNewVideo
 531144094064840704	405728790	Go watch [MENTION] new YouTube video & give it a thumbs up !! |NashAndJacksNewVideo [URL]	531144393936609280	484961764	[MENTION] please follow me💕
 531151290500665344	405728790	Posting |AskCam tomorrow🔥🔥 I'm so excited ☺ ️	531154665694842880	1042042788	[MENTION] Can't wait for the new video |AskCam SUBSCRIBE EVERYONE ! Link in [MENTION] bio😸
 531151290500665344	405728790	Posting |AskCam tomorrow🔥🔥 I'm so excited ☺ ️	531163677894778880	2398245474	[MENTION] SO AM I
@@ -798,13 +798,13 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 531196838020673536	1906234147	Ask me questionsssss I'm looking |TalkToMeMatt	531196971475038208	2744930975	[MENTION] whats your favorite thing to do when your bored ? |taketomematt
 531198008902574080	1906234147	“ [MENTION] : [MENTION] I love you |TalkToMeMatt ” I love you more	531198118016995328	2744930975	[MENTION] WILL U EVER KNOW I LOVE U . |taketomematt
 531199073827557376	1906234147	“ [MENTION] : Mattchu you should talk to me . I'm feeling lonesome |talktomematt ” ok hi baby girl ☺ ️😚	531199203981422592	2744930975	[MENTION] can you call me baby girl 😔😔😔😔 |talktomematt
-531206942346063872	382402366	Me and Carter met the coolest dude ever lastnight . He randomly walked up to both of us and long story short , changed my life .. He was awesome	531211580835639296	2566565666	[MENTION] it was my father
+531206942346063872	382402366	Me and Carter met the coolest dude ever lastnight . He randomly walked up to both of us and long story short comma changed my life .. He was awesome	531211580835639296	2566565666	[MENTION] it was my father
 531210910577090560	395706462	If you took pictures with us today or you know someone who did tag us ! Will rt them ☺ ️	531211698225438720	110288084	“ [MENTION] : If you took pictures with us today or you know someone who did tag us ! Will rt them ☺ ️ ” 🅰🅰
 531215409261707264	363961928	I love Legos so if you guys ever want to get me something ... there ya go 😊👌	531215446356537344	1729841617	[MENTION] HMU
 531215409261707264	363961928	I love Legos so if you guys ever want to get me something ... there ya go 😊👌	531215507341729792	1729841617	[MENTION] except for when you step on one
 531243454178025472	405728790	Who's ready form |AskCam tomorrow ? [URL]	531243589100371968	2825905798	[MENTION] I'm really fucking excited for this
-531243766871785472	405728790	But he don't know her habits	531246300965007360	1536302137	[MENTION] i've been tagging you on my tweets , nothing has happened . I wish you gave me 1/5 😞 hope u had a good day though ily
-531246989674299392	379408088	When i shave my moustache ( only facial hair i can grow ) i always cut my self	531247627564617728	1536302137	[MENTION] poor baby , need a muffin to feel better ?
+531243766871785472	405728790	But he don't know her habits	531246300965007360	1536302137	[MENTION] i've been tagging you on my tweets comma nothing has happened . I wish you gave me 1/5 😞 hope u had a good day though ily
+531246989674299392	379408088	When i shave my moustache ( only facial hair i can grow ) i always cut my self	531247627564617728	1536302137	[MENTION] poor baby comma need a muffin to feel better ?
 531247252707504128	1705991035	hi :) [URL]	531247480143237120	1536302137	[MENTION] please do a room tour video & post it on your channel 😍
 531258890722476032	1906234147	“ [MENTION] : [MENTION] lets be friends . okay ? |talktomematt ” or best friends ? Okay ?	531259783849185280	363961928	. [MENTION] [MENTION] I see how it is 😒😔
 531268327151529984	1906234147	|talktomematt	531268520311803904	2419851452	[MENTION] have you forgotten about us little people ? :( |talktomematt
@@ -820,14 +820,14 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 531448840084525056	840897602	Good morning🙈	531448938122215424	2419851452	[MENTION] it's 7am ugh but Goodmorningg
 531496263297277952	330705266	I'm so tired but can't sleep cuz my nose is stuffed up😫	531496408000770048	1328060750	[MENTION] use some vicks😘
 531520860231041024	405728790	So im about to upload |AskCam to YouTube .... I'm excited to post it ☺ ️ [URL]	531521231280156672	2825905798	[MENTION] ARE YOU FUCKING KIDDING ME THE ONE TIME I GET OUT IN PUBLIC YOU DECIDE TO POST SOMETHING thanks babe
-531544907563810816	405728790	When I post the video COMMENT & give it a THUMBS UP and tweet |CamsNewVideo when you're done ! ☺ ️ 5 minutes !!!	531545098795106304	484961764	[MENTION] I love you , please follow me
+531544907563810816	405728790	When I post the video COMMENT & give it a THUMBS UP and tweet |CamsNewVideo when you're done ! ☺ ️ 5 minutes !!!	531545098795106304	484961764	[MENTION] I love you comma please follow me
 531550593098072064	405728790	Going to Start following people that tweet my video link [URL] with |CamsNewVideo (: Don't forget to give it a thumbs up !	531551745751932928	99381112	24/7 ... RT " [MENTION] : Going to Start following people that tweet my video link [URL] with |CamsNewVideo
 531550593098072064	405728790	Going to Start following people that tweet my video link [URL] with |CamsNewVideo (: Don't forget to give it a thumbs up !	531552220618432512	99381112	[MENTION] to date this is by far my favorite . Excellent job ! [MENTION] [MENTION] |AskCam2 |CamsNewVideo
 531550593098072064	405728790	Going to Start following people that tweet my video link [URL] with |CamsNewVideo (: Don't forget to give it a thumbs up !	531553564230189056	2875104362	[MENTION] [URL] it's really really good !!! Please follow me I love u !
 531557004867665920	1906234147	Pat yourself on the back for being awesome	531557323970732032	858126522	[MENTION] thank you matt
 531560116231753728	163730859	Just took a nap in the shower	531560269018042368	858126522	[MENTION] I always take naps in the shower
 531586998453035008	163730859	I get sad when I see an elderly person eating alone	531587050055933952	1729841617	[MENTION] SAME
-531590549632192512	379408088	Tune into [MENTION] on ABC Tues 9 AM EST & NYC make sure to come out there bright & early to kick off |SomethingBigIsHappeningNow ! 😍	531592548125769728	379408088	Also , last chance to enter tonight for the |SomethingBigIsHappeningNow bus & other Tues events in NYC ! Info here : [URL]
+531590549632192512	379408088	Tune into [MENTION] on ABC Tues 9 AM EST & NYC make sure to come out there bright & early to kick off |SomethingBigIsHappeningNow ! 😍	531592548125769728	379408088	Also comma last chance to enter tonight for the |SomethingBigIsHappeningNow bus & other Tues events in NYC ! Info here : [URL]
 531591154585067520	2482534992	actually crying because after such a long time of supporting [MENTION] im not gonna get his follow	531591517270704128	2482534992	[MENTION] I know that it shouldn't matter whether or not I have ur follow but it would mean the world to me if you followed me
 531611040010600448	163730859	Snapchat is all about the length of the snap . 10 seconds is creepy as shit definitely gives off bad vibes . Somewhere around 3-4 is perfect .	531611094193029120	1729841617	[MENTION] truu
 531618303945744384	1088207396	te amo	531618504001462272	467781586	[MENTION] te amo mi amor !!
@@ -855,7 +855,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 531879140962893824	330705266	I'm sick 😷	531879863037489152	2875104362	[MENTION] I hope U'll get well soon .. <3
 531901721174618112	405728790	My bed >	531901812035833856	2825905798	[MENTION] my bed > love life
 531901721174618112	405728790	My bed >	531901854960324608	1042042788	[MENTION] and my bed
-531901721174618112	405728790	My bed >	531903257372004352	68966191	[MENTION] I love your life , without school , no work , just bed and you ...
+531901721174618112	405728790	My bed >	531903257372004352	68966191	[MENTION] I love your life comma without school comma no work comma just bed and you ...
 531908804070608896	1088207396	not sure who to give this Lokai bracelet to😳 keep tweeting me |LiveLokai if you reeeeally want it ☺ ️	531909734090416128	484961764	“ [MENTION] : not sure who to give this Lokai bracelet to😳 keep tweeting me |LiveLokai if you reeeeally want it ☺ ️ ” please Aaron 💕
 531909898062536704	1906234147	How are you guys this good at those vine edits . You guys should join together and make like a huge vine edit corporation and take over lol	531910043843977216	858126522	[MENTION] that's a great idea tbh
 531915211855634432	1729841617	[MENTION] NASH [URL]	531915388796534784	1729841617	[MENTION]
@@ -881,11 +881,11 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 531961215481028608	1906234147	Don't let people fool you . Your body is the actor and your mind is the director . Not the other way around .	531961402807054336	2419851452	[MENTION] so only my mind can decide I'm fat ? It already did long ago
 531963889270161408	2825905798	[MENTION] [MENTION] [MENTION] [MENTION] [MENTION] [MENTION] [MENTION] I feel that us being crazy is keepin	531963968844464128	2825905798	[MENTION] [MENTION] [MENTION] [MENTION] [MENTION] [MENTION] [MENTION] us from nash
 531993526163480576	1906234147	Tryna swim through your veins	531994149797773312	2419851452	[MENTION] you'd drown in mine
-532013204340494336	1396698397	Believe in yourself !	532013834882793472	68966191	[MENTION] I was born to make mistakes , not fake perfection .
+532013204340494336	1396698397	Believe in yourself !	532013834882793472	68966191	[MENTION] I was born to make mistakes comma not fake perfection .
 532059133173055488	1088207396	. [MENTION] goodnight babe😘	537001002386591744	1942303064	“ [MENTION] : . [MENTION] goodnight babe😘 ” upset that this is my old @
-532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie , COME TO SAIPAN PLEASE 💕 [URL]	532098252158423040	1536302137	I dare you to see this [MENTION]
-532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie , COME TO SAIPAN PLEASE 💕 [URL]	532643455680253952	1536302137	[MENTION] nash * white girl voice * WHAT THE HELL literally like omg ugh see this 😂 [URL]
-532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie , COME TO SAIPAN PLEASE 💕 [URL]	533567543932223488	1536302137	[MENTION] [URL]
+532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie comma COME TO SAIPAN PLEASE 💕 [URL]	532098252158423040	1536302137	I dare you to see this [MENTION]
+532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie comma COME TO SAIPAN PLEASE 💕 [URL]	532643455680253952	1536302137	[MENTION] nash * white girl voice * WHAT THE HELL literally like omg ugh see this 😂 [URL]
+532097410130931712	1536302137	[MENTION] i live on an island nash & i got your hoodie comma COME TO SAIPAN PLEASE 💕 [URL]	533567543932223488	1536302137	[MENTION] [URL]
 532201438806831104	379408088	You ready for the link to |SomethingBigVideo ?! I'm gonna drop it right here ! Need you all to share it to everyone ! 🙆	532201501322936320	2225825663	[MENTION] HIRRY YP
 532201501322936320	2225825663	[MENTION] HIRRY YP	532201869167575040	2225825663	[MENTION] QUICKLY
 532201914570911744	379408088	|SOMETHINGBIGVIDEO IS OUT NOW ! WATCH IT HERE & SHARE ! [URL]	532202658694561792	1604280403	[MENTION] SHAWN [URL]
@@ -899,7 +899,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 532298490588565504	405728790	So remember the |StartTag I was talking about ? Is it cool if I make next weeks video about YOU guys & post that as a video ? ☺ ️	532300023766470656	68966191	|StartTag [MENTION] please watch it [URL] and [URL] which is your favorite ?
 532298490588565504	405728790	So remember the |StartTag I was talking about ? Is it cool if I make next weeks video about YOU guys & post that as a video ? ☺ ️	532328782632194048	2398245474	[MENTION] no bitch I wanted you to do challenges and suffer smh
 532310029907402752	405728790	All you have to do is start .	532310290407653376	68966191	[MENTION] what are you waiting to watch my videos ?
-532320120995995648	1906234147	Like how do we know something happened ? Because a photo , video , news , all that can be fake . And you wouldn't even realize it .	532320253682798592	2419851452	[MENTION] [URL]
+532320120995995648	1906234147	Like how do we know something happened ? Because a photo comma video comma news comma all that can be fake . And you wouldn't even realize it .	532320253682798592	2419851452	[MENTION] [URL]
 532323727237595136	363961928	In-n-out burgers are 🔥	532323849488969728	2419851452	[MENTION] ew
 532323727237595136	363961928	In-n-out burgers are 🔥	532323965637652480	2419851452	[MENTION] go to tacobell ew in-n-out burger sounds gross
 532323727237595136	363961928	In-n-out burgers are 🔥	532323990925111296	858126522	[MENTION] I had in n out for lunch and dinner last night👌
@@ -911,7 +911,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 532343136157065216	163730859	Why am I in Dallas right now	532354146801029120	2419851452	[MENTION] because I'm like 4 hours away duh
 532349427647021056	1906234147	You all are so beautiful . Never forget that .	532349599655424000	858126522	[MENTION] I love you more then anything don't forget that
 532349615799304192	1906234147	Doesn't matter if the person next to you believes it or not . All that matters is if YOU do . Be confident in yourselves ☺ ️👍	532349945706467328	2419851452	[MENTION] and for the people who aren't strong enough to believe in their selves ... we have you .
-532352248794595328	405728790	My team good , we don't really need a mascot ......	532352745869545472	110288084	“ [MENTION] : My team good , we don't really need a mascot ...... ” 🅰🅰🅰🅰🅰🅰🅰🅰🅰🅰
+532352248794595328	405728790	My team good comma we don't really need a mascot ......	532352745869545472	110288084	“ [MENTION] : My team good comma we don't really need a mascot ...... ” 🅰🅰🅰🅰🅰🅰🅰🅰🅰🅰
 532390443011432448	1906234147	QOTN : " Love of beauty is taste . The creation of beauty is art " Love y'all night :) 😚	532390582606626816	858126522	[MENTION] night matt ☺ ️
 532395130502668288	379408088	Check out what went down in NYC today with [MENTION] ! [URL]	532395316616896512	492677346	[MENTION] aren't you supposed to be asleep
 532404308071825408	405728790	Hiiiii	532404620422029312	2626722111	[MENTION] hi baby how are youu
@@ -960,8 +960,8 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 532671145216995328	1906234147	At least the quality didn't completely suck . ((((( Sarcasm )))))	532671190067052544	1729841617	[MENTION] 😂
 532683205095489536	389238190	“ [MENTION] : You guys are the sweetest ever !! |CallMeSierra a couple more ! ” How am I supposed to dm u my | if you don't follow me ” DM me 😘	532684820220874752	2398245474	[MENTION] [MENTION] REBECCANSJEM
 532685837176422400	278328390	I feel like Jack & I have a different connection with you guys .. like the relationship between us & you is more of a friendship than anything	532685899176239104	2541854413	[MENTION] FRIENDZONED AF
-532687161376907264	163730859	GUYS WE ARE GOING TO MADISON ( Wisconson , not Beer )	532687796947808256	2398245474	[MENTION] JACK LMSFAFHO
-532687161376907264	163730859	GUYS WE ARE GOING TO MADISON ( Wisconson , not Beer )	532687920617254912	2825905798	[MENTION] YOU BETTER BRING YOUR BEAUTIFUL ASSES TO RICHMOND VIRGINIA NOONES EVER BEEN HERE
+532687161376907264	163730859	GUYS WE ARE GOING TO MADISON ( Wisconson comma not Beer )	532687796947808256	2398245474	[MENTION] JACK LMSFAFHO
+532687161376907264	163730859	GUYS WE ARE GOING TO MADISON ( Wisconson comma not Beer )	532687920617254912	2825905798	[MENTION] YOU BETTER BRING YOUR BEAUTIFUL ASSES TO RICHMOND VIRGINIA NOONES EVER BEEN HERE
 532717725354033152	405728790	But she bad though	532719373245763584	68966191	[MENTION] ... we should cuddle right now
 532728299613859840	382402366	Need a pic to post on Instagram 😁😁	532729595515387904	2566565666	[MENTION] post a pic of me as your wcw
 532732571302776832	163730859	Threesome ?	532732633059708928	1604280403	“ [MENTION] : Threesome ? ”
@@ -991,7 +991,7 @@ msgid	msguser	msgtext	replyid	replyuser	replytext
 533089865869852672	379408088	I love words	533089941275017216	492677346	[MENTION] I love you !
 533091714148605952	163730859	Man [MENTION] is such a fantastic songwriter . If you get a chance make sure you look him up . My personal favorite is " Jackie and Wilson "	533091760038486016	1631064974	[MENTION] pussy
 533092314349338624	163730859	People that talented are rare . Really rare .	533092439129882624	1604280403	[MENTION] you mean people like you
-533093073862262784	163730859	" Wild LIKE , Wild Life " just for those I've seen in the crowd singing " Wild Life , Wild Life "	533093275763490816	1631064974	[MENTION] [MENTION]
+533093073862262784	163730859	" Wild LIKE comma Wild Life " just for those I've seen in the crowd singing " Wild Life comma Wild Life "	533093275763490816	1631064974	[MENTION] [MENTION]
 533294072833015808	382402366	It's Friday :)	533296500361953280	492677346	[MENTION] wow thanks i didn't know
 533294354639503360	2398245474	[MENTION] LMFAO	533294471455059968	2398245474	[MENTION] i blocked u 2x
 533295202417381376	2398245474	Hi	533295219957956608	2398245474	[MENTION] hey
