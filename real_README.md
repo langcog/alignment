@@ -31,3 +31,6 @@ Code examples
 		https://docs.python.org/2/library/csv.html
 	- Grouping list of dictionaries
 		https://www.daniweb.com/software-development/python/code/216750/group-a-list-of-dictionaries-python
+
+TO DO:
+	Currently, we discard conversations with where a person replies to himself/herself

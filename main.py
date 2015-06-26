@@ -88,6 +88,7 @@ def getRandUser(users):
 	return users[random.choice(users.keys())]
 
 def bayesProbs(groupedUtterances, users, markers):
+	results = []
 	for convo in groupedUtterances:
 		counts = {}
 		bCounts = {}
@@ -123,16 +124,20 @@ def bayesProbs(groupedUtterances, users, markers):
 				powerProb = (counts[marker]*wordCounts[a])/(wordCounts[b]*bCounts[marker])
 				baseProb = bCounts[marker]/float(wordCounts[b])
 				if(powerProb > 0):
-					print(powerProb)
-					print(baseProb)
 					prob = powerProb-baseProb
-					print(prob)
-					print("----------------")
+					results.append([convo[0]["conv#"], prob])
+	return results
 		
+def writeFile(toWrite):
+	with open("results.csv", "wb") as f:
+		writer = csv.writer(f)
+		writer.writerows(toWrite)
+	f.close()
+
 markers = readMarkers()
 utterances = readCSV(markers)
 groupedUtterances = group(utterances)
-
 users = getUserUtterances(utterances)
 users = calculateProbabilities(users, markers)
-bayesProbs(groupedUtterances, users, markers)
+results = bayesProbs(groupedUtterances, users, markers)
+writeFile(results)
