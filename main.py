@@ -6,9 +6,13 @@ import re
 import random
 import tokenize
 
-def readCSV(markers):
-	csvFile = "pairedtweets1000.txt"
-	reader=csv.reader(open(csvFile))
+inputFile = "pairedtweets1000.txt"
+markersFile = "test.csv"
+outputFile = "results.csv"
+
+# Reads in tweets
+def readCSV(markers, inputFile):
+	reader=csv.reader(open(inputFile))
 	utterances = []
 	for row in reader:
 		row = re.split('\t+', row[0])
@@ -31,6 +35,7 @@ def readCSV(markers):
 		utterances.append(toAppend)
 	return utterances
 
+# Groups tweets by conversation numbers
 def group(utterances):
 	utterances.sort(key=operator.itemgetter('conv#'))
 	list1 = []
@@ -38,6 +43,7 @@ def group(utterances):
 		list1.append(list(items))
 	return list1
 
+# Adds information about individual users to the users dictionary
 def getUserUtterances(utterances):
 	users = {}
 	for utterance in utterances:
@@ -50,20 +56,20 @@ def getUserUtterances(utterances):
 		users[utterance["replyUserId"]].append(replySplit)
 
 	for key, value in users.iteritems():
-
 		chain = itertools.chain(*value)
 		users[key] = {}
 		users[key]["tokens"] = list(chain)
 	return users
 
-def readMarkers():
-	csvFile = "test.csv"
-	reader=csv.reader(open(csvFile))
+# Reads a list of markers from the markersFile
+def readMarkers(markersFile):
+	reader=csv.reader(open(markersFile))
 	markers = []
 	for row in reader:
 		markers.append(row[0])
 	return markers
 
+# Calculates the probabilities that a given user uses a marker
 def calculateProbabilities(users, markers):
 	for key in users:
 		users[key]["markers"] = {}
@@ -83,9 +89,11 @@ def calculateProbabilities(users, markers):
 
 	return users
 
+# Returns a random user - useful for debugging
 def getRandUser(users):
 	return users[random.choice(users.keys())]
 
+# Computers the power probabilities
 def bayesProbs(groupedUtterances, users, markers):
 	results = []
 	for convo in groupedUtterances:
@@ -132,37 +140,46 @@ def bayesProbs(groupedUtterances, users, markers):
 				baseProb = bCounts[marker]/float(wordCounts[b])
 				if(powerProb > 0):
 					prob = powerProb-baseProb
-					results.append([convo[0]["conv#"], prob])
-	results = sorted(results, key=lambda k: -k[1])
+					results.append([convo[0]["conv#"], marker, prob])
+	results = sorted(results, key=lambda k: -k[2])
 	return results
-		
-def writeFile(toWrite):
-	with open("results.csv", "wb") as f:
+
+# Writes probabilities to the output file
+def writeFile(toWrite, outputFile):
+	with open(outputFile, "wb") as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
 	f.close()
 
+# Prints the conversations with the max and least powers
 def testResults(results, groupedUtterances):
-	results = sorted(results, key=lambda k: -k[1])
+	results = sorted(results, key=lambda k: -k[2])
 	maxPower = results[0][0]
 	maxPower = findConvo(maxPower, groupedUtterances)
+	print(maxPower)
 	leastPower = results[len(results)-1][0]
 	leastPower = findConvo(leastPower, groupedUtterances)
+	print(leastPower)
 
+# Finds a conversation given it's conversation #
 def findConvo(convo, groupedUtterances):
 	for groupedUtterance in groupedUtterances:
 		if groupedUtterance[0]["conv#"] == convo:
 			return groupedUtterance
 	return False
 
-print("--------------")
-print("--------------")
-print("--------------")
-markers = readMarkers()
-utterances = readCSV(markers)
+# Just outputs lines to help when debugging
+def initialize():
+	print("--------------")
+	print("--------------")
+	print("--------------")
+
+initialize()
+markers = readMarkers(markersFile)
+utterances = readCSV(markers, inputFile)
 groupedUtterances = group(utterances)
 users = getUserUtterances(utterances)
 users = calculateProbabilities(users, markers)
 results = bayesProbs(groupedUtterances, users, markers)
-writeFile(results)
+writeFile(results, outputFile)
 testResults(results, groupedUtterances)
