@@ -4,6 +4,7 @@ import itertools
 import pprint 
 import re
 import random
+import tokenize
 
 def readCSV(markers):
 	csvFile = "pairedtweets1000.txt"
@@ -60,9 +61,7 @@ def readMarkers():
 	reader=csv.reader(open(csvFile))
 	markers = []
 	for row in reader:
-		row = re.split('\t+', row[0])
-		markers.append(row[1])
-		markers.append(row[3])
+		markers.append(row[0])
 	return markers
 
 def calculateProbabilities(users, markers):
@@ -92,6 +91,7 @@ def bayesProbs(groupedUtterances, users, markers):
 	for convo in groupedUtterances:
 		counts = {}
 		bCounts = {}
+		aCounts = {}
 		wordCounts = {}
 		a = convo[0]["msgUserId"]
 		b = convo[0]["replyUserId"]
@@ -100,11 +100,12 @@ def bayesProbs(groupedUtterances, users, markers):
 		for marker in markers:
 			counts[marker] = 0
 			bCounts[marker] = 0
+			aCounts[marker] = 0
 		for utterance in convo:
 			if((not (utterance["msgUserId"] in wordCounts)) or (not (utterance["replyUserId"]) in wordCounts)):
 				continue
-			wordCounts[utterance["msgUserId"]] = wordCounts[utterance["msgUserId"]] + len(utterance["msg"])
-			wordCounts[utterance["replyUserId"]] = wordCounts[utterance["replyUserId"]] + len(utterance["reply"])
+			wordCounts[utterance["msgUserId"]] = wordCounts[utterance["msgUserId"]] + len(utterance["msg"].split(" "))
+			wordCounts[utterance["replyUserId"]] = wordCounts[utterance["replyUserId"]] + len(utterance["reply"].split(" "))
 			msgMarkers = utterance["msgMarkers"]
 			replyMarkers = utterance["replyMarkers"]
 			if(utterance["msgUserId"] == b):
@@ -113,19 +114,26 @@ def bayesProbs(groupedUtterances, users, markers):
 			else:
 				for marker in replyMarkers:
 					bCounts[marker] = bCounts[marker] + 1
+			if(utterance["msgUserId"] == a):
+				for marker in msgMarkers:
+					aCounts[marker] = aCounts[marker] + 1
+			else:
+				for marker in replyMarkers:
+					aCounts[marker] = aCounts[marker] + 1
 			intersect = list(set(replyMarkers).intersection(msgMarkers))
 			for marker in intersect:
 				counts[marker] = counts[marker] + 1
 		usersIds = wordCounts.keys()
 		if(len(usersIds) != 2):
 			continue
-		for marker in markers:
+		for marker in utterance["msgMarkers"]:
 			if(counts[marker] > 0):
-				powerProb = (counts[marker]*wordCounts[a])/(wordCounts[b]*bCounts[marker])
+				powerProb = (counts[marker]*wordCounts[a])/(wordCounts[b]*aCounts[marker])
 				baseProb = bCounts[marker]/float(wordCounts[b])
 				if(powerProb > 0):
 					prob = powerProb-baseProb
 					results.append([convo[0]["conv#"], prob])
+	results = sorted(results, key=lambda k: -k[1])
 	return results
 		
 def writeFile(toWrite):
@@ -134,6 +142,22 @@ def writeFile(toWrite):
 		writer.writerows(toWrite)
 	f.close()
 
+def testResults(results, groupedUtterances):
+	results = sorted(results, key=lambda k: -k[1])
+	maxPower = results[0][0]
+	maxPower = findConvo(maxPower, groupedUtterances)
+	leastPower = results[len(results)-1][0]
+	leastPower = findConvo(leastPower, groupedUtterances)
+
+def findConvo(convo, groupedUtterances):
+	for groupedUtterance in groupedUtterances:
+		if groupedUtterance[0]["conv#"] == convo:
+			return groupedUtterance
+	return False
+
+print("--------------")
+print("--------------")
+print("--------------")
 markers = readMarkers()
 utterances = readCSV(markers)
 groupedUtterances = group(utterances)
@@ -141,3 +165,4 @@ users = getUserUtterances(utterances)
 users = calculateProbabilities(users, markers)
 results = bayesProbs(groupedUtterances, users, markers)
 writeFile(results)
+testResults(results, groupedUtterances)
