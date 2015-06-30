@@ -1,31 +1,6 @@
 Bugs/ Special modifications
 	Need to change all ","s to "comma" so that the csv file gets parsed properly
 
-Message = utterance
-Ste ps:
-1) Read in csv file
-2) Close csv file
-2) Split text up by conversations
-	a) For twitter, use a groupBy function on conversationId
-	b) For CHILDIS, ???
-3) For each conversation
-	a) For each message in messages
-		Concat messages from person A together
-		Concat messages from person B together
-	b) For each M in markers
-		a) Find out probability that A says M
-		b) Find out probability that B says M
-	c) For each message in the messages
-		1) Find out if the message has a parent
-		2) Find out if the message has any markers
-		3) Find out if the parent message has any markers
-		4) For each M in markers
-			a) Calculate the probability that B said marker M given that A said marker M
-				1) We already know the probability that B says M
-				2) We already know the probability that A says M
-				3) return P(B says M)*P(A says M)/(P(B says M))
-			b) Aggregate the results of 3.c.4.a together
-
 Code examples
 	- Reading in a csv
 		https://docs.python.org/2/library/csv.html
@@ -34,3 +9,19 @@ Code examples
 
 TO DO:
 	Currently, we discard conversations with where a person replies to himself/herself
+	Aggregation of markers
+	Aggregations of conversations
+	Create a list of markers
+
+6/26/2015
+Derived formula for Echoes of Power:
+	powerProb = ((# of times marker is said by A and B)*(# of words A says to B))/((# of words B says to A)*(# of times A says the marker))
+	baseProb = (# of times B says the marker)/(# of words B says)
+	prob = powerProb - baseProb
+
+6/29/2015
+Figured out that the formula we were working off of was incorrect.
+Instead of calculating probabilities using tokens, we need to calculate probabilites using utterances
+	powerProb = (# of utterances where A and B both say marker)/(Number of utterances where A says the marker)
+	baseProb = (# of utterances where B says the marker)/(# of utterances)
+	prob = powerProb - baseProb

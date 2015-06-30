@@ -10,6 +10,20 @@ inputFile = "pairedtweets1000.txt"
 markersFile = "test.csv"
 outputFile = "results.csv"
 
+# Just outputs lines to help when debugging
+def initialize():
+	print("--------------")
+	print("--------------")
+	print("--------------")
+
+# Reads a list of markers from the markersFile
+def readMarkers(markersFile):
+	reader=csv.reader(open(markersFile))
+	markers = []
+	for row in reader:
+		markers.append(row[0])
+	return markers
+
 # Reads in tweets
 def readCSV(markers, inputFile):
 	reader=csv.reader(open(inputFile))
@@ -43,124 +57,62 @@ def group(utterances):
 		list1.append(list(items))
 	return list1
 
-# Adds information about individual users to the users dictionary
-def getUserUtterances(utterances):
-	users = {}
-	for utterance in utterances:
-		users[utterance["msgUserId"]] = []
-		users[utterance["replyUserId"]] = []
-	for utterance in utterances:
-		msgSplit = utterance["msg"].split(" ")
-		replySplit = utterance["reply"].split(" ")
-		users[utterance["msgUserId"]].append(msgSplit)
-		users[utterance["replyUserId"]].append(replySplit)
-
-	for key, value in users.iteritems():
-		chain = itertools.chain(*value)
-		users[key] = {}
-		users[key]["tokens"] = list(chain)
-	return users
-
-# Reads a list of markers from the markersFile
-def readMarkers(markersFile):
-	reader=csv.reader(open(markersFile))
-	markers = []
-	for row in reader:
-		markers.append(row[0])
-	return markers
-
-# Calculates the probabilities that a given user uses a marker
-def calculateProbabilities(users, markers):
-	for key in users:
-		users[key]["markers"] = {}
-		users[key]["markerProbs"] = {}
-		for marker in markers:
-			users[key]["markers"][marker] = 0
-			tokens = users[key]["tokens"]
-			for token in tokens:			
-				if token == marker:
-					users[key]["markers"][marker] = users[key]["markers"][marker] + 1
-			for marker in markers:
-				if(marker in users[key]["markers"]):
-					users[key]["markerProbs"][marker] = users[key]["markers"][marker]/len(tokens)
-
-	return users
-
-# Returns a random user - useful for debugging
-def getRandUser(users):
-	return users[random.choice(users.keys())]
-
 # Computers the power probabilities
-def setUp(groupedUtterances, users, markers):
+def setUp(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
 		toPush = {}
-		both = {}
-		a = convo[0]["msgUserId"]
-		b = convo[0]["replyUserId"]
-		numUtterances = len(convo)
+		intersect = {} # Number of times Person A and person B says the marker
+		a = convo[0]["msgUserId"] # Id of person A
+		b = convo[0]["replyUserId"] # Id of person B
+		numUtterances = len(convo) # Number of total utterances in the conversation
 		if(a == b): # No self aligning stuff
 			continue
 		for marker in markers:
-			toPush[a + marker] = 0
-			toPush[b + marker] = 0
-			both[marker] = 0
+			toPush[a + marker] = 0 # Set all markers to uttered by a to 0
+			toPush[b + marker] = 0 # Same as above but with b
+			intersect[marker] = 0 # Same as above but with intersect a and b
 		for j, marker in enumerate(markers):
 			for utterance in convo:
-				if(utterance["msgUserId"] != a and utterance["replyUserId"] != b):
+				# If there's a third person in the conversation, ignore the convo
+				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
 					continue
 				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
 					continue
-				
+
+				# Increments values of toPush and intersect depending on whether a marker is in the current utterance
 				if marker in utterance["msgMarkers"]:
 					toPush[utterance["msgUserId"] + marker] = toPush[utterance["msgUserId"] + marker] + 1
 				if marker in utterance["replyMarkers"]:
 					toPush[utterance["replyUserId"] + marker] = toPush[utterance["replyUserId"] + marker] + 1
 				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
-					both[marker] = both[marker] + 1
-		results.append({"numUtterances": numUtterances,  "both": both, "userMarkers": toPush, "a": a, "b": b, "conv": convo[0]["conv#"]})
+					intersect[marker] = intersect[marker] + 1
 
+		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": toPush, "a": a, "b": b, "conv": convo[0]["conv#"]})
 	return results
 
+# Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
 def bayesProbs(results, markers):
 	toReturn = []
 	for result in results:
 		for marker in markers:
-			if(result["userMarkers"][result["a"]+marker] == 0):
+			# If a doesn't say the marker, ignore
+			# (Otherwise we get a divide by 0 error)
+			if(result["userMarkers"][result["a"]+marker] == 0):  
 				continue
-			powerProb = float(result["both"][marker])/float(result["userMarkers"][result["a"]+marker])
+			powerProb = float(result["intersect"][marker])/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"][result["b"]+marker])/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			if(prob == -1.5 and result["b"] == "2825905798"):
-				print(powerProb)
-				print(baseProb)
-				print(prob)
-				print(marker)
-				print(float(result["userMarkers"][result["b"]+marker]))
-				print(result["b"])
-				print(result["a"])
-				print(float(result["numUtterances"]))
-				print("------------")
 			toReturn.append([result["conv"], marker, prob])
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	return toReturn
 
-# Writes probabilities to the output file
+# Writes stuff to the output file
 def writeFile(toWrite, outputFile):
 	with open(outputFile, "wb") as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
 	f.close()
-
-# Prints the conversations with the max and least powers
-def testResults(results, groupedUtterances):
-	results = sorted(results, key=lambda k: -k[2])
-	maxPower = results[0][0]
-	maxPower = findConvo(maxPower, groupedUtterances)
-	print(maxPower)
-	leastPower = results[len(results)-1][0]
-	leastPower = findConvo(leastPower, groupedUtterances)
-	print(leastPower)
 
 # Finds a conversation given it's conversation #
 def findConvo(convo, groupedUtterances):
@@ -169,19 +121,21 @@ def findConvo(convo, groupedUtterances):
 			return groupedUtterance
 	return False
 
-# Just outputs lines to help when debugging
-def initialize():
-	print("--------------")
-	print("--------------")
-	print("--------------")
+# Prints the conversations with the max and least powers
+def testResults(results, groupedUtterances):
+	results = sorted(results, key=lambda k: -k[2])
+	maxPower = results[0][0]
+	maxConvo = findConvo(maxPower, groupedUtterances)
+	leastPower = results[len(results)-1][0]
+	leastConvo = findConvo(leastPower, groupedUtterances)
+	print(maxPower)
+	print(leastPower)
 
 initialize()
 markers = readMarkers(markersFile)
 utterances = readCSV(markers, inputFile)
 groupedUtterances = group(utterances)
-users = getUserUtterances(utterances)
-users = calculateProbabilities(users, markers)
-results = setUp(groupedUtterances, users, markers)
+results = setUp(groupedUtterances, markers)
 results = bayesProbs(results, markers)
 writeFile(results, outputFile)
-#testResults(results, groupedUtterances)
+testResults(results, groupedUtterances)
