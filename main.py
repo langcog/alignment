@@ -98,12 +98,13 @@ def bayesProbs(results, markers):
 		for marker in markers:
 			# If a doesn't say the marker, ignore
 			# (Otherwise we get a divide by 0 error)
-			if(result["userMarkers"][result["a"]+marker] == 0):  
+			if(result["userMarkers"][result["a"]+marker] == 0):
 				continue
 			powerProb = float(result["intersect"][marker])/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"][result["b"]+marker])/float(result["numUtterances"])
 			prob = powerProb - baseProb
 			toReturn.append([result["conv"], marker, prob])
+	
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	return toReturn
 
@@ -122,20 +123,29 @@ def findConvo(convo, groupedUtterances):
 	return False
 
 # Prints the conversations with the max and least powers
-def testResults(results, groupedUtterances):
+def testBoundaries(results, groupedUtterances):
 	results = sorted(results, key=lambda k: -k[2])
-	maxPower = results[0][0]
-	maxConvo = findConvo(maxPower, groupedUtterances)
-	leastPower = results[len(results)-1][0]
-	leastConvo = findConvo(leastPower, groupedUtterances)
+	maxPower = results[0]
+	maxConvo = findConvo(maxPower[0], groupedUtterances)
+	leastPower = results[len(results)-1]
+	leastConvo = findConvo(leastPower[0], groupedUtterances)
 	print(maxPower)
 	print(leastPower)
+
+def testNumResults(results, groupedUtterances, markers):
+	allCount = 0
+	for result in results:
+		for marker in markers:
+			if(result["intersect"][marker] > 0):
+				allCount = allCount + 1
+	print("Conversations in which both A and B say a marker: " + str(allCount))
 
 initialize()
 markers = readMarkers(markersFile)
 utterances = readCSV(markers, inputFile)
 groupedUtterances = group(utterances)
-results = setUp(groupedUtterances, markers)
-results = bayesProbs(results, markers)
+setUppedResults = setUp(groupedUtterances, markers)
+results = bayesProbs(setUppedResults, markers)
 writeFile(results, outputFile)
-testResults(results, groupedUtterances)
+testBoundaries(results, groupedUtterances)
+testNumResults(setUppedResults, groupedUtterances, markers)
