@@ -28,7 +28,7 @@ def readCSV(markers, inputFile):
 	for row in reader:
 		row = re.split('\t+', row[0])
 		toAppend = {}
-		toAppend["conv#"] = row[0]
+		toAppend["conv#"] = row[1]+"_"+row[4]
 		toAppend["msgUserId"] = row[1]
 		toAppend["msg"] = row[2]
 		toAppend["replyId"] = row[3]
