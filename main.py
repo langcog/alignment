@@ -1,10 +1,7 @@
 import csv
 import operator
 import itertools
-import pprint 
 import re
-import random
-import tokenize
 
 inputFile = "pairedtweets1000.txt"
 markersFile = "test.csv"
@@ -18,7 +15,7 @@ def initialize():
 
 # Reads a list of markers from the markersFile
 def readMarkers(markersFile):
-	reader=csv.reader(open(markersFile))
+	reader = csv.reader(open(markersFile))
 	markers = []
 	for row in reader:
 		markers.append(row[0])
@@ -79,7 +76,6 @@ def setUp(groupedUtterances, markers):
 					continue
 				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
 					continue
-
 				# Increments values of toPush and intersect depending on whether a marker is in the current utterance
 				if marker in utterance["msgMarkers"]:
 					toPush[utterance["msgUserId"] + marker] = toPush[utterance["msgUserId"] + marker] + 1
@@ -103,7 +99,7 @@ def bayesProbs(results, markers):
 			powerProb = float(result["intersect"][marker])/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"][result["b"]+marker])/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			toReturn.append([result["conv"], marker, prob])
+			toReturn.append([result["conv"], marker, prob, result["a"], result["b"]])
 	
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	return toReturn
@@ -132,6 +128,7 @@ def testBoundaries(results, groupedUtterances):
 	print(maxPower)
 	print(leastPower)
 
+# Finds out the number of conversations in which both A and B say the same marker
 def testNumResults(results, groupedUtterances, markers):
 	allCount = 0
 	for result in results:
