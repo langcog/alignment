@@ -75,12 +75,9 @@ def calculateProbabilities(users, markers):
 		users[key]["markers"] = {}
 		users[key]["markerProbs"] = {}
 		for marker in markers:
-			
 			users[key]["markers"][marker] = 0
 			tokens = users[key]["tokens"]
-
-			for token in tokens:
-				
+			for token in tokens:			
 				if token == marker:
 					users[key]["markers"][marker] = users[key]["markers"][marker] + 1
 			for marker in markers:
@@ -94,55 +91,59 @@ def getRandUser(users):
 	return users[random.choice(users.keys())]
 
 # Computers the power probabilities
-def bayesProbs(groupedUtterances, users, markers):
+def setUp(groupedUtterances, users, markers):
 	results = []
-	for convo in groupedUtterances:
-		counts = {}
-		bCounts = {}
-		aCounts = {}
-		wordCounts = {}
+	for i, convo in enumerate(groupedUtterances):
+		toPush = {}
+		both = {}
 		a = convo[0]["msgUserId"]
 		b = convo[0]["replyUserId"]
-		wordCounts[a] = 0
-		wordCounts[b] = 0
-		for marker in markers:
-			counts[marker] = 0
-			bCounts[marker] = 0
-			aCounts[marker] = 0
-		for utterance in convo:
-			if((not (utterance["msgUserId"] in wordCounts)) or (not (utterance["replyUserId"]) in wordCounts)):
-				continue
-			wordCounts[utterance["msgUserId"]] = wordCounts[utterance["msgUserId"]] + len(utterance["msg"].split(" "))
-			wordCounts[utterance["replyUserId"]] = wordCounts[utterance["replyUserId"]] + len(utterance["reply"].split(" "))
-			msgMarkers = utterance["msgMarkers"]
-			replyMarkers = utterance["replyMarkers"]
-			if(utterance["msgUserId"] == b):
-				for marker in msgMarkers:
-					bCounts[marker] = bCounts[marker] + 1
-			else:
-				for marker in replyMarkers:
-					bCounts[marker] = bCounts[marker] + 1
-			if(utterance["msgUserId"] == a):
-				for marker in msgMarkers:
-					aCounts[marker] = aCounts[marker] + 1
-			else:
-				for marker in replyMarkers:
-					aCounts[marker] = aCounts[marker] + 1
-			intersect = list(set(replyMarkers).intersection(msgMarkers))
-			for marker in intersect:
-				counts[marker] = counts[marker] + 1
-		usersIds = wordCounts.keys()
-		if(len(usersIds) != 2):
+		numUtterances = len(convo)
+		if(a == b): # No self aligning stuff
 			continue
-		for marker in utterance["msgMarkers"]:
-			if(counts[marker] > 0):
-				powerProb = (counts[marker]*wordCounts[a])/(wordCounts[b]*aCounts[marker])
-				baseProb = bCounts[marker]/float(wordCounts[b])
-				if(powerProb > 0):
-					prob = powerProb-baseProb
-					results.append([convo[0]["conv#"], marker, prob])
-	results = sorted(results, key=lambda k: -k[2])
+		for marker in markers:
+			toPush[a + marker] = 0
+			toPush[b + marker] = 0
+			both[marker] = 0
+		for j, marker in enumerate(markers):
+			for utterance in convo:
+				if(utterance["msgUserId"] != a and utterance["replyUserId"] != b):
+					continue
+				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
+					continue
+				
+				if marker in utterance["msgMarkers"]:
+					toPush[utterance["msgUserId"] + marker] = toPush[utterance["msgUserId"] + marker] + 1
+				if marker in utterance["replyMarkers"]:
+					toPush[utterance["replyUserId"] + marker] = toPush[utterance["replyUserId"] + marker] + 1
+				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
+					both[marker] = both[marker] + 1
+		results.append({"numUtterances": numUtterances,  "both": both, "userMarkers": toPush, "a": a, "b": b, "conv": convo[0]["conv#"]})
+
 	return results
+
+def bayesProbs(results, markers):
+	toReturn = []
+	for result in results:
+		for marker in markers:
+			if(result["userMarkers"][result["a"]+marker] == 0):
+				continue
+			powerProb = float(result["both"][marker])/float(result["userMarkers"][result["a"]+marker])
+			baseProb = float(result["userMarkers"][result["b"]+marker])/float(result["numUtterances"])
+			prob = powerProb - baseProb
+			if(prob == -1.5 and result["b"] == "2825905798"):
+				print(powerProb)
+				print(baseProb)
+				print(prob)
+				print(marker)
+				print(float(result["userMarkers"][result["b"]+marker]))
+				print(result["b"])
+				print(result["a"])
+				print(float(result["numUtterances"]))
+				print("------------")
+			toReturn.append([result["conv"], marker, prob])
+	toReturn = sorted(toReturn, key=lambda k: -k[2])
+	return toReturn
 
 # Writes probabilities to the output file
 def writeFile(toWrite, outputFile):
@@ -180,6 +181,7 @@ utterances = readCSV(markers, inputFile)
 groupedUtterances = group(utterances)
 users = getUserUtterances(utterances)
 users = calculateProbabilities(users, markers)
-results = bayesProbs(groupedUtterances, users, markers)
+results = setUp(groupedUtterances, users, markers)
+results = bayesProbs(results, markers)
 writeFile(results, outputFile)
-testResults(results, groupedUtterances)
+#testResults(results, groupedUtterances)
