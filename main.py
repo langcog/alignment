@@ -3,8 +3,8 @@ import operator
 import itertools
 import re
 import traceback
-
-inputFile = "pairedtweets1000.txt"
+inputFile = "toy.users"
+#inputFile = "pairedtweets1000.txt"
 markersFile = "test.csv"
 outputFile = "results.csv"
 
@@ -98,6 +98,7 @@ def setUp(groupedUtterances, markers):
 					intersect[marker] = intersect.get(marker,0) + 1
 
 		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["conv#"]})
+
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
@@ -205,7 +206,7 @@ utterances = readCSV(markers, inputFile)
 groupedUtterances = group(utterances)
 setUppedResults = setUp(groupedUtterances, markers)
 results = bayesProbs(setUppedResults, markers)
-testSetUp(groupedUtterances, markers, setUppedResults, False)
+#testSetUp(groupedUtterances, markers, setUppedResults, False)
 #testBayes(results, groupedUtterances)
 writeFile(results, outputFile)
 testBoundaries(results, groupedUtterances)
