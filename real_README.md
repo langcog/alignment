@@ -23,5 +23,5 @@ Derived formula for Echoes of Power:
 Figured out that the formula we were working off of was incorrect.
 Instead of calculating probabilities using tokens, we need to calculate probabilites using utterances
 	powerProb = (# of utterances where A and B both say marker)/(Number of utterances where A says the marker)
-	baseProb = (# of utterances where B says the marker)/(# of utterances)
+	baseProb = (# of utterances where B says the marker)/(# of utterances that B says to A)
 	prob = powerProb - baseProb
