@@ -23,10 +23,14 @@ def readMarkers(markersFile):
 
 # Reads in tweets
 def readCSV(markers, inputFile):
-	reader=csv.reader(open(inputFile))
+	reader=csv.reader(open(inputFile),dialect="excel-tab")
 	utterances = []
+	linenum = 0
+	header=True
 	for row in reader:
-		row = re.split('\t+', row[0])
+		if header:
+			header=False
+			continue
 		toAppend = {}
 		toAppend["conv#"] = row[1]+"_"+row[4]
 		toAppend["msgUserId"] = row[1]
@@ -57,7 +61,8 @@ def group(utterances):
 # Computers the power probabilities
 def setUp(groupedUtterances, markers):
 	results = []
-	for i, convo in enumerate(groupedUtterances):
+	for i, convo in enumerate(groupedUtterances[1:10]):
+		print i, convo
 		toPush = {}
 		intersect = {} # Number of times Person A and person B says the marker
 		a = convo[0]["msgUserId"] # Id of person A
@@ -65,26 +70,24 @@ def setUp(groupedUtterances, markers):
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		if(a == b): # No self aligning stuff
 			continue
+		
 		for marker in markers:
 			toPush[a + marker] = 0 # Set all markers to uttered by a to 0
 			toPush[b + marker] = 0 # Same as above but with b
 			intersect[marker] = 0 # Same as above but with intersect a and b
+		
 		for j, marker in enumerate(markers):
 			for utterance in convo:
-				# If there's a third person in the conversation, ignore the convo
-				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
-					continue
-				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
-					continue
 				# Increments values of toPush and intersect depending on whether a marker is in the current utterance
 				if marker in utterance["msgMarkers"]:
-					toPush[utterance["msgUserId"] + marker] = toPush[utterance["msgUserId"] + marker] + 1
+					toPush[utterance["msgUserId"] + marker] += 1
 				if marker in utterance["replyMarkers"]:
-					toPush[utterance["replyUserId"] + marker] = toPush[utterance["replyUserId"] + marker] + 1
-				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
-					intersect[marker] = intersect[marker] + 1
-
+					toPush[utterance["replyUserId"] + marker] += 1
+				if ((marker in utterance["msgMarkers"]) and (marker in utterance["replyMarkers"])):
+					intersect[marker] += 1
+		
 		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": toPush, "a": a, "b": b, "conv": convo[0]["conv#"]})
+	
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
