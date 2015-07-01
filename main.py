@@ -118,6 +118,9 @@ def bayesProbs(results, markers):
 				log("Power Prob: " + str(powerProb))
 				log("Base Prob: " + str(baseProb))
 				log("Intersection: " + str(result["intersect"].get(marker, 0)))
+				log("A marker: " + str(result["userMarkers"][result["a"]+marker]))
+				log("B marker: " + str(result["userMarkers"][result["b"]+marker]))
+				log("B total: " + str(result["numUtterances"]))
 			toReturn.append([result["conv"], marker, prob])
 	
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
