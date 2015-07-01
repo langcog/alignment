@@ -114,6 +114,10 @@ def bayesProbs(results, markers):
 			powerProb = float(result["intersect"].get(marker, 0))/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"].get(result["b"]+marker, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
+			if(result["a"] == "4" and result["b"] == "3" and marker == "the"):
+				log("Power Prob: " + str(powerProb))
+				log("Base Prob: " + str(baseProb))
+				log("Intersection: " + str(result["intersect"].get(marker, 0)))
 			toReturn.append([result["conv"], marker, prob])
 	
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
