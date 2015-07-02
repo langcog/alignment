@@ -3,10 +3,12 @@ import operator
 import itertools
 import re
 import traceback
-inputFile = "toy.users"
-#inputFile = "pairedtweets1000.txt"
+
+#inputFile = "toy.users"
+inputFile = "pairedtweets1000.txt"
 markersFile = "test.csv"
 outputFile = "results.csv"
+userFile = "pairedtweets1000.txt.userinfo"
 
 # Just outputs lines to help when debugging
 def initialize():
@@ -29,11 +31,15 @@ def readMarkers(markersFile):
 		markers.append(row[0])
 	return markers
 
+def findUser(users, uId):
+	for user in users:
+		if(user["uid"] == uId):
+			return user
+	return False
 # Reads in tweets
-def readCSV(markers, inputFile):
+def readCSV(markers, inputFile, users):
 	reader=csv.reader(open(inputFile),dialect="excel-tab")
 	utterances = []
-	linenum = 0
 	header=True
 	for row in reader:
 		if header:
@@ -48,6 +54,16 @@ def readCSV(markers, inputFile):
 		toAppend["reply"] = row[5]
 		toAppend["msgMarkers"] = []
 		toAppend["replyMarkers"] = []
+		msgUser = findUser(users, row[1])
+		if(msgUser != False):
+			toAppend["verifiedSpeaker"] = msgUser["verified"]
+		else:
+			toAppend["verifiedSpeaker"] = False
+		replyUser = findUser(users, row[4])
+		if(replyUser != False):
+			toAppend["verifiedReplier"] = replyUser["verified"]
+		else:
+			toAppend["verifiedReplier"] = False
 		messages = row[2].split(" ")
 		replies = row[5].split(" ")
 		for marker in markers:
@@ -96,14 +112,14 @@ def setUp(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker] = userMarkers.get(utterance["replyUserId"] + marker ,0) + 1
 				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
 					intersect[marker] = intersect.get(marker,0) + 1
-
-		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["conv#"]})
+		results.append({"verifiedSpeaker": bool(convo[0]["verifiedSpeaker"]), "verifiedReplier": bool(convo[0]["verifiedReplier"]), "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["conv#"]})
 
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
 def bayesProbs(results, markers):
 	toReturn = []
+	averages = {"truetrue": [], "truefalse": [], "falsetrue": [], "falsefalse": []}
 	for result in results:
 		for marker in markers:
 			# If a doesn't say the marker, ignore
@@ -114,15 +130,21 @@ def bayesProbs(results, markers):
 			powerProb = float(result["intersect"].get(marker, 0))/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"].get(result["b"]+marker, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			if(result["a"] == "4" and result["b"] == "3" and marker == "the"):
-				log("Power Prob: " + str(powerProb))
-				log("Base Prob: " + str(baseProb))
-				log("Intersection: " + str(result["intersect"].get(marker, 0)))
-				log("A marker: " + str(result["userMarkers"][result["a"]+marker]))
-				log("B marker: " + str(result["userMarkers"][result["b"]+marker]))
-				log("B total: " + str(result["numUtterances"]))
 			toReturn.append([result["conv"], marker, prob])
-	
+			if(result["verifiedSpeaker"] and result["verifiedReplier"]):
+				averages["truetrue"].append(prob)
+			elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
+				averages["truefalse"].append(prob)
+			elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
+				averages["falsetrue"].append(prob)
+			else:
+				averages["falsefalse"].append(prob)
+	for key in averages:
+		value = averages[key]
+		if(len(value) == 0):
+			continue
+		average =  sum(value) / float(len(value))
+		log(key + ": " + str(average))
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
@@ -162,6 +184,8 @@ def testNumResults(results, groupedUtterances, markers):
 
 
 def testSetUp(groupedUtterances, markers, results, debug):
+	if(len(results) < 10):
+		return
 	for index in range(1, 10):
 		current = results[index]
 		intersect = current["intersect"]
@@ -197,8 +221,22 @@ def testSetUp(groupedUtterances, markers, results, debug):
 			if((b + marker) in userMarkers):
 				if(not (marker in str(convo))):
 					log("Something went wrong...")
-
 	return
+
+
+def readUserInfo():
+	reader=csv.reader(open(userFile),dialect="excel-tab")
+	users = []
+	header=True
+	for row in reader:
+		if header:
+			header=False
+			continue
+		toAppend = {}
+		toAppend["uid"] = row[0]
+		toAppend["verified"] = row[2]
+		users.append(toAppend)
+	return users
 
 def testBayes(results, groupedUtterances):
 	for index in range(1, 10):
@@ -208,13 +246,15 @@ def testBayes(results, groupedUtterances):
 		log(conv)
 		intersect = current["intersect"]
 initialize()
+users = readUserInfo()
 markers = readMarkers(markersFile)
-utterances = readCSV(markers, inputFile)
+utterances = readCSV(markers, inputFile, users)
 groupedUtterances = group(utterances)
 setUppedResults = setUp(groupedUtterances, markers)
 results = bayesProbs(setUppedResults, markers)
-#testSetUp(groupedUtterances, markers, setUppedResults, False)
+testSetUp(groupedUtterances, markers, setUppedResults, False)
 #testBayes(results, groupedUtterances)
 writeFile(results, outputFile)
 testBoundaries(results, groupedUtterances)
 testNumResults(setUppedResults, groupedUtterances, markers)
+
