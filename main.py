@@ -71,15 +71,7 @@ def findConvo(convo, groupedUtterances):
 			return groupedUtterance
 	return False
 
-# Prints the conversations with the max and least powers
-def testBoundaries(results, groupedUtterances):
-	results = sorted(results, key=lambda k: -k[2])
-	maxPower = results[0]
-	maxConvo = findConvo(maxPower[0], groupedUtterances)
-	leastPower = results[len(results)-1]
-	leastConvo = findConvo(leastPower[0], groupedUtterances)
-	shared_code.log("Max Alignment: " + str(maxPower))
-	shared_code.log("Min Alignment: " + str(leastPower))
+
 
 # Finds out the number of conversations in which both A and B say the same marker
 def testNumResults(results, groupedUtterances, markers):
@@ -164,6 +156,6 @@ results = shared_code.calculateAlignment(setUppedResults, markers)
 #testSetUp(groupedUtterances, markers, setUppedResults, False)
 #testBayes(results, groupedUtterances)
 shared_code.writeFile(results, outputFile, "wb")
-testBoundaries(results, groupedUtterances)
+shared_code.testBoundaries(results, groupedUtterances)
 #testNumResults(setUppedResults, groupedUtterances, markers)
 

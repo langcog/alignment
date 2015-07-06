@@ -183,7 +183,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	#testSetUp(groupedUtterances, markers, setUppedResults, False)
 	#testBayes(results, groupedUtterances)
 	shared_code.writeFile(results, output_file_name, "a")
-	testBoundaries(results, groupedUtterances)	
+	shared_code.testBoundaries(results, groupedUtterances)	
 
 shared_code.writeFile([], outputFile, "w") # Clears the contents of the output file
 

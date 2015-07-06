@@ -92,3 +92,20 @@ def calculateAlignment(results, markers):
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
+
+# Finds a conversation given it's conversation #
+def findConvo(convo, groupedUtterances):
+	for groupedUtterance in groupedUtterances:
+		if groupedUtterance[0]["conv#"] == convo:
+			return groupedUtterance
+	return False
+
+# Prints the conversations with the max and least powers
+def testBoundaries(results, groupedUtterances):
+	results = sorted(results, key=lambda k: -k[2])
+	maxPower = results[0]
+	maxConvo = findConvo(maxPower[0], groupedUtterances)
+	leastPower = results[len(results)-1]
+	leastConvo = findConvo(leastPower[0], groupedUtterances)
+	log("Max Alignment: " + str(maxPower))
+	log("Min Alignment: " + str(leastPower))
