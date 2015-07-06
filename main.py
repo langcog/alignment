@@ -12,16 +12,6 @@ outputFile = "results.csv"
 userFile = "pairedtweets1000.txt.userinfo"
 
 
-
-# Prints the name of the function that called log and prints the line number
-# Useful for debugging
-def log(toPrint):
-	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]))
-	print(toPrint)
-	print("---------")
-
-
-
 def findUser(users, uId):
 	for user in users:
 		if(user["uid"] == uId):
@@ -38,7 +28,7 @@ def readCSV(markers, inputFile, users):
 			header=False
 			continue
 		toAppend = {}
-		toAppend["conv#"] = row[1]+"_"+row[4]
+		toAppend["conv#"] = (row[1], row[4])
 		toAppend["msgUserId"] = row[1]
 		toAppend["msg"] = row[2]
 		toAppend["replyId"] = row[3]
@@ -46,6 +36,8 @@ def readCSV(markers, inputFile, users):
 		toAppend["reply"] = row[5]
 		toAppend["msgMarkers"] = []
 		toAppend["replyMarkers"] = []
+		toAppend["msgTokens"] = []
+		toAppend["replyTokens"] = []
 		msgUser = findUser(users, row[1])
 		if(msgUser != False):
 			toAppend["verifiedSpeaker"] = msgUser["verified"]
@@ -63,6 +55,8 @@ def readCSV(markers, inputFile, users):
 				toAppend["msgMarkers"].append(marker)
 			if marker in replies:
 				toAppend["replyMarkers"].append(marker)
+		toAppend["msgTokens"] = messages
+		toAppend["replyTokens"] = replies
 		utterances.append(toAppend)
 	return utterances
 
@@ -86,10 +80,6 @@ def setUp(groupedUtterances, markers):
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		if(a == b): # No self aligning stuff
 			continue
-		#for marker in markers:
-		#	userMarkers[a + marker] = 0 # Set all markers to uttered by a to 0
-		#	userMarkers[b + marker] = 0 # Same as above but with b
-		#	intersect[marker] = 0 # Same as above but with intersect a and b
 		for j, marker in enumerate(markers):
 			for utterance in convo:
 				# If there's a third person in the conversation, ignore the convo
@@ -105,7 +95,6 @@ def setUp(groupedUtterances, markers):
 				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
 					intersect[marker] = intersect.get(marker,0) + 1
 		results.append({"verifiedSpeaker": bool(convo[0]["verifiedSpeaker"]), "verifiedReplier": bool(convo[0]["verifiedReplier"]), "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["conv#"]})
-
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
@@ -122,7 +111,7 @@ def bayesProbs(results, markers):
 			powerProb = float(result["intersect"].get(marker, 0))/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"].get(result["b"]+marker, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			toReturn.append([result["conv"], marker, prob])
+			toReturn.append([result["conv"], marker, prob, float(result["intersect"].get(marker, 0)), float(result["userMarkers"][result["a"]+marker]), float(result["userMarkers"].get(result["b"]+marker, 0)), float(result["numUtterances"])])
 			if(result["verifiedSpeaker"] and result["verifiedReplier"]):
 				averages["truetrue"].append(prob)
 			elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
@@ -136,7 +125,7 @@ def bayesProbs(results, markers):
 		if(len(value) == 0):
 			continue
 		average =  sum(value) / float(len(value))
-		log(key + ": " + str(average))
+		shared_code.log(key + ": " + str(average))
 	toReturn = sorted(toReturn, key=lambda k: -k[2])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
@@ -157,8 +146,8 @@ def testBoundaries(results, groupedUtterances):
 	maxConvo = findConvo(maxPower[0], groupedUtterances)
 	leastPower = results[len(results)-1]
 	leastConvo = findConvo(leastPower[0], groupedUtterances)
-	log("Max Alignment: " + str(maxPower))
-	log("Min Alignment: " + str(leastPower))
+	shared_code.log("Max Alignment: " + str(maxPower))
+	shared_code.log("Min Alignment: " + str(leastPower))
 
 # Finds out the number of conversations in which both A and B say the same marker
 def testNumResults(results, groupedUtterances, markers):
@@ -167,7 +156,7 @@ def testNumResults(results, groupedUtterances, markers):
 		for marker in markers:
 			if(marker in result["intersect"]):
 				allCount = allCount + 1
-	log("Conversations in which both A and B say a marker: " + str(allCount))
+	shared_code.log("Conversations in which both A and B say a marker: " + str(allCount))
 
 
 def testSetUp(groupedUtterances, markers, results, debug):
@@ -194,20 +183,20 @@ def testSetUp(groupedUtterances, markers, results, debug):
 				replyMarkers = list(set(replyMarkers))
 				msgMarkers = list(set(msgMarkers))
 				if(debug):
-					log("Intersection: " + key)
-					log("Reply Markers: " + str(sorted(replyMarkers)))
-					log("Message Markers: " + str(sorted(msgMarkers)))
+					shared_code.log("Intersection: " + key)
+					shared_code.log("Reply Markers: " + str(sorted(replyMarkers)))
+					shared_code.log("Message Markers: " + str(sorted(msgMarkers)))
 				if(not (key in msgMarkers and key in replyMarkers)):
-					log("Something went wrong...")
+					shared_code.log("Something went wrong...")
 		
 		# Tests if the markers that a or b says are actually in the conversation
 		for marker in markers:
 			if((a+marker) in userMarkers):
 				if(not (marker in str(convo))):
-					log("Something went wrong...")
+					shared_code.log("Something went wrong...")
 			if((b + marker) in userMarkers):
 				if(not (marker in str(convo))):
-					log("Something went wrong...")
+					shared_code.log("Something went wrong...")
 	return
 
 
@@ -228,9 +217,9 @@ def readUserInfo():
 def testBayes(results, groupedUtterances):
 	for index in range(1, 10):
 		current = results[index]
-		log(current)
+		shared_code.log(current)
 		conv = findConvo(current[0], groupedUtterances)
-		log(conv)
+		shared_code.log(conv)
 		intersect = current["intersect"]
 
 shared_code.initialize()
