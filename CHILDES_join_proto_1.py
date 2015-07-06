@@ -3,7 +3,16 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-marker_list = ['the', 'a'] 
+import shared_code
+
+shared_code.initialize()
+
+outputFile = "results.csv"
+markersFile = "test.csv"
+corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
+rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
+
+marker_list = shared_code.readMarkers(markersFiles)
 speaker_list = []
 utterance_dict = {}
 squished_dict = {}
@@ -138,7 +147,7 @@ def conditional_calculator(word): # counts number of time a replier utters a mar
 			conditional_conversation_dict[(speaker1, speaker2)] += 1	
 	return(conditional_conversation_dict)			
 
-def convo_converter(conversation_dictionary):
+def convo_converter(convo_dict):
 	global project_x
 	global marker_list
 	for x in range(0, (len(conversation_dictionary) - 1)):
@@ -213,25 +222,14 @@ def document_stuff(directory_location, input_file_name, list_of_markers, output_
 	squisher(ordered_utterance_list)
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
-	for word in marker_list:
-		conditional_calculator(word)
-		meta_data_extractor(word)
-		calculate_alignment(word)				
-		for x in range(0, (len(convo_dict) - 1)):
-			speaker1 = convo_dict[x][0][0]
-			speaker2 = convo_dict[x][1][0]
-			output_almost[final_counter] = [input_file_name, speaker1, speaker2, sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1], word, conditional_conversation_dict[(speaker1, speaker2)], total_marker_speaker_dict[(speaker1, speaker2)], total_marker_reply_dict[(speaker1, speaker2)], total_utterance_reply_dict[(speaker1, speaker2)]]	
-			final_counter += 1
-		for y in range(0, (len(output_almost) - 1)):
-			if output_almost[y] not in for_output_list:
-				for_output_list.append(output_almost[y])	
-	with open(output_file_name, "a") as f:
-		magic_writer = csv.writer(f)
-		magic_writer.writerows(for_output_list)
-		f.close()		
-
-corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
-rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
+	utterances = convo_converter(convo_dict)	
+	groupedUtterances = shared_code.group(utterances)
+	setUppedResults = shared_code.setUp(groupedUtterances, marker_list)
+	results = shared_code.bayesProbs(setUppedResults, marker_list)
+	#testSetUp(groupedUtterances, markers, setUppedResults, False)
+	#testBayes(results, groupedUtterances)
+	shared_code.writeFile(results, outputFile, "wb")
+	testBoundaries(results, groupedUtterances)	
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for subdir in subdirList:
