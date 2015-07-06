@@ -140,11 +140,19 @@ def conditional_calculator(word): # counts number of time a replier utters a mar
 
 def convo_converter(conversation_dictionary):
 	global project_x
+	global marker_list
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		project_x.append({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': 'msgMarkers', 'replyMarkers': 'replyMarkers', 'msgTokens': 'msgTokens', 'replyTokens': 'replyTokens']
-	return project_x		
+
+		toAppend = ({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		for marker in marker_list:
+			if marker in convo_dict[x][0]:
+				toAppend["msgMarkers"].append(marker)
+			if marker in convo_dict[x][1]:
+				toAppend["replyMarkers"].append(marker)
+		project_x.append(toAppend)
+	return project_x
 
 def meta_data_extractor(word): #gets the rest of the values needed to calculate alignment
 	global total_marker_speaker_dict

@@ -31,7 +31,6 @@ def readCSV(markers, inputFile, users):
 		toAppend["conv#"] = (row[1], row[4])
 		toAppend["msgUserId"] = row[1]
 		toAppend["msg"] = row[2]
-		toAppend["replyId"] = row[3]
 		toAppend["replyUserId"] = row[4]
 		toAppend["reply"] = row[5]
 		toAppend["msgMarkers"] = []
