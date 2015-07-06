@@ -3,10 +3,9 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-import os
 import shared_code
 
-markersFile = "test.csv"
+
 rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
 
 shared_code.initialize()
