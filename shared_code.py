@@ -41,7 +41,7 @@ def group(utterances):
 	return list1
 
 # Computers the power probabilities
-def setUp(groupedUtterances, markers):
+def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
 		userMarkers = {}
@@ -69,7 +69,7 @@ def setUp(groupedUtterances, markers):
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def bayesProbs(results, markers):
+def calculateAlignment(results, markers):
 	toReturn = []
 	averages = {"truetrue": [], "truefalse": [], "falsetrue": [], "falsefalse": []}
 	for result in results:

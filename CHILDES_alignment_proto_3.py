@@ -193,10 +193,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(convo_dict[x][0]) - len(re.findall(speaker1, str(convo_dict[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(convo_dict[x][1]) - len(re.findall(speaker2, str(convo_dict[x][1])))]
-	for word in marker_list:
-		conditional_calculator(word)
-		meta_data_extractor(word)
-		calculate_alignment(word)				
+	for word in marker_list:			
 		for x in range(0, (len(convo_dict) - 1)):
 			speaker1 = convo_dict[x][0][0]
 			speaker2 = convo_dict[x][1][0]
