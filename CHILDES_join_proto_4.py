@@ -3,7 +3,15 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-marker_list = ['the', 'a'] 
+import shared_code
+
+shared_code.initialize()
+
+outputFile = "results.csv"
+markersFile = "test.csv"
+corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
+
+marker_list = shared_code.readMarkers(markersFiles)
 speaker_list = []
 utterance_dict = {}
 squished_dict = {}
@@ -138,13 +146,21 @@ def conditional_calculator(word): # counts number of time a replier utters a mar
 			conditional_conversation_dict[(speaker1, speaker2)] += 1	
 	return(conditional_conversation_dict)			
 
-def convo_converter(conversation_dictionary):
-	global project_x
+def convo_converter(convo_dict, marker_list):
+	project_x = {}
 	for x in range(0, (len(conversation_dictionary) - 1)):
-		speaker1 = conversation_dictionary[x][0][0]
-		speaker2 = conversation_dictionary[x][1][0]
-		project_x.append({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': conversation_dictionary[x][0], 'replyUserId': speaker2, 'reply': conversation_dictionary[x][1], 'msgMarkers': 'msgMarkers', 'replyMarkers': 'replyMarkers', 'msgTokens': 'msgTokens', 'replyTokens': 'replyTokens'})
-	return project_x		
+		speaker1 = convo_dict[x][0][0]
+		speaker2 = convo_dict[x][1][0]
+
+		toAppend = ({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		for marker in marker_list:
+			if marker in convo_dict[x][0]:
+				toAppend["msgMarkers"].append(marker)
+			if marker in convo_dict[x][1]:
+				toAppend["replyMarkers"].append(marker)
+		project_x.append(toAppend)
+	return project_x
+	
 
 def meta_data_extractor(word): #gets the rest of the values needed to calculate alignment
 	global total_marker_speaker_dict
@@ -188,8 +204,7 @@ def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of w
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
 
-def document_stuff(directory_location, input_file_name, list_of_markers, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
-	global marker_list
+def document_stuff(directory_location, input_file_name, marker_list, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
@@ -205,31 +220,24 @@ def document_stuff(directory_location, input_file_name, list_of_markers, output_
 	squisher(ordered_utterance_list)
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
-	for word in marker_list:
-		conditional_calculator(word)
-		meta_data_extractor(word)
-		calculate_alignment(word)				
-		for x in range(0, (len(convo_dict) - 1)):
-			speaker1 = convo_dict[x][0][0]
-			speaker2 = convo_dict[x][1][0]
-			output_almost[final_counter] = [directory_location + '\\' + input_file_name, speaker1, speaker2, sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1], word, conditional_conversation_dict[(speaker1, speaker2)], total_marker_speaker_dict[(speaker1, speaker2)], total_marker_reply_dict[(speaker1, speaker2)], total_utterance_reply_dict[(speaker1, speaker2)]]	
-			final_counter += 1
-		for y in range(0, (len(output_almost) - 1)):
-			if output_almost[y] not in for_output_list:
-				for_output_list.append(output_almost[y])	
-	with open(output_file_name, "a") as f:
-		magic_writer = csv.writer(f)
-		magic_writer.writerows(for_output_list)
-		f.close()		
+	
+	utterances = convo_converter(convo_dict, marker_list)	
+	groupedUtterances = shared_code.group(utterances)
+	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
+	results = shared_code.calculateAlignment(setUppedResults, marker_list)
+	#testSetUp(groupedUtterances, markers, setUppedResults, False)
+	#testBayes(results, groupedUtterances)
+	shared_code.writeFile(results, output_file_name, "a")
+	shared_code.testBoundaries(results, groupedUtterances)		
 
-corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
+
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
 		for fname in os.listdir(dirName + '\\' + x):
 			if fname.endswith(".xml"):
 				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname , marker_list, 'test_run1.csv')
+				document_stuff(dirName + '\\' + x, fname , marker_list, outputFile)
 
 
 
