@@ -4,7 +4,13 @@ import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 import os
-marker_list = ['the', 'a'] 
+import shared_code
+
+markersFile = "test.csv"
+
+shared_code.initialize()
+
+marker_list = shared_code.readMarkers(markersFiles)
 speaker_list = []
 utterance_dict = {}
 squished_dict = {}
@@ -205,11 +211,10 @@ def document_stuff(directory_location, input_file_name, list_of_markers, output_
 		for y in range(0, (len(output_almost) - 1)):
 			if output_almost[y] not in for_output_list:
 				for_output_list.append(output_almost[y])
-		alignment_dict = {}		
-	with open(output_file_name, "a") as f:
-		magic_writer = csv.writer(f)
-		magic_writer.writerows(for_output_list)
-		f.close()		
+		alignment_dict = {}
+	shared_code.writeFile(for_output_list, output_file_name, "a")
+
+
 
 rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
 
