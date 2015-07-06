@@ -7,6 +7,7 @@ import os
 import shared_code
 
 markersFile = "test.csv"
+rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
 
 shared_code.initialize()
 
@@ -15,7 +16,6 @@ speaker_list = []
 utterance_dict = {}
 squished_dict = {}
 convo_dict = {}
-convo_counter = 0
 squish_counter = 0
 total_utterance_reply_dict = {}
 total_marker_speaker_dict = {}
@@ -28,7 +28,6 @@ ordered_utterance_list = []
 sparsity_measure = {}
 output_list = []
 output_almost = {}
-final_counter = 0
 for_output_list = []
 possible_conversation_list = []
 
@@ -49,14 +48,12 @@ def initialize(): # clean slates the variables
 	global sparsity_measure
 	global output_list
 	global output_almost
-	global final_counter
 	global for_output_list
 	global possible_conversation_list
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
 	convo_dict = {}
-	convo_counter = 0
 	squish_counter = 0
 	total_utterance_reply_dict = {}
 	total_marker_speaker_dict = {}
@@ -68,7 +65,6 @@ def initialize(): # clean slates the variables
 	sparsity_measure = {}
 	output_list = []
 	output_almost = {}
-	final_counter = 0
 	for_output_list = []
 	possible_conversation_list = []
 
@@ -84,7 +80,7 @@ def determine_speakers(word_list): # gives a list of all speakers in the file
 	for lists in word_list:
 		if lists[0] not in speaker_list:
 			speaker_list.append(lists[0])
-	return(speaker_list)	
+	return(speaker_list)
 
 def determine_possible_conversations(list_of_speakers): # determines the list of possible speaker/replier pairs
 	global possible_conversation_list
@@ -126,7 +122,7 @@ def squisher(some_utterance_list): # squishes utterances with the same speaker
 
 def convo_grouper(some_dict): # groups utterances into speaker/replier "conversations" 
 	global convo_dict
-	global convo_counter
+	convo_counter = 0
 	for i in range(0, len(some_dict) - 1, 2):
 		convo_dict[convo_counter] = [some_dict[i], some_dict[i + 1]]
 		convo_counter += 1
@@ -147,7 +143,7 @@ def meta_data_extractor(word): #gets the rest of the values needed to calculate 
 	global total_marker_speaker_dict
 	global	total_marker_reply_dict
 	global	total_utterance_reply_dict
-	global convo_dict	
+	global convo_dict
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]	
@@ -175,17 +171,16 @@ def calculate_alignment(word): # calculates the alignment for each speaker repli
 			alignment_dict[(x)] = 'undefined'	
 	return(alignment_dict)
 
-def document_stuff(directory_location, input_file_name, list_of_markers, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
-	global marker_list
+def document_stuff(directory_location, input_file_name, marker_list, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
 	global output_almost
-	global final_counter
 	global alignment_dict
 	global possible_conversation_list
 	global speaker_list
 	initialize()
+	final_counter = 0
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
 	determine_possible_conversations(speaker_list)
@@ -214,9 +209,6 @@ def document_stuff(directory_location, input_file_name, list_of_markers, output_
 		alignment_dict = {}
 	shared_code.writeFile(for_output_list, output_file_name, "a")
 
-
-
-rootDir = r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence\Alex'
 
 for dirName, subdirList, fileList in os.walk(rootDir):
     for fname in fileList:
