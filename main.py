@@ -3,6 +3,7 @@ import operator
 import itertools
 import re
 import traceback
+import shared_code
 
 #inputFile = "toy.users"
 inputFile = "pairedtweets1000.txt"
@@ -10,11 +11,7 @@ markersFile = "test.csv"
 outputFile = "results.csv"
 userFile = "pairedtweets1000.txt.userinfo"
 
-# Just outputs lines to help when debugging
-def initialize():
-	print("--------------")
-	print("--------------")
-	print("--------------")
+
 
 # Prints the name of the function that called log and prints the line number
 # Useful for debugging
@@ -23,19 +20,14 @@ def log(toPrint):
 	print(toPrint)
 	print("---------")
 
-# Reads a list of markers from the markersFile
-def readMarkers(markersFile):
-	reader = csv.reader(open(markersFile))
-	markers = []
-	for row in reader:
-		markers.append(row[0])
-	return markers
+
 
 def findUser(users, uId):
 	for user in users:
 		if(user["uid"] == uId):
 			return user
 	return False
+
 # Reads in tweets
 def readCSV(markers, inputFile, users):
 	reader=csv.reader(open(inputFile),dialect="excel-tab")
@@ -149,12 +141,7 @@ def bayesProbs(results, markers):
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
 
-# Writes stuff to the output file
-def writeFile(toWrite, outputFile):
-	with open(outputFile, "wb") as f:
-		writer = csv.writer(f)
-		writer.writerows(toWrite)
-	f.close()
+
 
 # Finds a conversation given it's conversation #
 def findConvo(convo, groupedUtterances):
@@ -245,16 +232,17 @@ def testBayes(results, groupedUtterances):
 		conv = findConvo(current[0], groupedUtterances)
 		log(conv)
 		intersect = current["intersect"]
-initialize()
+
+shared_code.initialize()
 users = readUserInfo()
-markers = readMarkers(markersFile)
+markers = shared_code.readMarkers(markersFile)
 utterances = readCSV(markers, inputFile, users)
 groupedUtterances = group(utterances)
 setUppedResults = setUp(groupedUtterances, markers)
 results = bayesProbs(setUppedResults, markers)
 testSetUp(groupedUtterances, markers, setUppedResults, False)
 #testBayes(results, groupedUtterances)
-writeFile(results, outputFile)
+shared_code.writeFile(results, outputFile, "wb")
 testBoundaries(results, groupedUtterances)
 testNumResults(setUppedResults, groupedUtterances, markers)
 
