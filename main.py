@@ -11,6 +11,7 @@ markersFile = "test.csv"
 outputFile = "results.csv"
 userFile = "pairedtweets1000.txt.userinfo"
 
+
 def findUser(users, uId):
 	for user in users:
 		if(user["uid"] == uId):
@@ -57,6 +58,20 @@ def readCSV(markers, inputFile, users):
 		toAppend["replyTokens"] = replies
 		utterances.append(toAppend)
 	return utterances
+
+def readUserInfo():
+	reader=csv.reader(open(userFile),dialect="excel-tab")
+	users = []
+	header=True
+	for row in reader:
+		if header:
+			header=False
+			continue
+		toAppend = {}
+		toAppend["uid"] = row[0]
+		toAppend["verified"] = row[2]
+		users.append(toAppend)
+	return users
 
 shared_code.initialize()
 users = readUserInfo()
