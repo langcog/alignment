@@ -33,7 +33,6 @@ output_almost = {}
 final_counter = 0
 for_output_list = []
 possible_conversation_list = []
-project_x = {}
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -134,22 +133,10 @@ def convo_grouper(some_dict): # groups utterances into speaker/replier "conversa
 	for i in range(0, len(some_dict) - 1, 2):
 		convo_dict[convo_counter] = [some_dict[i], some_dict[i + 1]]
 		convo_counter += 1
-	return(convo_dict)
-		
-def conditional_calculator(word): # counts number of time a replier utters a marker given that the speaker utters the marker
-	global convo_dict
-	global marker_list
-	global conditional_conversation_dict
-	for x in range(0, (len(convo_dict) - 1)):
-		speaker1 = convo_dict[x][0][0]
-		speaker2 = convo_dict[x][1][0]	
-		if word in convo_dict[x][0] and convo_dict[x][1]:
-			conditional_conversation_dict[(speaker1, speaker2)] += 1	
-	return(conditional_conversation_dict)			
+	return(convo_dict)	
 
-def convo_converter(convo_dict):
-	global project_x
-	global marker_list
+def convo_converter(convo_dict, marker_list):
+	project_x = {}
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
@@ -163,38 +150,6 @@ def convo_converter(convo_dict):
 		project_x.append(toAppend)
 	return project_x
 
-def meta_data_extractor(word): #gets the rest of the values needed to calculate alignment
-	global total_marker_speaker_dict
-	global	total_marker_reply_dict
-	global	total_utterance_reply_dict
-	global convo_dict	
-	for x in range(0, (len(convo_dict) - 1)):
-		speaker1 = convo_dict[x][0][0]
-		speaker2 = convo_dict[x][1][0]	
-		if word in convo_dict[x][0]:
-			total_marker_speaker_dict[(speaker1, speaker2)] += 1
-		elif word in convo_dict[x][1]:
-			total_marker_speaker_dict[(speaker1, speaker2)] += 1
-	for x in range(0, (len(convo_dict) - 1)):
-		speaker1 = convo_dict[x][0][0]
-		speaker2 = convo_dict[x][1][0]
-		total_utterance_reply_dict[(speaker1, speaker2)] += 1
-	return(total_marker_speaker_dict, total_marker_reply_dict, total_utterance_reply_dict)			
-
-def calculate_alignment(word): # calculates the alignment for each speaker replier pair given some marker; is not used in the final doc, but architecture exists so that it can be included
-	global total_marker_speaker_dict
-	global total_marker_reply_dict
-	global total_utterance_reply_dict
-	global conditional_conversation_dict
-	global alignment_dict
-	global possible_conversation_list
-	for x in possible_conversation_list:
-		if total_marker_speaker_dict[(x)] != 0 and total_utterance_reply_dict[(x)] != 0:	
-			alignment_dict[(x)] = float((conditional_conversation_dict[(x)]/ total_marker_speaker_dict[(x)]) - (total_marker_reply_dict[(x)]/ total_utterance_reply_dict[(x)]))	
-		else:
-			alignment_dict[(x)] = 'undefined'	
-	return(alignment_dict)
-
 def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of words speaker has said to replier/replier to speaker total
 	global sparsity_measure
 	for a in list_of_speakers:
@@ -205,8 +160,7 @@ def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of w
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
 
-def document_stuff(directory_location, input_file_name, list_of_markers, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
-	global marker_list
+def document_stuff(directory_location, input_file_name, marker_list, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
@@ -222,14 +176,16 @@ def document_stuff(directory_location, input_file_name, list_of_markers, output_
 	squisher(ordered_utterance_list)
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
-	utterances = convo_converter(convo_dict)	
+	utterances = convo_converter(convo_dict, marker_list)	
 	groupedUtterances = shared_code.group(utterances)
-	setUppedResults = shared_code.setUp(groupedUtterances, marker_list)
-	results = shared_code.bayesProbs(setUppedResults, marker_list)
+	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
+	results = shared_code.calculateAlignment(setUppedResults, marker_list)
 	#testSetUp(groupedUtterances, markers, setUppedResults, False)
 	#testBayes(results, groupedUtterances)
-	shared_code.writeFile(results, outputFile, "wb")
+	shared_code.writeFile(results, output_file_name, "a")
 	testBoundaries(results, groupedUtterances)	
+
+shared_code.writeFile([], outputFile, "w") # Clears the contents of the output file
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for subdir in subdirList:
@@ -237,5 +193,5 @@ for dirName, subdirList, fileList in os.walk(corpus_dir):
     		for fname in fileList:
 				if fname.endswith(".xml"):
 					os.path.join(dirName, fname)
-            		document_stuff('corpora\childes\Providence\Alex', fname , marker_list, 'test_run1.csv')
+            		document_stuff('corpora\childes\Providence\Alex', fname , marker_list, outputFile)
 
