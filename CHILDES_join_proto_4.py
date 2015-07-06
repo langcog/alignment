@@ -238,6 +238,3 @@ for dirName, subdirList, fileList in os.walk(corpus_dir):
 			if fname.endswith(".xml"):
 				os.path.join(dirName + '\\' + x, fname)
 				document_stuff(dirName + '\\' + x, fname , marker_list, outputFile)
-
-
-
