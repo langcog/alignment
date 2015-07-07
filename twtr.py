@@ -23,8 +23,15 @@ def test(testFile, testMarkersFile, testOutputFile):
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities)
 	shared_code.writeFile(results, testOutputFile, "wb")
-	shared_code.testBoundaries(results, groupedUtterances)
-
+	results.pop(0)
+	results = sorted(results, key=lambda k: -k[6])
+	leastPower = results[len(results)-1]
+	if (abs(leastPower[6] - -0.135692307692308) < 0.01):
+		print("PASSED TEST")
+		return True
+	else:
+		print("FAILED TEST")
+		return False
 def findUser(users, uId):
 	for user in users:
 		if(user["uid"] == uId):
@@ -92,7 +99,9 @@ def readUserInfo():
 
 
 shared_code.initialize()
-test(testFile, testMarkers, testOutputFile)
+testResult = test(testFile, testMarkers, testOutputFile)
+if(not testResult):
+	exit()
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 utterances = readCSV(markers, inputFile, users)
