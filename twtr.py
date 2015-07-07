@@ -7,7 +7,7 @@ import shared_code
 
 #inputFile = "toy.users"
 inputFile = "pairedtweets1000.txt"
-markersFile = "test.csv"
+markersFile = "markers.txt"
 outputFile = "results.csv"
 userFile = "pairedtweets1000.txt.userinfo"
 
@@ -52,10 +52,10 @@ def readCSV(markers, inputFile, users):
 		messages = row[2].split(" ")
 		replies = row[5].split(" ")
 		for marker in markers:
-			if marker in messages:
-				toAppend["msgMarkers"].append(marker)
-			if marker in replies:
-				toAppend["replyMarkers"].append(marker)
+			if marker["marker"] in messages:
+				toAppend["msgMarkers"].append(marker["marker"])
+			if marker["marker"] in replies:
+				toAppend["replyMarkers"].append(marker["marker"])
 		toAppend["msgTokens"] = messages
 		toAppend["replyTokens"] = replies
 		utterances.append(toAppend)
