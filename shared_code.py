@@ -19,7 +19,7 @@ def log(toPrint):
 
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
-	toWrite.insert(0, ["ConvId", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances"])
+	toWrite.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A"])
 	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
@@ -70,7 +70,7 @@ def metaDataExtractor(groupedUtterances, markers):
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers):
+def calculateAlignment(results, markers, sparsities):
 	toReturn = []
 	for result in results:
 		for marker in markers:
@@ -82,8 +82,9 @@ def calculateAlignment(results, markers):
 			powerProb = float(result["intersect"].get(marker, 0))/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"].get(result["b"]+marker, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			toReturn.append([result["corpus"], result["docId"], result["conv"], marker, prob, float(result["intersect"].get(marker, 0)), float(result["userMarkers"][result["a"]+marker]), float(result["userMarkers"].get(result["b"]+marker, 0)), float(result["numUtterances"])])
-	toReturn = sorted(toReturn, key=lambda k: -k[4])
+			sparsity = sparsities[(result["a"], result["b"])]
+			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], marker, prob, float(result["intersect"].get(marker, 0)), float(result["userMarkers"][result["a"]+marker]), float(result["userMarkers"].get(result["b"]+marker, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1]])
+	toReturn = sorted(toReturn, key=lambda k: -k[6])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
 
@@ -97,8 +98,8 @@ def findConvo(convo, groupedUtterances):
 # Prints the conversations with the max and least powers
 def testBoundaries(results, groupedUtterances):
 	results.pop(0)
-	results = sorted(results, key=lambda k: -k[4])
-	maxPower = results[2]
+	results = sorted(results, key=lambda k: -k[6])
+	maxPower = results[4]
 	maxConvo = findConvo(maxPower[0], groupedUtterances)
 	leastPower = results[len(results)-1]
 	leastConvo = findConvo(leastPower[0], groupedUtterances)
