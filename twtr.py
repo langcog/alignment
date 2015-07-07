@@ -5,12 +5,25 @@ import re
 import traceback
 import shared_code
 
-#inputFile = "toy.users"
+testMarkers = "test_markers.csv"
+testFile = "debug/toy.users"
+testOutputFile = "debug/results.csv"
+
 inputFile = "pairedtweets1000.txt"
-markersFile = "test.csv"
+markersFile = "markers.csv"
 outputFile = "results.csv"
+
 userFile = "pairedtweets1000.txt.userinfo"
 
+def test(testFile, testMarkersFile, testOutputFile):
+	markers = shared_code.readMarkers(testMarkersFile)
+	utterances = readCSV(markers, testFile, False)
+	groupedUtterances = shared_code.group(utterances)
+	sparsities = shared_code.calculateSparsity(groupedUtterances)
+	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
+	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities)
+	shared_code.writeFile(results, testOutputFile, "wb")
+	shared_code.testBoundaries(results, groupedUtterances)
 
 def findUser(users, uId):
 	for user in users:
@@ -39,16 +52,17 @@ def readCSV(markers, inputFile, users):
 		toAppend["replyMarkers"] = []
 		toAppend["msgTokens"] = row[2].split(" ")
 		toAppend["replyTokens"] = row[5].split(" ")
-		msgUser = findUser(users, row[1])
-		if(msgUser != False):
-			toAppend["verifiedSpeaker"] = msgUser["verified"]
-		else:
-			toAppend["verifiedSpeaker"] = False
-		replyUser = findUser(users, row[4])
-		if(replyUser != False):
-			toAppend["verifiedReplier"] = replyUser["verified"]
-		else:
-			toAppend["verifiedReplier"] = False
+		if(users is not False):
+			msgUser = findUser(users, row[1])
+			if(msgUser != False):
+				toAppend["verifiedSpeaker"] = msgUser["verified"]
+			else:
+				toAppend["verifiedSpeaker"] = False
+			replyUser = findUser(users, row[4])
+			if(replyUser != False):
+				toAppend["verifiedReplier"] = replyUser["verified"]
+			else:
+				toAppend["verifiedReplier"] = False
 		messages = row[2].split(" ")
 		replies = row[5].split(" ")
 		for marker in markers:
@@ -78,6 +92,7 @@ def readUserInfo():
 
 
 shared_code.initialize()
+test(testFile, testMarkers, testOutputFile)
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 utterances = readCSV(markers, inputFile, users)
