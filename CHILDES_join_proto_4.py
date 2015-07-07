@@ -133,7 +133,7 @@ def convo_grouper(some_dict): # groups utterances into speaker/replier "conversa
 	for i in range(0, len(some_dict) - 1, 2):
 		convo_dict[convo_counter] = [some_dict[i], some_dict[i + 1]]
 		convo_counter += 1
-	return(convo_dict)		
+	return(convo_dict)
 
 def convo_converter(convo_dict, marker_list):
 	project_x = {}
@@ -141,7 +141,7 @@ def convo_converter(convo_dict, marker_list):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 
-		toAppend = ({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		toAppend = ({'convId': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
 		for marker in marker_list:
 			if marker in convo_dict[x][0]:
 				toAppend["msgMarkers"].append(marker)
@@ -158,6 +158,7 @@ def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of w
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = a_dictionary[x][0][0]
 		speaker2 = a_dictionary[x][1][0] 
+		# Current sparsity + num of words in message 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
 
 def document_stuff(directory_location, input_file_name, marker_list, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
@@ -177,14 +178,14 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
 	
-	utterances = convo_converter(convo_dict, marker_list)	
+	utterances = convo_converter(convo_dict, marker_list)
 	groupedUtterances = shared_code.group(utterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
 	results = shared_code.calculateAlignment(setUppedResults, marker_list)
 	#testSetUp(groupedUtterances, markers, setUppedResults, False)
 	#testBayes(results, groupedUtterances)
 	shared_code.writeFile(results, output_file_name, "a")
-	shared_code.testBoundaries(results, groupedUtterances)		
+	shared_code.testBoundaries(results, groupedUtterances)	
 
 shared_code.writeFile([], outputFile, "w") # Clears the contents of the output file
 

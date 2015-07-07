@@ -95,6 +95,16 @@ def findConvo(convo, groupedUtterances):
 			return groupedUtterance
 	return False
 
+def calculateSparsity(groupedUtterances): # calculates number of words speaker has said to replier/replier to speaker total
+	sparsity_measure = {}
+	for convo in groupedUtterances:
+		a = convo[0]["msgUserId"] # Id of person A
+		b = convo[0]["replyUserId"] # Id of person B
+		sparsity_measure[(a, b)] = [0, 0]
+	 	for utterance in convo:
+	 		sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
+	return sparsity_measure
+
 # Prints the conversations with the max and least powers
 def testBoundaries(results, groupedUtterances):
 	results.pop(0)
