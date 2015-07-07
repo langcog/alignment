@@ -19,6 +19,7 @@ def log(toPrint):
 
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
+	toWrite.insert(0, ["ConvId", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances"])
 	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
@@ -34,9 +35,9 @@ def readMarkers(markersFile):
 
 # Groups tweets by conversation numbers
 def group(utterances):
-	utterances.sort(key=operator.itemgetter('conv#'))
+	utterances.sort(key=operator.itemgetter('convId'))
 	list1 = []
-	for key, items in itertools.groupby(utterances, operator.itemgetter('conv#')):
+	for key, items in itertools.groupby(utterances, operator.itemgetter('convId')):
 		list1.append(list(items))
 	return list1
 
@@ -65,13 +66,12 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker] = userMarkers.get(utterance["replyUserId"] + marker ,0) + 1
 				if marker in utterance["msgMarkers"] and marker in utterance["replyMarkers"]:
 					intersect[marker] = intersect.get(marker,0) + 1
-		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["conv#"]})
+		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]})
 	return results
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
 def calculateAlignment(results, markers):
 	toReturn = []
-	averages = {"truetrue": [], "truefalse": [], "falsetrue": [], "falsefalse": []}
 	for result in results:
 		for marker in markers:
 			# If a doesn't say the marker, ignore
@@ -82,28 +82,23 @@ def calculateAlignment(results, markers):
 			powerProb = float(result["intersect"].get(marker, 0))/float(result["userMarkers"][result["a"]+marker])
 			baseProb = float(result["userMarkers"].get(result["b"]+marker, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
-			toReturn.append([result["conv"], marker, prob, float(result["intersect"].get(marker, 0)), float(result["userMarkers"][result["a"]+marker]), float(result["userMarkers"].get(result["b"]+marker, 0)), float(result["numUtterances"])])
-	for key in averages:
-		value = averages[key]
-		if(len(value) == 0):
-			continue
-		average =  sum(value) / float(len(value))
-		log(key + ": " + str(average))
-	toReturn = sorted(toReturn, key=lambda k: -k[2])
+			toReturn.append([result["corpus"], result["docId"], result["conv"], marker, prob, float(result["intersect"].get(marker, 0)), float(result["userMarkers"][result["a"]+marker]), float(result["userMarkers"].get(result["b"]+marker, 0)), float(result["numUtterances"])])
+	toReturn = sorted(toReturn, key=lambda k: -k[4])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
 def findConvo(convo, groupedUtterances):
 	for groupedUtterance in groupedUtterances:
-		if groupedUtterance[0]["conv#"] == convo:
+		if groupedUtterance[0]["convId"] == convo:
 			return groupedUtterance
 	return False
 
 # Prints the conversations with the max and least powers
 def testBoundaries(results, groupedUtterances):
-	results = sorted(results, key=lambda k: -k[2])
-	maxPower = results[0]
+	results.pop(0)
+	results = sorted(results, key=lambda k: -k[4])
+	maxPower = results[2]
 	maxConvo = findConvo(maxPower[0], groupedUtterances)
 	leastPower = results[len(results)-1]
 	leastConvo = findConvo(leastPower[0], groupedUtterances)
