@@ -75,12 +75,15 @@ def readUserInfo():
 		users.append(toAppend)
 	return users
 
+
+
 shared_code.initialize()
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 utterances = readCSV(markers, inputFile, users)
 groupedUtterances = shared_code.group(utterances)
+sparsities = shared_code.calculateSparsity(groupedUtterances)
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
-results = shared_code.calculateAlignment(setUppedResults, markers)
+results = shared_code.calculateAlignment(setUppedResults, markers, sparsities)
 shared_code.writeFile(results, outputFile, "wb")
 shared_code.testBoundaries(results, groupedUtterances)
