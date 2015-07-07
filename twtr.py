@@ -28,7 +28,9 @@ def readCSV(markers, inputFile, users):
 			header=False
 			continue
 		toAppend = {}
-		toAppend["conv#"] = (row[1], row[4])
+		toAppend["docId"] = "TWITTER"
+		toAppend["corpus"] = "TWITTER"
+		toAppend["convId"] = (row[1], row[4])
 		toAppend["msgUserId"] = row[1]
 		toAppend["msg"] = row[2]
 		toAppend["replyUserId"] = row[4]
@@ -82,4 +84,3 @@ setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 results = shared_code.calculateAlignment(setUppedResults, markers)
 shared_code.writeFile(results, outputFile, "wb")
 shared_code.testBoundaries(results, groupedUtterances)
-
