@@ -161,7 +161,7 @@ def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of w
 		speaker1 = a_dictionary[x][0][0]
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
-	return sparsity_measure	
+	return sparsity_measure
 
 def document_stuff(directory_location, input_file_name, marker_list, output_file_name, corpus): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
 	global ordered_utterance_list
