@@ -32,6 +32,7 @@ def test(testFile, testMarkersFile, testOutputFile):
 	else:
 		print("FAILED TEST")
 		return False
+
 def findUser(users, uId):
 	for user in users:
 		if(user["uid"] == uId):

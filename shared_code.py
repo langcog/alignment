@@ -58,12 +58,15 @@ def metaDataExtractor(groupedUtterances, markers):
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		if(a == b): # No self aligning stuff
 			continue
-		for j, marker in enumerate(markers):
-			for utterance in convo:
+		for utterance in convo:
+			completedCategories = {}
+			for j, marker in enumerate(markers):
 				# If there's a third person in the conversation, ignore the convo
 				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
 					continue
 				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
+					continue
+				if(marker["category"] in completedCategories):
 					continue
 				#log(marker["category"])
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
@@ -73,6 +76,7 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1
 				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
+				completedCategories[marker["category"]] = True
 			#log(userMarkers)
 		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]})
 	return results
