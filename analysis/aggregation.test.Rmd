@@ -24,6 +24,7 @@ library(tidyr)
 library(stringr)
 library(magrittr)
 library(directlabels)
+library(langcog)
 source('~/Projects/langcog/R/multiboot.R')
 ```
 
