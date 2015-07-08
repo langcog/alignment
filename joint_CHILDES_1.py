@@ -152,7 +152,7 @@ def convo_converter(conversation_dictionary, marker_list):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 
-		toAppend = ({'conv#': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		toAppend = ({'convId': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
 		for marker in marker_list:
 			if marker in convo_dict[x][0]:
 				toAppend["msgMarkers"].append(marker)
