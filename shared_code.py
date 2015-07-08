@@ -30,8 +30,13 @@ def readMarkers(markersFile):
 	reader = csv.reader(open(markersFile))
 	markers = []
 	for row in reader:
-		print(row)
-		markers.append({"marker": row[0], "category": row[1]})
+		toAppend = {}
+		toAppend["marker"] = row[0]
+		if(len(row) > 1):
+			toAppend["category"] = row[1]
+		else:
+			toAppend["category"] = row[0]
+		markers.append(toAppend)
 	return markers
 
 # Groups tweets by conversation numbers
@@ -47,7 +52,7 @@ def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
 		userMarkers = {}
-		intersect = {} # Number of times Person A and person B says the marker["marker"] 		a = convo[0]["msgUserId"] # Id of person A
+		intersect = {} # Number of times Person A and person B says the marker["marker"]
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
@@ -60,6 +65,7 @@ def metaDataExtractor(groupedUtterances, markers):
 					continue
 				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
 					continue
+				#log(marker["category"])
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
 				if marker["marker"] in utterance["msgMarkers"]:
 					userMarkers[utterance["msgUserId"] + marker["category"]] = userMarkers.get(utterance["msgUserId"] + marker["category"] ,0) + 1
@@ -67,24 +73,32 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1
 				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
+			#log(userMarkers)
 		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]})
 	return results
 
+def allMarkers(markers):
+	categories = []
+	for marker in markers:
+		categories.append(marker["category"])
+
+	return list(set(categories))
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
 def calculateAlignment(results, markers, sparsities):
 	toReturn = []
+	categories = allMarkers(markers)
 	for result in results:
-		for marker in markers:
+		for category in categories:
 			# If a doesn't say the marker["marker"], ignore
 			# (Otherwise we get a divide by 0 error)
-			if((result["a"]+marker["marker"]) not in result["userMarkers"]):
+			#log(result["userMarkers"])
+			if((result["a"]+category) not in result["userMarkers"]):
 				continue
-
-			powerProb = float(result["intersect"].get(marker["marker"], 0))/float(result["userMarkers"][result["a"]+marker["marker"]])
-			baseProb = float(result["userMarkers"].get(result["b"]+marker["marker"], 0))/float(result["numUtterances"])
+			powerProb = float(result["intersect"].get(category, 0))/float(result["userMarkers"][result["a"]+category])
+			baseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], marker["marker"], prob, float(result["intersect"].get(marker["marker"], 0)), float(result["userMarkers"][result["a"]+marker["marker"]]), float(result["userMarkers"].get(result["b"]+marker["marker"], 0)), float(result["numUtterances"]), sparsity[0], sparsity[1]])
+			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, prob, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1]])
 	toReturn = sorted(toReturn, key=lambda k: -k[6])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
