@@ -18,7 +18,7 @@ def log(toPrint):
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age"])
+	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
@@ -94,7 +94,7 @@ def allMarkers(markers):
 
 	return list(set(categories))
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, age):
+def calculateAlignment(results, markers, sparsities, age, gender):
 	toReturn = []
 	categories = allMarkers(markers)
 	for result in results:
@@ -108,7 +108,7 @@ def calculateAlignment(results, markers, sparsities, age):
 			baseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
 			prob = powerProb - baseProb
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, prob, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], age])
+			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, prob, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], age, gender])
 	toReturn = sorted(toReturn, key=lambda k: -k[6])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
