@@ -33,6 +33,7 @@ final_counter = 0
 for_output_list = []
 possible_conversation_list = []
 project_x = []
+child_age = "NA"
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -55,6 +56,7 @@ def initialize(): # clean slates the variables
 	global for_output_list
 	global possible_conversation_list
 	global project_x
+	global child_age
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
@@ -75,13 +77,26 @@ def initialize(): # clean slates the variables
 	for_output_list = []
 	possible_conversation_list = []
 	project_x = []
+	child_age = 'NA'
+
+def get_child_age(setup_file):
+	global child_age
+	corpus_participants = setup_file.participants(setup_file.fileids())
+	for this_corpus_participants in corpus_participants[:2]:
+    	for key in sorted(this_corpus_participants.keys()):
+        	dct = this_corpus_participants[key]
+			if key == 'CHI':
+				child_age = dct['age']
+	return child_age
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
+	global child_age
 	corpus_root = nltk.data.find(root_location) 
 	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
 	ordered_utterance_list = file_setup.sents()
-	return(ordered_utterance_list)
+	get_child_age(file_setup)
+	return(ordered_utterance_list, child_age)
 
 def determine_speakers(word_list): # gives a list of all speakers in the file
 	global speaker_list
@@ -135,13 +150,14 @@ def convo_grouper(some_dict): # groups utterances into speaker/replier "conversa
 		convo_counter += 1
 	return(convo_dict)
 		
-def convo_converter(corpusname, filename, conversation_dictionary, marker_list):
+def convo_converter(corpusname, filename, conversation_dictionary, marker_list, age):
 	global project_x
+	global child_age
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 
-		toAppend = ({'corpus': corpusname, 'docId': filename, 'convId': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		toAppend = ({'corpus': corpusname, 'docId': filename, 'convId': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1], 'child age': age})
 		for marker in marker_list:
 			if marker["marker"] in convo_dict[x][0]:
 				toAppend["msgMarkers"].append(marker["marker"])
@@ -178,10 +194,10 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
 	
-	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)	
+	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list, child_age)	
 	groupedUtterances = shared_code.group(utterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
-	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure)
+	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure, child_age)
 	#testSetUp(groupedUtterances, markers, setUppedResults, False)
 	#testBayes(results, groupedUtterances)
 	shared_code.writeFile(results, output_file_name, "a")		
