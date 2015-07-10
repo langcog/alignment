@@ -67,13 +67,15 @@ def initialize(): # clean slates the variables
 
 def get_child_age(setup_file):
 	global child_age
+	global child_gender
 	corpus_participants = setup_file.participants(setup_file.fileids())
 	for this_corpus_participants in corpus_participants[:2]:
     	for key in sorted(this_corpus_participants.keys()):
         	dct = this_corpus_participants[key]
 			if key == 'CHI':
 				child_age = dct['age']
-	return child_age
+				child_gender = dct['sex']
+	return(child_age, child_gender)
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
