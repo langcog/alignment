@@ -23,6 +23,7 @@ hypernym_dict = {}
 hypernym_count = {}
 magic_counter = {}
 child_age = 'NA'
+child_gender = 'NA'
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -43,6 +44,7 @@ def initialize(): # clean slates the variables
 	global hypernym_count
 	global magic_counter
 	global child_age
+	global child_gender
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
@@ -61,6 +63,7 @@ def initialize(): # clean slates the variables
 	hypernym_dict = {}
 	magic_counter = {}
 	child_age = 'NA'
+	child_gender = 'NA'
 
 def get_child_age(setup_file):
 	global child_age
@@ -196,6 +199,7 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	global magic_counter
 	global hypernym_dict
 	global child_age
+	global child_gender
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -209,7 +213,7 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, hypernym_dict[(speaker1, speaker2)][0], hypernym_dict[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1], child_age]	
+		output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, hypernym_dict[(speaker1, speaker2)][0], hypernym_dict[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1], child_age, child_gender]	
 		final_counter += 1
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
@@ -225,7 +229,7 @@ corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "SpeakerA", "SpeakerB", 'FLT A -> B', "FLT B -> A", "Sparsity A->B", "Sparsity B->A", "Child Age"])
+	header.insert(0, ["Corpus", "DocId", "SpeakerA", "SpeakerB", 'FLT A -> B', "FLT B -> A", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
