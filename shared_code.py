@@ -2,17 +2,19 @@ import csv
 import traceback
 import operator
 import itertools
+import datetime
+from random import randint
 
 # Just outputs lines to help when debugging
 def initialize():
 	print("--------------")
-	print("--------------")
+	print(datetime.datetime.now().time())
 	print("--------------")
 
 # Prints the name of the function that called log and prints the line number
 # Useful for debugging
 def log(toPrint):
-	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]))
+	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]) + " at " + str(datetime.datetime.now().time()))
 	print(toPrint)
 	print("---------")
 
@@ -29,7 +31,9 @@ def writeFile(toWrite, outputFile, writeType):
 def readMarkers(markersFile):
 	reader = csv.reader(open(markersFile))
 	markers = []
-	for row in reader:
+	for i, row in enumerate(reader):
+		if(i > 100):
+			break
 		toAppend = {}
 		toAppend["marker"] = row[0]
 		if(len(row) > 1):
@@ -60,6 +64,7 @@ def metaDataExtractor(groupedUtterances, markers):
 			continue
 		for utterance in convo:
 			completedCategories = {}
+			hasSaid = {}
 			for j, marker in enumerate(markers):
 				# If there's a third person in the conversation, ignore the convo
 				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
@@ -68,6 +73,9 @@ def metaDataExtractor(groupedUtterances, markers):
 					continue
 				if(marker["category"] in completedCategories):
 					continue
+				#if(not (marker["marker"] in hasSaid or marker["marker"] in userMarkers[a + marker["category"]])):
+				#	continue
+				#hasSaid[marker["marker"]] = True
 				#log(marker["category"])
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
 				if marker["marker"] in utterance["msgMarkers"]:
@@ -78,7 +86,15 @@ def metaDataExtractor(groupedUtterances, markers):
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
 				completedCategories[marker["category"]] = True
 			#log(userMarkers)
-		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]})
+		convoUtterances = []
+		for utterance in convo:
+			convoUtterances.append(utterance["msg"])
+			convoUtterances.append(utterance["reply"])
+		toAppend = {"utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
+		if("verifiedSpeaker" in convo[0]):
+			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
+			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
+		results.append(toAppend)
 	return results
 
 def allMarkers(markers):
@@ -87,22 +103,108 @@ def allMarkers(markers):
 		categories.append(marker["category"])
 
 	return list(set(categories))
+
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities):
+def calculateAlignment(results, markers, sparsities, utterances, markerFrequency, utterancesById):
 	toReturn = []
+	markerFreqRange = 15
 	categories = allMarkers(markers)
-	for result in results:
-		for category in categories:
+	averages = {}
+	types = ["..truetrue", ".truefalse", ".falsetrue", "falsefalse"]
+	baseProbTypes = ["standard", "new"]
+	for verifiedType in types:
+		for baseProbType in baseProbTypes:
+			for i in range(0, markerFreqRange):
+				iStr = str(i)
+				if i < 10:
+					iStr = "0"+iStr
+				averages[verifiedType+baseProbType+iStr] = []
+	for i, result in enumerate(results):
+		if(i % 1000 is 0):
+			log("On result " + str(i) + " of " + str(len(results)))
+		#if(result["numUtterances"] < 4):
+		#	continue
+		
+		for j, category in enumerate(categories):
 			# If a doesn't say the marker["marker"], ignore
 			# (Otherwise we get a divide by 0 error)
 			#log(result["userMarkers"])
+			allB = 0
+			allBUtt = 0
+			
+			userUtterances = utterancesById[result["b"]]
+			allB = len(userUtterances)
+			for utterance in userUtterances:
+				splitted = utterance.split(" ")
+				if(category in splitted):
+					allBUtt += 1
+				#if(result["b"] is utterance["msgUserId"]):
+				#	allB += 1
+				#	if(category in utterance["msgMarkers"]):
+				#		allBUtt += 1
+				
+			
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
 			powerProb = float(result["intersect"].get(category, 0))/float(result["userMarkers"][result["a"]+category])
-			baseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
-			prob = powerProb - baseProb
+			
+			standardBaseProb = float(allBUtt)/float(allB)
+			newBaseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
+			#if(powerProb == 0):
+			#	continue
+			standardProb = powerProb - standardBaseProb
+			newProb = powerProb - newBaseProb
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, prob, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1]])
+			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, standardProb, newProb, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], float(result["userMarkers"][result["a"]+category])])
+			for k in range(0, markerFreqRange):
+				if float(result["userMarkers"][result["a"]+category]) < k:
+					continue
+				kStr = str(k)
+				if k < 10:
+					kStr = "0"+kStr
+
+				if("verifiedSpeaker" in result):
+					if(randint(0,1000) % 1000 is 0 and k > 9):
+						log(category)
+						log(result["conv"])
+						log(newProb)
+						#for utterance in result["utterances"]:
+						#	log(utterance)
+						#log(category)
+						#log(str(result["verifiedReplier"]) + " - " + str(result["verifiedSpeaker"]))
+					if(result["verifiedSpeaker"] and result["verifiedReplier"]):
+						averages["..truetrue"+"standard"+kStr].append(standardProb)
+						averages["..truetrue"+"new"+kStr].append(newProb)
+					elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
+						averages[".truefalse"+"standard"+kStr].append(standardProb)
+						averages[".truefalse"+"new"+kStr].append(newProb)
+					elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
+						averages[".falsetrue"+"standard"+kStr].append(standardProb)
+						averages[".falsetrue"+"new"+kStr].append(newProb)
+					else:
+						averages["falsefalse"+"standard"+kStr].append(standardProb)
+						averages["falsefalse"+"new"+kStr].append(newProb)
+	toLog = []
+	for key in averages:
+		toAppend = {}
+		toAppend["freq"] = int(key[-2:])
+		if("standard" in key):
+			continue
+			toAppend["type"] = "standard"
+		else:
+			toAppend["type"] = "new"
+		toAppend["verif"] = key[:10]
+		value = averages[key]
+		if(len(value) == 0):
+			continue
+		average =  sum(value) / float(len(value))
+		toAppend["average"] = average
+		toAppend["alignments"] = str(len(value))
+		toLog.append(toAppend)
+	toLog = sorted(toLog, key=lambda k: k["freq"])
+	for logging in toLog:
+		log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"] + " " + logging["type"])
+
 	toReturn = sorted(toReturn, key=lambda k: -k[6])
 	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
