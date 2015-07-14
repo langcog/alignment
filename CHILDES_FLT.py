@@ -4,6 +4,7 @@ import re
 import csv
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
+from nltk.corpus.reader import NOUN
 
 speaker_list = []
 utterance_dict = {}
@@ -145,20 +146,24 @@ def hypernym_calculator(conversation_dictionary): # calculates number of nouns a
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0] 
-		for y in convo_dict[x][0]:
-			y_tokenized = nltk.pos_tag(y)
-			for i in range(1, len(y_tokenized) - 1):
-				if y_tokenized[i][1] == 'NN':
+		y_tokenized = nltk.pos_tag(convo_dict[x][0])
+		for i in range(1, len(y_tokenized) - 1):
+			try:
+				if len(wn.synsets(y_tokenized[i][0], pos=wn.NOUN)) > 0:
 					checked_item = wn.synset(y_tokenized[i][0] + '.n.01')
 					hypernym_count[(speaker1, speaker2)] = [hypernym_count[(speaker1, speaker2)][0] + len(checked_item.hypernyms()), hypernym_count[(speaker1, speaker2)][1]]
 					magic_counter[(speaker1, speaker2)][0] += 1
-		for z in convo_dict[x][1]:
-			z_tokenized = nltk.pos_tag(z)
-			for i in range(1, len(z_tokenized) - 1):
-				if z_tokenized[i][1] == 'NN':
+			except:
+				continue		
+		z_tokenized = nltk.pos_tag(convo_dict[x][1])
+		for i in range(1, len(z_tokenized) - 1):
+			try:
+				if len(wn.synsets(z_tokenized[i][0], pos=wn.NOUN)) > 0:
 					checked_item = wn.synset(z_tokenized[i][0] + '.n.01')
 					hypernym_count[(speaker1, speaker2)] = [hypernym_count[(speaker1, speaker2)][0], len(checked_item.hypernyms()) + hypernym_count[(speaker1, speaker2)][1]]
-					magic_counter[(speaker1, speaker2)][1] += 1				
+					magic_counter[(speaker1, speaker2)][1] += 1
+			except:
+				continue						
 	return(hypernym_count, magic_counter)		
 
 def hypernym_average_calculator(total_hypernym_count, total_hypernym_counter): # calculates average number of hypernyms per noun for each speaker/replier
@@ -169,11 +174,11 @@ def hypernym_average_calculator(total_hypernym_count, total_hypernym_counter): #
 		for b in speaker_list:
 			if magic_counter[(a, b)][0] == 0:
 				if magic_counter[(a, b)][1] == 0:
-					hypernym_dict[(a, b)] = ['UD', 'UD']
+					hypernym_dict[(a, b)] = ['NA', 'NA']
 				else:
-					hypernym_dict[(a, b)] = ['UD', hypernym_count[(a, b)][1] / magic_counter[(a, b)][1]]	
+					hypernym_dict[(a, b)] = ['NA', hypernym_count[(a, b)][1] / magic_counter[(a, b)][1]]	
 			elif magic_counter[(a, b)][1] == 0:
-				hypernym_dict[(a, b)] = [hypernym_count[(a, b)][0] / magic_counter[(a, b)][0], 'UD']	
+				hypernym_dict[(a, b)] = [hypernym_count[(a, b)][0] / magic_counter[(a, b)][0], 'NA']	
 			else:
 				hypernym_dict[(a, b)] = [hypernym_count[(a, b)][0] / magic_counter[(a, b)][0], hypernym_count[(a, b)][1] / magic_counter[(a, b)][1]]
 	return(hypernym_dict)
@@ -221,7 +226,7 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 		if output_almost[y] not in for_output_list:
 			for_output_list.append(output_almost[y])
 		alignment_dict = {}		
-	with open(output_file_name, "a") as f:
+	with open(output_file_name, "a", newline='') as f:
 		magic_writer = csv.writer(f)
 		magic_writer.writerows(for_output_list)
 		f.close()		
@@ -231,7 +236,7 @@ corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "SpeakerA", "SpeakerB", 'FLT A -> B', "FLT B -> A", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
+	header.insert(0, ["Corpus", "DocId", "SpeakerA", "SpeakerB", 'FLT A->B', "FLT B->A", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
