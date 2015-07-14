@@ -4,6 +4,7 @@ import operator
 import itertools
 import datetime
 from random import randint
+import math
 
 # Just outputs lines to help when debugging
 def initialize():
@@ -18,10 +19,16 @@ def log(toPrint):
 	print(toPrint)
 	print("---------")
 
+def writeHeader(outputFile, writeType):
+	header = []
+	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
+	with open(outputFile, writeType) as f:
+		writer = csv.writer(f)
+		writer.writerows(header)
+	f.close()
 
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
-	toWrite.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A"])
 	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
@@ -57,6 +64,7 @@ def metaDataExtractor(groupedUtterances, markers):
 	for i, convo in enumerate(groupedUtterances):
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
+		base = {}
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
@@ -64,7 +72,6 @@ def metaDataExtractor(groupedUtterances, markers):
 			continue
 		for utterance in convo:
 			completedCategories = {}
-			hasSaid = {}
 			for j, marker in enumerate(markers):
 				# If there's a third person in the conversation, ignore the convo
 				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
@@ -73,10 +80,6 @@ def metaDataExtractor(groupedUtterances, markers):
 					continue
 				if(marker["category"] in completedCategories):
 					continue
-				#if(not (marker["marker"] in hasSaid or marker["marker"] in userMarkers[a + marker["category"]])):
-				#	continue
-				#hasSaid[marker["marker"]] = True
-				#log(marker["category"])
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
 				if marker["marker"] in utterance["msgMarkers"]:
 					userMarkers[utterance["msgUserId"] + marker["category"]] = userMarkers.get(utterance["msgUserId"] + marker["category"] ,0) + 1
@@ -84,13 +87,15 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1
 				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
+				if (marker["marker"] in utterance["replyMarkers"] and utterance["replyUserId"] is b) or (marker["marker"] in utterance["msgMarkers"] and utterance["msgUserId"] is a):
+					base[marker["category"]] = base.get(marker["category"], 0) + 1
 				completedCategories[marker["category"]] = True
 			#log(userMarkers)
 		convoUtterances = []
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
-		toAppend = {"utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
+		toAppend = {"base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
@@ -122,13 +127,10 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 	for i, result in enumerate(results):
 		if(i % 1000 is 0):
 			log("On result " + str(i) + " of " + str(len(results)))
-		#if(result["numUtterances"] < 4):
-		#	continue
-		
+
 		for j, category in enumerate(categories):
 			# If a doesn't say the marker["marker"], ignore
 			# (Otherwise we get a divide by 0 error)
-			#log(result["userMarkers"])
 			allB = 0
 			allBUtt = 0
 			
@@ -138,22 +140,21 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 				splitted = utterance.split(" ")
 				if(category in splitted):
 					allBUtt += 1
-				#if(result["b"] is utterance["msgUserId"]):
-				#	allB += 1
-				#	if(category in utterance["msgMarkers"]):
-				#		allBUtt += 1
 				
 			
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
 			powerProb = float(result["intersect"].get(category, 0))/float(result["userMarkers"][result["a"]+category])
-			
+			powerProb = powerProb + 0.00001
+			powerProb = math.log(powerProb)
+			baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
+			baseDenom += 0.00001
+			baseNum = float(result["base"].get(category, 0)) + 0.0000001
+			baseProb = math.log(baseNum/baseDenom)
 			standardBaseProb = float(allBUtt)/float(allB)
-			newBaseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
-			#if(powerProb == 0):
-			#	continue
+			newProb = powerProb - baseProb
 			standardProb = powerProb - standardBaseProb
-			newProb = powerProb - newBaseProb
+
 			sparsity = sparsities[(result["a"], result["b"])]
 			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, standardProb, newProb, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], float(result["userMarkers"][result["a"]+category])])
 			for k in range(0, markerFreqRange):
@@ -164,14 +165,6 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 					kStr = "0"+kStr
 
 				if("verifiedSpeaker" in result):
-					if(randint(0,1000) % 1000 is 0 and k > 9):
-						log(category)
-						log(result["conv"])
-						log(newProb)
-						#for utterance in result["utterances"]:
-						#	log(utterance)
-						#log(category)
-						#log(str(result["verifiedReplier"]) + " - " + str(result["verifiedSpeaker"]))
 					if(result["verifiedSpeaker"] and result["verifiedReplier"]):
 						averages["..truetrue"+"standard"+kStr].append(standardProb)
 						averages["..truetrue"+"new"+kStr].append(newProb)
@@ -188,11 +181,6 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 	for key in averages:
 		toAppend = {}
 		toAppend["freq"] = int(key[-2:])
-		if("standard" in key):
-			continue
-			toAppend["type"] = "standard"
-		else:
-			toAppend["type"] = "new"
 		toAppend["verif"] = key[:10]
 		value = averages[key]
 		if(len(value) == 0):
@@ -203,10 +191,9 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 		toLog.append(toAppend)
 	toLog = sorted(toLog, key=lambda k: k["freq"])
 	for logging in toLog:
-		log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"] + " " + logging["type"])
+		log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
 
 	toReturn = sorted(toReturn, key=lambda k: -k[6])
-	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
@@ -222,8 +209,8 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		sparsity_measure[(a, b)] = [0, 0]
-	 	for utterance in convo:
-	 		sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
+		for utterance in convo:
+			sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
 	return sparsity_measure
 
 # Prints the conversations with the max and least powers

@@ -25,16 +25,25 @@ library(stringr)
 library(magrittr)
 library(directlabels)
 library(langcog)
-source('~/Projects/langcog/R/multiboot.R')
+source('../helper/multiboot.R')
 ```
 
 ```{r load_data}
 # twitter.data <- fread('results.csv') 
 
-childes.data <- read_csv('results/CHILDES_clean_results.csv') %>%
+childes.wl.data <- read_csv('../results/CHILDES_clean_results.csv') %>%
   filter(!Corpus == "Corpus") %>%
   select(-ConvId) %>%
-  mutate(Alignment = as.numeric(Alignment))
+  mutate(Alignment = as.numeric(Alignment)) %>%
+  mutate(MarkerSet = "WL")
+
+childes.recursive.data <- read_csv('../results/CHILDES_recursive.csv') %>%
+  filter(!Corpus == "Corpus") %>%
+  select(-ConvId) %>% 
+  mutate(Alignment = as.numeric(Alignment)) %>%
+  mutate(MarkerSet = "Recursive")
+
+childes.data <- bind_rows(childes.wl.data,childes.recursive.data)
 
 
 # # User info for twitter data
@@ -49,29 +58,46 @@ childes.alignment <- childes.data %>%
   mutate(Child = substr(DocId,1,3),
          File = as.numeric(substr(DocId,4,5))) %>%
   rename(Speaker = SpeakerA, Replier = SpeakerB) %>%
-  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
-  group_by(Child,File,Speaker,Replier,Marker) %>%
+  filter(Speaker%in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  group_by(MarkerSet,Child,File,Speaker,Replier,Marker) %>%
   summarise(Alignment = mean(Alignment)) 
 
 
 childes.alignment <- multi_boot(childes.alignment, column="Alignment",
-                                summary_groups = c("Child", "File", "Speaker", "Replier"),
+                                summary_groups = c("MarkerSet","Child", "File", 
+                                                   "Speaker", "Replier"),
              statistics_functions = c("ci_lower","ci_upper")) %>%
   left_join(summarise(childes.alignment,Alignment = mean(Alignment)))
-  
 
   
 ```
 
-```{r childes_plot, fig.width = 7, fig.height= 5}
-ggplot(aes(x = File,y = Alignment, color = Speaker), data = childes.alignment) +
+WL Markers
+```{r childes_plot_wl, fig.width = 7, fig.height= 5}
+ggplot(aes(x = File,y = Alignment, color = Replier), 
+       data = filter(childes.alignment, MarkerSet == "WL")) +
   facet_wrap(~ Child) +
   geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
   geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
   scale_color_brewer(palette = "Set1") +
   theme(legend.position = "none") +
   scale_x_continuous(limits = c(0,95))+
-  geom_dl(aes(label=Speaker),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+```
+
+Recursive Markers
+```{r childes_plot_recursive, fig.width = 7, fig.height= 5}
+ggplot(aes(x = File,y = Alignment, color = Replier), 
+       data = filter(childes.alignment,MarkerSet == "Recursive")) +
+  facet_wrap(~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0,95))+
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
 ```
 
 ```{r}
