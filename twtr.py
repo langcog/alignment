@@ -10,17 +10,17 @@ testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 testOutputFile = "debug/results.csv"
 
-inputFile = "data/pairedtweets1000.txt"
+inputFile = "data/pairedtweets.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
 outputFile = "debug/results.csv"
 
-userFile = "data/pairedtweets1000.txt.userinfo"
+userFile = "data/pairedtweets.txt.userinfo"
 
 markerFrequency = 0
 
 def test(testFile, testMarkersFile, testOutputFile):
 	markers = shared_code.readMarkers(testMarkersFile)
-	result = readCSV(markers, testFile, False, [])
+	result = readCSV(markers, testFile, False, [], [])
 	utterances = result["utterances"]
 	utterancesById = result["utterancesById"]
 	groupedUtterances = shared_code.group(utterances)
@@ -31,14 +31,10 @@ def test(testFile, testMarkersFile, testOutputFile):
 	results.pop(0)
 	results = sorted(results, key=lambda k: -k[6])
 	leastPower = results[len(results)-1]
-	for result in results:
-		shared_code.log(result)
-
-	if (abs(leastPower[6] - -0.158) < 0.01):
-		#print("PASSED TEST")
+	shared_code.log(leastPower[6])
+	if (abs(leastPower[6] - -2) < 0.01):
 		return True
 	else:
-		#print("FAILED TEST")
 		return False
 
 def getCommonMarkers(utterances):
@@ -66,16 +62,17 @@ def findUser(users, uId):
 	return False
 
 # Reads in tweets
-def readCSV(markers, inputFile, users, ignoredUsers):
+def readCSV(markers, inputFile, users, positives, negatives):
 	reader=csv.reader(open(inputFile),dialect="excel-tab")
 	utterances = []
 	header=True
 	utterancesById = {}
 	continues = 0
+	averageSentiment = 0
 	for i, row in enumerate(reader):
 		if(i % 1000 is 0):
 			shared_code.log("On line " + str(i) + " of 230000")
-		#if(i > 6000):
+		#if(i > 150000):
 		#	shared_code.log("Continuing")
 		#	break
 		if header:
@@ -89,9 +86,6 @@ def readCSV(markers, inputFile, users, ignoredUsers):
 			continue
 		toAppend["convId"] = (row[1], row[4])
 		toAppend["msgUserId"] = row[1]
-		if(len(ignoredUsers) > 0 and findUser(ignoredUsers, toAppend["msgUserId"]) is not False):
-			continues += 1
-			continue
 		toAppend["msg"] = row[2].lower()
 		toAppend["replyUserId"] = row[4]
 		toAppend["reply"] = row[5].lower()
@@ -99,13 +93,31 @@ def readCSV(markers, inputFile, users, ignoredUsers):
 		toAppend["replyMarkers"] = []
 		toAppend["msgTokens"] = row[2].split(" ")
 		toAppend["replyTokens"] = row[5].split(" ")
+		msgSentiment = 0
+		for token in toAppend["msgTokens"]:
+			if(token in positives):
+				msgSentiment += 1
+			elif token in negatives:
+				msgSentiment -= 1
+		toAppend["msgSentiment"] = msgSentiment
+
+		replySentiment = 0
+		for token in toAppend["replyTokens"]:
+			if(token in positives):
+				replySentiment += 1
+			elif token in negatives:
+				replySentiment -= 1
+		toAppend["replySentiment"] = replySentiment
+
+		if(replySentiment < 0):
+			continue
+		averageSentiment += replySentiment
 		allTokens = []
 		allTokens.append(toAppend["msgTokens"])
 		allTokens.append(toAppend["replyTokens"])
 		allTokens = [item for sublist in allTokens for item in sublist]
 		duplicates = list(set(toAppend["msgTokens"]) & set(toAppend["replyTokens"]))
 		if(len(list(set(allTokens))) < 5):
-			#continues += 1
 			continue
 		if(users is not False):
 			msgUser = findUser(users, row[1])
@@ -131,7 +143,7 @@ def readCSV(markers, inputFile, users, ignoredUsers):
 		userUtterances = utterancesById.get(toAppend["replyUserId"], [])
 		userUtterances.append(toAppend["reply"])
 		utterancesById[toAppend["replyUserId"]] = userUtterances
-	shared_code.log("Continues: " + str(continues))
+	shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
 	return {"utterances": utterances, "utterancesById": utterancesById}
 
 def readUserInfo():
@@ -155,35 +167,28 @@ def readUserInfo():
 		users.append(toAppend)
 	return users
 
-def chunks(l, n):
-    n = max(1, n)
-    return [l[i:i + n] for i in range(0, len(l), n)]
+def read(inputFile):
+	reader=csv.reader(open(inputFile),dialect="excel-tab")
+	toReturn = []
+	for i, row in enumerate(reader):
+		toReturn.append(row[0])
+	return toReturn
 
 shared_code.initialize()
+positives = read("data/positive.txt")
+negatives = read("data/negative.txt")
+
 testResult = test(testFile, testMarkers, testOutputFile)
 if(not testResult):
 	shared_code.log("DIDN'T PASS TEST")
-	#exit()
-ignoredUsers = []
-magicNum = 10
+	exit()
+
 users = readUserInfo()
-for user in users:
-	if(int(user["numlistsin"]) < magicNum or int(user["numfollowers"]) < magicNum or int(user["numfriends"]) < magicNum):
-		shared_code.log(user)
-		ignoredUsers.append(user)
-shared_code.log("Read in user info")
 markers = shared_code.readMarkers(markersFile)
-shared_code.log("Read Markers")
-result = readCSV(markers, inputFile, users, [])
-#exit()
+result = readCSV(markers, inputFile, users, positives, negatives)
 utterances = result["utterances"]
 utterancesById = result["utterancesById"]
-#chunked = chunks(utterances, 20000)
-#for utterances in chunked:
-shared_code.log("Result length: " + str(len(result)))
-shared_code.log("Read utterances")
 markers = getCommonMarkers(utterances)
-shared_code.log("Got common Markers")
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
 sparsities = shared_code.calculateSparsity(groupedUtterances)
@@ -193,5 +198,4 @@ shared_code.log("Setted up Results")
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById)
 shared_code.writeFile(results, outputFile, "wb")
 #shared_code.testBoundaries(results, groupedUtterances)
-shared_code.log(len(ignoredUsers))
 shared_code.initialize()
