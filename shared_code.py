@@ -110,7 +110,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, utterances, markerFrequency, utterancesById):
+def calculateAlignment(results, markers, sparsities, utterances, markerFrequency, utterancesById, age, gender):
 	toReturn = []
 	markerFreqRange = 15
 	categories = allMarkers(markers)
@@ -156,7 +156,7 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 			standardProb = powerProb - standardBaseProb
 
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, standardProb, newProb, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], float(result["userMarkers"][result["a"]+category])])
+			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, standardProb, newProb, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], float(result["userMarkers"][result["a"]+category]), age, gender])
 			for k in range(0, markerFreqRange):
 				if float(result["userMarkers"][result["a"]+category]) < k:
 					continue
@@ -166,32 +166,29 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 
 				if("verifiedSpeaker" in result):
 					if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-						#averages["..truetrue"+"standard"+kStr].append(standardProb)
 						averages["..truetrue"+"new"+kStr].append(newProb)
 					elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-						#averages[".truefalse"+"standard"+kStr].append(standardProb)
 						averages[".truefalse"+"new"+kStr].append(newProb)
 					elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-						#averages[".falsetrue"+"standard"+kStr].append(standardProb)
 						averages[".falsetrue"+"new"+kStr].append(newProb)
 					else:
-						#averages["falsefalse"+"standard"+kStr].append(standardProb)
 						averages["falsefalse"+"new"+kStr].append(newProb)
-	toLog = []
-	for key in averages:
-		toAppend = {}
-		toAppend["freq"] = int(key[-2:])
-		toAppend["verif"] = key[:10]
-		value = averages[key]
-		if(len(value) == 0):
-			continue
-		average =  sum(value) / float(len(value))
-		toAppend["average"] = average
-		toAppend["alignments"] = str(len(value))
-		toLog.append(toAppend)
-	toLog = sorted(toLog, key=lambda k: k["freq"])
-	for logging in toLog:
-		log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
+	if("verifiedSpeaker" in results[0])
+		toLog = []
+		for key in averages:
+			toAppend = {}
+			toAppend["freq"] = int(key[-2:])
+			toAppend["verif"] = key[:10]
+			value = averages[key]
+			if(len(value) == 0):
+				continue
+			average =  sum(value) / float(len(value))
+			toAppend["average"] = average
+			toAppend["alignments"] = str(len(value))
+			toLog.append(toAppend)
+		toLog = sorted(toLog, key=lambda k: k["freq"])
+		for logging in toLog:
+			log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
 
 	toReturn = sorted(toReturn, key=lambda k: -k[6])
 	return toReturn
