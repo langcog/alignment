@@ -19,24 +19,20 @@ def log(toPrint):
 	print(toPrint)
 	print("---------")
 
-#def writeHeader(outputFile, writeType):
-#	header = []
-#	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
-#	with open(outputFile, writeType) as f:
-#		writer = csv.writer(f)
-#		writer.writerows(header)
-#	f.close()
+def writeHeader(outputFile, writeType):
+	header = []
+	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
+	with open(outputFile, writeType) as f:
+		writer = csv.writer(f)
+		writer.writerows(header)
+	f.close()
+
 
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
-	keys = toWrite[0].keys()
 	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
-		log(list(keys))
-		writer.writerow(list(keys))
-
-		for row in toWrite:
-			writer.writerow(list(row.values()))
+		writer.writerows(toWrite)
 	f.close()
 
 # Reads a list of markers from the markersFile
@@ -99,7 +95,7 @@ def metaDataExtractor(groupedUtterances, markers):
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
-		toAppend = {"base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
+		toAppend = {"base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"], "replySentiment": utterance["replySentiment"], "msgSentiment": utterance["msgSentiment"]}
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
@@ -166,6 +162,8 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 			toAppend["sparsityB"] = sparsity[1]
 			toAppend["age"] = age
 			toAppend["gender"] = gender
+			toAppend["msgSentiment"] = result["msgSentiment"]
+			toAppend["replySentiment"] = result["replySentiment"]
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
