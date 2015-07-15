@@ -166,16 +166,16 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 
 				if("verifiedSpeaker" in result):
 					if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-						averages["..truetrue"+"standard"+kStr].append(standardProb)
+						#averages["..truetrue"+"standard"+kStr].append(standardProb)
 						averages["..truetrue"+"new"+kStr].append(newProb)
 					elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-						averages[".truefalse"+"standard"+kStr].append(standardProb)
+						#averages[".truefalse"+"standard"+kStr].append(standardProb)
 						averages[".truefalse"+"new"+kStr].append(newProb)
 					elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-						averages[".falsetrue"+"standard"+kStr].append(standardProb)
+						#averages[".falsetrue"+"standard"+kStr].append(standardProb)
 						averages[".falsetrue"+"new"+kStr].append(newProb)
 					else:
-						averages["falsefalse"+"standard"+kStr].append(standardProb)
+						#averages["falsefalse"+"standard"+kStr].append(standardProb)
 						averages["falsefalse"+"new"+kStr].append(newProb)
 	toLog = []
 	for key in averages:
