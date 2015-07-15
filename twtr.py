@@ -8,7 +8,7 @@ import datetime
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
-testOutputFile = "debug/results.csv"
+testOutputFile = "debug/test_results.csv"
 
 inputFile = "data/pairedtweets.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
@@ -26,9 +26,16 @@ def test(testFile, testMarkersFile, testOutputFile):
 	groupedUtterances = shared_code.group(utterances)
 	sparsities = shared_code.calculateSparsity(groupedUtterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
+	
 	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
-	shared_code.writeFile(results, testOutputFile, "w")
-	shared_code.log(results)
+	
+	header = [list(results[0].keys())]
+	shared_code.writeFile(header, testOutputFile, "w")
+	toWrite = []
+	for row in results:
+		toWrite.append(list(row.values()))
+	shared_code.writeFile(toWrite, testOutputFile, "a")
+
 	results.pop(0)
 	results = sorted(results, key=lambda k: -k["alignment"])
 	leastPower = results[len(results)-1]
@@ -114,8 +121,6 @@ def readCSV(markers, inputFile, users, positives, negatives):
 				replySentiment -= 1
 		toAppend["replySentiment"] = replySentiment
 
-		if(replySentiment < 0):
-			continue
 		averageSentiment += replySentiment
 		allTokens = []
 		allTokens.append(toAppend["msgTokens"])
@@ -250,6 +255,12 @@ setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
 logInfo(results, markers)
-shared_code.writeFile(results, outputFile, "w")
-#shared_code.testBoundaries(results, groupedUtterances)
+
+header = [list(results[0].keys())]
+shared_code.writeFile(header, outputFile, "w")
+toWrite = []
+for row in results:
+	toWrite.append(list(row.values()))
+shared_code.writeFile(toWrite, outputFile, "a")
+
 shared_code.initialize()
