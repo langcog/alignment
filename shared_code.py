@@ -19,19 +19,24 @@ def log(toPrint):
 	print(toPrint)
 	print("---------")
 
-def writeHeader(outputFile, writeType):
-	header = []
-	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
-	with open(outputFile, writeType) as f:
-		writer = csv.writer(f)
-		writer.writerows(header)
-	f.close()
+#def writeHeader(outputFile, writeType):
+#	header = []
+#	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
+#	with open(outputFile, writeType) as f:
+#		writer = csv.writer(f)
+#		writer.writerows(header)
+#	f.close()
 
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
+	keys = toWrite[0].keys()
 	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
-		writer.writerows(toWrite)
+		log(list(keys))
+		writer.writerow(list(keys))
+
+		for row in toWrite:
+			writer.writerow(list(row.values()))
 	f.close()
 
 # Reads a list of markers from the markersFile
@@ -90,7 +95,6 @@ def metaDataExtractor(groupedUtterances, markers):
 				if (marker["marker"] in utterance["replyMarkers"] and utterance["replyUserId"] is b) or (marker["marker"] in utterance["msgMarkers"] and utterance["msgUserId"] is a):
 					base[marker["category"]] = base.get(marker["category"], 0) + 1
 				completedCategories[marker["category"]] = True
-			#log(userMarkers)
 		convoUtterances = []
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
@@ -114,16 +118,6 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 	toReturn = []
 	markerFreqRange = 15
 	categories = allMarkers(markers)
-	averages = {}
-	types = ["..truetrue", ".truefalse", ".falsetrue", "falsefalse"]
-	baseProbTypes = ["standard", "new"]
-	for verifiedType in types:
-		for baseProbType in baseProbTypes:
-			for i in range(0, markerFreqRange):
-				iStr = str(i)
-				if i < 10:
-					iStr = "0"+iStr
-				averages[verifiedType+baseProbType+iStr] = []
 	for i, result in enumerate(results):
 		if(i % 1000 is 0):
 			log("On result " + str(i) + " of " + str(len(results)))
@@ -145,52 +139,38 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
 			powerProb = float(result["intersect"].get(category, 0))/float(result["userMarkers"][result["a"]+category])
-			powerProb = powerProb + 0.00001
+			powerProb = powerProb + 0.00000001
 			powerProb = math.log(powerProb)
 			baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
-			baseDenom += 0.00001
+			baseDenom += 0.00000001
 			baseNum = float(result["base"].get(category, 0)) + 0.0000001
 			baseProb = math.log(baseNum/baseDenom)
-			standardBaseProb = float(allBUtt)/float(allB)
-			newProb = powerProb - baseProb
-			standardProb = powerProb - standardBaseProb
+			alignment = powerProb - baseProb
 
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, standardProb, newProb, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], float(result["userMarkers"][result["a"]+category]), age, gender])
-			for k in range(0, markerFreqRange):
-				if float(result["userMarkers"][result["a"]+category]) < k:
-					continue
-				kStr = str(k)
-				if k < 10:
-					kStr = "0"+kStr
 
-				if("verifiedSpeaker" in result):
-					if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-						averages["..truetrue"+"new"+kStr].append(newProb)
-					elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-						averages[".truefalse"+"new"+kStr].append(newProb)
-					elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-						averages[".falsetrue"+"new"+kStr].append(newProb)
-					else:
-						averages["falsefalse"+"new"+kStr].append(newProb)
-	if("verifiedSpeaker" in results[0])
-		toLog = []
-		for key in averages:
 			toAppend = {}
-			toAppend["freq"] = int(key[-2:])
-			toAppend["verif"] = key[:10]
-			value = averages[key]
-			if(len(value) == 0):
-				continue
-			average =  sum(value) / float(len(value))
-			toAppend["average"] = average
-			toAppend["alignments"] = str(len(value))
-			toLog.append(toAppend)
-		toLog = sorted(toLog, key=lambda k: k["freq"])
-		for logging in toLog:
-			log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
-
-	toReturn = sorted(toReturn, key=lambda k: -k[6])
+			toAppend["corpus"] = result["corpus"]
+			toAppend["docId"] = result["docId"]
+			toAppend["conv"] = result["conv"]
+			toAppend["speakerId"] = result["a"]
+			toAppend["replierId"] = result["b"]
+			toAppend["category"] = "category"
+			toAppend["alignment"] = alignment
+			toAppend["powerNum"] = float(result["intersect"].get(category, 0))
+			toAppend["powerDenom"] = float(result["userMarkers"][result["a"]+category])
+			toAppend["baseNum"] = baseNum
+			toAppend["baseDenom"] = baseDenom
+			toAppend["numUtterances"] = result["numUtterances"]
+			toAppend["sparsityA"] = sparsity[0]
+			toAppend["sparsityB"] = sparsity[1]
+			toAppend["age"] = age
+			toAppend["gender"] = gender
+			if("verifiedSpeaker" in result):
+				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
+				toAppend["verifiedReplier"] = result["verifiedReplier"]
+			toReturn.append(toAppend)
+	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
