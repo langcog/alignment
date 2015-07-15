@@ -27,7 +27,7 @@ def test(testFile, testMarkersFile, testOutputFile):
 	sparsities = shared_code.calculateSparsity(groupedUtterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById)
-	shared_code.writeFile(results, testOutputFile, "wb")
+	shared_code.writeFile(results, testOutputFile, "w")
 	results.pop(0)
 	results = sorted(results, key=lambda k: -k[6])
 	leastPower = results[len(results)-1]
@@ -50,9 +50,12 @@ def getCommonMarkers(utterances):
 	toReturn = []
 	shared_code.log(len(freqs))
 	subset = freqs[0:50]
-	print(subset)
+	
 	for subsetTuple in subset:
+		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
+			continue
 		toReturn.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+	shared_code.log(toReturn)
 	return toReturn
 
 def findUser(users, uId):
@@ -63,7 +66,7 @@ def findUser(users, uId):
 
 # Reads in tweets
 def readCSV(markers, inputFile, users, positives, negatives):
-	reader=csv.reader(open(inputFile),dialect="excel-tab")
+	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
 	utterances = []
 	header=True
 	utterancesById = {}
@@ -185,10 +188,12 @@ if(not testResult):
 
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
+
 result = readCSV(markers, inputFile, users, positives, negatives)
 utterances = result["utterances"]
 utterancesById = result["utterancesById"]
 markers = getCommonMarkers(utterances)
+shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
 sparsities = shared_code.calculateSparsity(groupedUtterances)
@@ -196,6 +201,6 @@ shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById)
-shared_code.writeFile(results, outputFile, "wb")
+shared_code.writeFile(results, outputFile, "w")
 #shared_code.testBoundaries(results, groupedUtterances)
 shared_code.initialize()
