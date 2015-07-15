@@ -22,3 +22,13 @@ Instead of calculating probabilities using tokens, we need to calculate probabil
     powerProb = (# of utterances where A and B both say marker)/(Number of utterances where A says the marker)
     baseProb = (# of utterances where B says the marker)/(# of utterances that B says to A)
     prob = powerProb - baseProb
+
+7/13/2015
+
+Figured out that the formula we were working off of was incorrect.
+
+Our new formula is:
+
+powerProb = log((# of utterances where A and B both say marker)/(Number of utterances where A says the marker))
+baseProb = log((# of utterances where B says the marker and A doesn't)/(# of utterances that A doesn't say the marker))
+prob = powerProb - baseProb

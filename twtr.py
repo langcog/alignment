@@ -26,13 +26,15 @@ def test(testFile, testMarkersFile, testOutputFile):
 	groupedUtterances = shared_code.group(utterances)
 	sparsities = shared_code.calculateSparsity(groupedUtterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
-	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById)
+	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
 	shared_code.writeFile(results, testOutputFile, "w")
+	shared_code.log(results)
 	results.pop(0)
-	results = sorted(results, key=lambda k: -k[6])
+	results = sorted(results, key=lambda k: -k["alignment"])
 	leastPower = results[len(results)-1]
-	shared_code.log(leastPower[6])
-	if (abs(leastPower[6] - -2) < 0.01):
+	shared_code.log(leastPower)
+	shared_code.log(leastPower["alignment"])
+	if (abs(leastPower["alignment"] - -1.701344340796773) < 0.01):
 		return True
 	else:
 		return False
@@ -177,6 +179,52 @@ def read(inputFile):
 		toReturn.append(row[0])
 	return toReturn
 
+def logInfo(results, markers):
+	averages = {}
+	markerFreqRange = 15
+	categories = shared_code.allMarkers(markers)
+	types = ["..truetrue", ".truefalse", ".falsetrue", "falsefalse"]
+	for verifiedType in types:
+		for i in range(0, markerFreqRange):
+			iStr = str(i)
+			if i < 10:
+				iStr = "0"+iStr
+			averages[verifiedType+iStr] = []
+	for result in results:
+		for category in categories:
+			for k in range(0, markerFreqRange):
+					if result["powerDenom"] < k:
+						continue
+					kStr = str(k)
+					if k < 10:
+						kStr = "0"+kStr
+
+					if("verifiedSpeaker" in result):
+						if(result["verifiedSpeaker"] and result["verifiedReplier"]):
+							averages["..truetrue"+kStr].append(result["alignment"])
+						elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
+							averages[".truefalse"+kStr].append(result["alignment"])
+						elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
+							averages[".falsetrue"+kStr].append(result["alignment"])
+						else:
+							averages["falsefalse"+kStr].append(result["alignment"])
+	toLog = []
+	for key in averages:
+		toAppend = {}
+		toAppend["freq"] = int(key[-2:])
+		toAppend["verif"] = key[:10]
+		value = averages[key]
+		if(len(value) == 0):
+			continue
+		average =  sum(value) / float(len(value))
+		toAppend["average"] = average
+		toAppend["alignments"] = str(len(value))
+		toLog.append(toAppend)
+	toLog = sorted(toLog, key=lambda k: k["freq"])
+	for logging in toLog:
+		shared_code.log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
+
+
 shared_code.initialize()
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
@@ -200,7 +248,8 @@ sparsities = shared_code.calculateSparsity(groupedUtterances)
 shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
-results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById)
+results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
+logInfo(results, markers)
 shared_code.writeFile(results, outputFile, "w")
 #shared_code.testBoundaries(results, groupedUtterances)
 shared_code.initialize()
