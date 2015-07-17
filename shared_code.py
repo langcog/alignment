@@ -2,31 +2,35 @@ import csv
 import traceback
 import operator
 import itertools
+import datetime
+from random import randint
+import math
 
 # Just outputs lines to help when debugging
 def initialize():
 	print("--------------")
-	print("--------------")
+	print(datetime.datetime.now().time())
 	print("--------------")
 
 # Prints the name of the function that called log and prints the line number
 # Useful for debugging
 def log(toPrint):
-	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]))
+	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]) + " at " + str(datetime.datetime.now().time()))
 	print(toPrint)
 	print("---------")
 
 def writeHeader(outputFile, writeType):
 	header = []
 	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
-	with open(outputFile, writeType, newline='') as f:
+	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
+
 # Writes stuff to the output file
 def writeFile(toWrite, outputFile, writeType):
-	with open(outputFile, writeType, newline='') as f:
+	with open(outputFile, writeType) as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
 	f.close()
@@ -35,7 +39,9 @@ def writeFile(toWrite, outputFile, writeType):
 def readMarkers(markersFile):
 	reader = csv.reader(open(markersFile))
 	markers = []
-	for row in reader:
+	for i, row in enumerate(reader):
+		if(i > 100):
+			break
 		toAppend = {}
 		toAppend["marker"] = row[0]
 		if(len(row) > 1):
@@ -59,6 +65,7 @@ def metaDataExtractor(groupedUtterances, markers):
 	for i, convo in enumerate(groupedUtterances):
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
+		base = {}
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
@@ -74,7 +81,6 @@ def metaDataExtractor(groupedUtterances, markers):
 					continue
 				if(marker["category"] in completedCategories):
 					continue
-				#log(marker["category"])
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
 				if marker["marker"] in utterance["msgMarkers"]:
 					userMarkers[utterance["msgUserId"] + marker["category"]] = userMarkers.get(utterance["msgUserId"] + marker["category"] ,0) + 1
@@ -82,9 +88,18 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1
 				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
+				if (marker["marker"] in utterance["replyMarkers"] and utterance["replyUserId"] is b) or (marker["marker"] in utterance["msgMarkers"] and utterance["msgUserId"] is a):
+					base[marker["category"]] = base.get(marker["category"], 0) + 1
 				completedCategories[marker["category"]] = True
-			#log(userMarkers)
-		results.append({"numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]})
+		convoUtterances = []
+		for utterance in convo:
+			convoUtterances.append(utterance["msg"])
+			convoUtterances.append(utterance["reply"])
+		toAppend = {"base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"], "replySentiment": utterance["replySentiment"], "msgSentiment": utterance["msgSentiment"]}
+		if("verifiedSpeaker" in convo[0]):
+			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
+			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
+		results.append(toAppend)
 	return results
 
 def allMarkers(markers):
@@ -93,24 +108,67 @@ def allMarkers(markers):
 		categories.append(marker["category"])
 
 	return list(set(categories))
+
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, age, gender):
+def calculateAlignment(results, markers, sparsities, utterances, markerFrequency, utterancesById, age, gender):
 	toReturn = []
+	markerFreqRange = 15
 	categories = allMarkers(markers)
-	for result in results:
-		for category in categories:
+	for i, result in enumerate(results):
+		if(i % 1000 is 0):
+			log("On result " + str(i) + " of " + str(len(results)))
+
+		for j, category in enumerate(categories):
 			# If a doesn't say the marker["marker"], ignore
 			# (Otherwise we get a divide by 0 error)
-			#log(result["userMarkers"])
+			allB = 0
+			allBUtt = 0
+			
+			userUtterances = utterancesById[result["b"]]
+			allB = len(userUtterances)
+			for utterance in userUtterances:
+				splitted = utterance.split(" ")
+				if(category in splitted):
+					allBUtt += 1
+				
+			
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
 			powerProb = float(result["intersect"].get(category, 0))/float(result["userMarkers"][result["a"]+category])
-			baseProb = float(result["userMarkers"].get(result["b"]+category, 0))/float(result["numUtterances"])
-			prob = powerProb - baseProb
+			powerProb = powerProb + 0.00000001
+			powerProb = math.log(powerProb)
+			baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
+			baseDenom += 0.00000001
+			baseNum = float(result["base"].get(category, 0)) + 0.0000001
+			baseProb = math.log(baseNum/baseDenom)
+			alignment = powerProb - baseProb
+
 			sparsity = sparsities[(result["a"], result["b"])]
-			toReturn.append([result["corpus"], result["docId"], result["conv"], result["a"], result["b"], category, prob, float(result["intersect"].get(category, 0)), float(result["userMarkers"][result["a"]+category]), float(result["userMarkers"].get(result["b"]+category, 0)), float(result["numUtterances"]), sparsity[0], sparsity[1], age, gender])
-	toReturn = sorted(toReturn, key=lambda k: -k[6])
-	#toReturn.insert(0, ["speakerID_replierID", "Marker", "Alignment"])
+
+			toAppend = {}
+			toAppend["corpus"] = result["corpus"]
+			toAppend["docId"] = result["docId"]
+			toAppend["conv"] = result["conv"]
+			toAppend["speakerId"] = result["a"]
+			toAppend["replierId"] = result["b"]
+			toAppend["category"] = "category"
+			toAppend["alignment"] = alignment
+			toAppend["powerNum"] = float(result["intersect"].get(category, 0))
+			toAppend["powerDenom"] = float(result["userMarkers"][result["a"]+category])
+			toAppend["baseNum"] = baseNum
+			toAppend["baseDenom"] = baseDenom
+			toAppend["numUtterances"] = result["numUtterances"]
+			toAppend["sparsityA"] = sparsity[0]
+			toAppend["sparsityB"] = sparsity[1]
+			toAppend["age"] = age
+			toAppend["gender"] = gender
+			toAppend["msgSentiment"] = result["msgSentiment"]
+			toAppend["replySentiment"] = result["replySentiment"]
+			if("verifiedSpeaker" in result):
+				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
+				toAppend["verifiedReplier"] = result["verifiedReplier"]
+			toReturn.append(toAppend)
+	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
