@@ -10,11 +10,11 @@ testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 testOutputFile = "debug/test_results.csv"
 
-inputFile = "data/pairedtweets.txt"
+inputFile = "data/pairedtweets1000.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
 outputFile = "debug/results.csv"
 
-userFile = "data/pairedtweets.txt.userinfo"
+userFile = "data/pairedtweets1000.txt.userinfo"
 
 markerFrequency = 0
 
@@ -73,6 +73,91 @@ def findUser(users, uId):
 			return user
 	return False
 
+def transformCSV(markers, users, positives, negatives, row):
+	#utterancesById = {}
+	#averageSentiment = 0
+	
+	#for i, row in enumerate(rows):
+	#if(i % 1000 is 0):
+	#	shared_code.log("On " + str(i) + " of " + str(len(rows))) 
+	toAppend = {}
+	toAppend["docId"] = "TWITTER"
+	toAppend["corpus"] = "TWITTER"
+	
+	if(len(row) < 6):
+		return
+	if(int(row[6])%1000 == 0):
+
+		shared_code.log("On " + str(row[6]))
+	toAppend["convId"] = (row[1], row[4])
+	toAppend["msgUserId"] = row[1]
+	toAppend["msg"] = row[2].lower()
+	toAppend["replyUserId"] = row[4]
+	toAppend["reply"] = row[5].lower()
+	toAppend["msgMarkers"] = []
+	toAppend["replyMarkers"] = []
+	toAppend["msgTokens"] = row[2].split(" ")
+	toAppend["replyTokens"] = row[5].split(" ")
+	#msgSentiment = 0
+	#for token in toAppend["msgTokens"]:
+	#	if(token in positives):
+	#		msgSentiment += 1
+	#	elif token in negatives:
+	#		msgSentiment -= 1
+	#toAppend["msgSentiment"] = msgSentiment
+
+	#replySentiment = 0
+	#for token in toAppend["replyTokens"]:
+	#	if(token in positives):
+	#		replySentiment += 1
+	#	elif token in negatives:
+	#		replySentiment -= 1
+	#toAppend["replySentiment"] = replySentiment
+	#if (replySentiment < 0):
+	#	return
+	#averageSentiment += replySentiment
+	allTokens = []
+	allTokens.append(toAppend["msgTokens"])
+	allTokens.append(toAppend["replyTokens"])
+	allTokens = [item for sublist in allTokens for item in sublist]
+	duplicates = list(set(toAppend["msgTokens"]) & set(toAppend["replyTokens"]))
+	if(len(list(set(allTokens))) < 5):
+		return
+	if(users is not False):
+		msgUser = findUser(users, row[1])
+		if(msgUser != False):
+			toAppend["verifiedSpeaker"] = msgUser["verified"]
+		else:
+			toAppend["verifiedSpeaker"] = False
+		replyUser = findUser(users, row[4])
+		if(replyUser != False):
+			toAppend["verifiedReplier"] = replyUser["verified"]
+		else:
+			toAppend["verifiedReplier"] = False
+	messages = toAppend["msg"].split(" ")
+	replies = toAppend["reply"].split(" ")
+	for marker in markers:
+		if marker["marker"] in messages:
+			toAppend["msgMarkers"].append(marker["marker"])
+		if marker["marker"] in replies:
+			toAppend["replyMarkers"].append(marker["marker"])
+	toAppend["msgTokens"] = messages
+	toAppend["replyTokens"] = replies
+	return toAppend
+		#userUtterances = utterancesById.get(toAppend["replyUserId"], [])
+		#userUtterances.append(toAppend["reply"])
+		#utterancesById[toAppend["replyUserId"]] = userUtterances
+	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
+	#return utterances #{"utterances": utterances, "utterancesById": utterancesById}
+
+def getUtterancesById(utterances):
+	utterancesById = {}
+	for utterance in utterances:
+		userUtterances = utterancesById.get(utterance["replyUserId"], [])
+		userUtterances.append(utterance["reply"])
+		utterancesById[utterance["replyUserId"]] = userUtterances
+	return utterancesById
+
 # Reads in tweets
 def readCSV(markers, inputFile, users, positives, negatives):
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
@@ -81,80 +166,21 @@ def readCSV(markers, inputFile, users, positives, negatives):
 	utterancesById = {}
 	continues = 0
 	averageSentiment = 0
+	toReturn = []
 	for i, row in enumerate(reader):
 		if(i % 1000 is 0):
 			shared_code.log("On line " + str(i) + " of 230000")
-		#if(i > 150000):
+		row.append(i)
+		toReturn.append(row)
+		
+		#if(i > 10000):
 		#	shared_code.log("Continuing")
 		#	break
 		if header:
 			header=False
 			continue
-		toAppend = {}
-		toAppend["docId"] = "TWITTER"
-		toAppend["corpus"] = "TWITTER"
+	return toReturn
 		
-		if(len(row) < 6):
-			continue
-		toAppend["convId"] = (row[1], row[4])
-		toAppend["msgUserId"] = row[1]
-		toAppend["msg"] = row[2].lower()
-		toAppend["replyUserId"] = row[4]
-		toAppend["reply"] = row[5].lower()
-		toAppend["msgMarkers"] = []
-		toAppend["replyMarkers"] = []
-		toAppend["msgTokens"] = row[2].split(" ")
-		toAppend["replyTokens"] = row[5].split(" ")
-		msgSentiment = 0
-		for token in toAppend["msgTokens"]:
-			if(token in positives):
-				msgSentiment += 1
-			elif token in negatives:
-				msgSentiment -= 1
-		toAppend["msgSentiment"] = msgSentiment
-
-		replySentiment = 0
-		for token in toAppend["replyTokens"]:
-			if(token in positives):
-				replySentiment += 1
-			elif token in negatives:
-				replySentiment -= 1
-		toAppend["replySentiment"] = replySentiment
-
-		averageSentiment += replySentiment
-		allTokens = []
-		allTokens.append(toAppend["msgTokens"])
-		allTokens.append(toAppend["replyTokens"])
-		allTokens = [item for sublist in allTokens for item in sublist]
-		duplicates = list(set(toAppend["msgTokens"]) & set(toAppend["replyTokens"]))
-		if(len(list(set(allTokens))) < 5):
-			continue
-		if(users is not False):
-			msgUser = findUser(users, row[1])
-			if(msgUser != False):
-				toAppend["verifiedSpeaker"] = msgUser["verified"]
-			else:
-				toAppend["verifiedSpeaker"] = False
-			replyUser = findUser(users, row[4])
-			if(replyUser != False):
-				toAppend["verifiedReplier"] = replyUser["verified"]
-			else:
-				toAppend["verifiedReplier"] = False
-		messages = toAppend["msg"].split(" ")
-		replies = toAppend["reply"].split(" ")
-		for marker in markers:
-			if marker["marker"] in messages:
-				toAppend["msgMarkers"].append(marker["marker"])
-			if marker["marker"] in replies:
-				toAppend["replyMarkers"].append(marker["marker"])
-		toAppend["msgTokens"] = messages
-		toAppend["replyTokens"] = replies
-		utterances.append(toAppend)
-		userUtterances = utterancesById.get(toAppend["replyUserId"], [])
-		userUtterances.append(toAppend["reply"])
-		utterancesById[toAppend["replyUserId"]] = userUtterances
-	shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
-	return {"utterances": utterances, "utterancesById": utterancesById}
 
 def readUserInfo():
 	reader=csv.reader(open(userFile),dialect="excel-tab")
@@ -231,20 +257,29 @@ def logInfo(results, markers):
 
 
 shared_code.initialize()
+#shared_code.parallelizer(shared_code.printer)
+#exit()
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
 
-testResult = test(testFile, testMarkers, testOutputFile)
-if(not testResult):
-	shared_code.log("DIDN'T PASS TEST")
-	exit()
+#testResult = test(testFile, testMarkers, testOutputFile)
+#if(not testResult):
+#	shared_code.log("DIDN'T PASS TEST")
+#	#exit()
 
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 
-result = readCSV(markers, inputFile, users, positives, negatives)
-utterances = result["utterances"]
-utterancesById = result["utterancesById"]
+rows = readCSV(markers, inputFile, users, positives, negatives)
+constants = (markers, users, positives, negatives)
+variables = rows
+toParallelize = []
+for row in rows:
+	toParallelize.append((markers, users, positives, negatives, row))
+utterances = shared_code.parallelizer(transformCSV, toParallelize)
+utterances = [x for x in utterances if x != None]
+
+utterancesById = getUtterancesById(utterances)
 markers = getCommonMarkers(utterances)
 shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
@@ -254,10 +289,11 @@ shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
-logInfo(results, markers)
+
 
 header = [list(results[0].keys())]
 shared_code.writeFile(header, outputFile, "w")
+#logInfo(results, markers)
 toWrite = []
 for row in results:
 	toWrite.append(list(row.values()))
