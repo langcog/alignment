@@ -150,8 +150,8 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 			userUtterances = utterancesById[result["b"]]
 			allB = len(userUtterances)
 			for utterance in userUtterances:
-				splitted = utterance.split(" ")
-				if(category in splitted):
+				#splitted = utterance.split(" ")
+				if(category in utterance):
 					allBUtt += 1
 				
 			
