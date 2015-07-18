@@ -5,16 +5,18 @@ import re
 import traceback
 import shared_code
 import datetime
+from ast import literal_eval
+from pprint import pprint
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 testOutputFile = "debug/test_results.csv"
 
-inputFile = "data/pairedtweets1000.txt"
+inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
 outputFile = "debug/results.csv"
 
-userFile = "data/pairedtweets1000.txt.userinfo"
+userFile = "data/pairedtweets.txt.userinfo"
 
 markerFrequency = 0
 
@@ -72,6 +74,21 @@ def findUser(users, uId):
 		if(user["uid"] == uId):
 			return user
 	return False
+
+def findUser2(udict,uid):
+	return udict.get(uid, False)
+
+def makeUserDict(users):
+	udict = {}
+	for user in users:
+		udict[user["uid"]] = user
+	return udict
+
+def makeMarkerDict(markers):
+	mdict = {}
+	for marker in markers:
+		mdict[marker["marker"]] = marker
+	return mdict
 
 def transformCSV(markers, users, positives, negatives, row):
 	#utterancesById = {}
@@ -150,6 +167,124 @@ def transformCSV(markers, users, positives, negatives, row):
 	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
 	#return utterances #{"utterances": utterances, "utterancesById": utterancesById}
 
+def analyzeSentiment(tokens,positives,negatives):
+	for token in tokens:
+		if(token in positives):
+			msgSentiment += 1
+		elif token in negatives:
+			msgSentiment -= 1
+	return msgSentiment 
+
+#testing whether a reply has enough words not in common with the original message to merit being treated as its own message
+def testReplySimilarity(toAppend,cutoff=5):
+	allTokens = []
+	allTokens.append(toAppend["msgTokens"])
+	allTokens.append(toAppend["replyTokens"])
+	allTokens = [item for sublist in allTokens for item in sublist]
+	duplicates = list(set(toAppend["msgTokens"]) & set(toAppend["replyTokens"]))
+	if(len(list(set(allTokens))) < cutoff):
+		return True					#if too few unique words, return True (i.e., too similar)
+	return False					#if enough unique words, return False (i.e., not too similar)
+
+#Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
+def processTweetCSVRow(row):
+	toAppend = {}
+	toAppend["docId"] = "TWITTER"
+	toAppend["corpus"] = "TWITTER"
+	toAppend["convId"] = (row[1], row[4])
+	toAppend["msgUserId"] = row[1]
+	toAppend["msg"] = row[2].lower()
+	toAppend["replyUserId"] = row[4]
+	toAppend["reply"] = row[5].lower()
+	toAppend["msgMarkers"] = []
+	toAppend["replyMarkers"] = []
+	toAppend["msgTokens"] = toAppend["msg"].split(" ")
+	toAppend["replyTokens"] = toAppend["reply"].split(" ")
+	return toAppend
+
+#Code to take in the user dictionary & a user ID and return if that user is verified
+#	Note: users with missing data are considered unverified
+def verifySpeaker(udict,uid):
+	msgUser = findUser2(udict,uid)
+	if(msgUser != False):
+		return msgUser["verified"]
+	else:
+		return False
+
+def countMarkers(toAppend,markers):
+	toAppend["msgMarkers"] = []
+	toAppend["replyMarkers"] = []
+	for marker in markers:
+		if marker["marker"] in toAppend["msgTokens"]:
+			toAppend["msgMarkers"].append(marker["marker"])
+		if marker["marker"] in toAppend["replyTokens"]:
+			toAppend["replyMarkers"].append(marker["marker"])
+	return toAppend
+
+def countMarkers2(tokens,markers):
+	return [val for val in tokens if val in markers.keys()]
+
+def countMarkers3(tokens,markers):
+	return list(set(tokens) & set(markers.keys()))
+
+def compareCountMarkers(t,m,md):
+	t2a = countMarkers2(t["msgTokens"],md)
+	t3a = countMarkers3(t["msgTokens"],md)
+	t2b = countMarkers2(t["replyTokens"],md)
+	t3b = countMarkers3(t["replyTokens"],md)
+	t = countMarkers(t,m)
+	
+	if set(t["msgMarkers"]) != set(t2a):
+		shared_code.log("1 != 2")
+	if set(t["replyMarkers"]) != set(t3b):
+		shared_code.log("1 != 3")
+	
+	return
+		
+
+def transformCSVnonP(markers, users, positives, negatives, rows):
+	utterancesById = {}
+	utterances = []
+	udict = makeUserDict(users)
+	mdict = makeMarkerDict(markers)
+	vcounts = {}
+	#averageSentiment = 0
+	
+	for i, row in enumerate(rows):
+		if(i % 1000 is 0):
+			shared_code.log("On " + str(i) + " of " + str(len(rows))) 
+		
+		toAppend = processTweetCSVRow(row)
+		
+		#toAppend["msgSentiment"] = analyzeSentiment(toAppend["msgTokens"],positives,negatives)
+		#toAppend["replySentiment"] = analyzeSentiment(toAppend["replyTokens"],positives,negatives)
+		
+		if testReplySimilarity(toAppend):
+			continue
+		
+		if(users is not False):
+			toAppend["verifiedSpeaker"] = verifySpeaker(udict,row[1])
+			toAppend["verifiedReplier"] = verifySpeaker(udict,row[4])
+		
+		#compareCountMarkers(toAppend,markers,mdict)
+		toAppend["msgMarkers"] = countMarkers2(toAppend["msgTokens"],mdict)
+		toAppend["replyMarkers"] = countMarkers2(toAppend["replyTokens"],mdict)
+		
+		#for marker in markers:
+		#	if marker["marker"] in toAppend["msgTokens"]:
+		#		toAppend["msgMarkers"].append(marker["marker"])
+		#	if marker["marker"] in toAppend["replyTokens"]:
+		#		toAppend["replyMarkers"].append(marker["marker"])
+
+		userUtterances = utterancesById.get(toAppend["replyUserId"], [])
+		userUtterances.append(toAppend["reply"])
+		utterancesById[toAppend["replyUserId"]] = userUtterances
+		utterances.append(toAppend)
+	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
+	#pprint(vcounts)					#code to print counts of verification of speaker and replier to sanity check
+	return {"utterances": utterances, "utterancesById": utterancesById}
+
+
 def getUtterancesById(utterances):
 	utterancesById = {}
 	for utterance in utterances:
@@ -193,7 +328,7 @@ def readUserInfo():
 		toAppend = {}
 		toAppend["uid"] = row[0]
 		toAppend["screenname"] = row[1]
-		toAppend["verified"] = row[2]
+		toAppend["verified"] = literal_eval(row[2])
 		toAppend["numtweets"] = row[3]
 		toAppend["numfriends"] = row[4]
 		toAppend["numfollowers"] = row[5]
@@ -271,17 +406,52 @@ users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 
 rows = readCSV(markers, inputFile, users, positives, negatives)
-constants = (markers, users, positives, negatives)
-variables = rows
-toParallelize = []
-for row in rows:
-	toParallelize.append((markers, users, positives, negatives, row))
-utterances = shared_code.parallelizer(transformCSV, toParallelize)
-utterances = [x for x in utterances if x != None]
+#constants = (markers, users, positives, negatives)
+#variables = rows
+#toParallelize = []
+#for row in rows:
+#	toParallelize.append((markers, users, positives, negatives, row))
+#utterances = shared_code.parallelizer(transformCSV, toParallelize)
+#utterances = [x for x in utterances if x != None]
 
-utterancesById = getUtterancesById(utterances)
-markers = getCommonMarkers(utterances)
-shared_code.log(markers)
+def preprocessingCSV(markers, inputFile, positives, negatives):
+	users = readUserInfo()
+	rows = readCSV(markers, inputFile, users, positives, negatives)
+	utterancedict = transformCSVnonP(markers, users, positives, negatives,rows)
+	utterances = utterancedict["utterances"]
+	utterancesById = utterancedict["utterancesById"]
+	return utterancedict
+
+def preprocessingCSVOld(markers, inputFile, positives, negatives):
+	users = readUserInfo()
+	rows = readCSV(markers, inputFile, users, positives, negatives)
+	constants = (markers, users, positives, negatives)
+	variables = rows
+	toParallelize = []
+	for row in rows:
+		toParallelize.append((markers, users, positives, negatives, row))
+	utterances = shared_code.parallelizer(transformCSV, toParallelize)
+	utterances = [x for x in utterances if x != None]
+	return utterances
+
+import cProfile
+#cProfile.run('utterancedict = preprocessingCSV(markers, inputFile, positives, negatives)','nstats.tmp')
+#cProfile.run('utterances = preprocessingCSVOld(markers, inputFile, positives, negatives)','ostats.tmp')
+import pstats
+
+#n = pstats.Stats('nstats.tmp')
+#n.strip_dirs().sort_stats('cumulative').print_stats(25)
+#
+#o = pstats.Stats('ostats.tmp')
+#o.strip_dirs().sort_stats('cumulative').print_stats(25)
+
+utterancedict = preprocessingCSV(markers, inputFile, positives, negatives)
+utterances = utterancedict["utterances"]
+utterancesById = utterancedict["utterancesById"]
+#utterancesById = getUtterancesById(utterances)
+
+#markers = getCommonMarkers(utterances)
+#shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
 sparsities = shared_code.calculateSparsity(groupedUtterances)
@@ -291,12 +461,12 @@ shared_code.log("Setted up Results")
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
 
 
-header = [list(results[0].keys())]
-shared_code.writeFile(header, outputFile, "w")
-#logInfo(results, markers)
-toWrite = []
-for row in results:
-	toWrite.append(list(row.values()))
-shared_code.writeFile(toWrite, outputFile, "a")
-
-shared_code.initialize()
+#header = [list(results[0].keys())]
+#shared_code.writeFile(header, outputFile, "w")
+##logInfo(results, markers)
+#toWrite = []
+#for row in results:
+#	toWrite.append(list(row.values()))
+#shared_code.writeFile(toWrite, outputFile, "a")
+#
+#shared_code.initialize()
