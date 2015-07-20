@@ -30,8 +30,21 @@ def writeHeader(outputFile, writeType):
 
 
 # Writes stuff to the output file
-def writeFile(toWrite, outputFile, writeType):
-	with open(outputFile, writeType) as f:
+def writeFile(results, outputFile):
+	header = list(results[0].keys())
+	toWrite = []
+	for row in results:
+		toAppend = []
+		for key in header:
+			toAppend.append(row[key])
+		toWrite.append(toAppend)
+
+	with open(outputFile, "w") as f:
+		writer = csv.writer(f)
+		writer.writerows([header])
+	f.close()
+
+	with open(outputFile, "a") as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
 	f.close()
@@ -94,6 +107,8 @@ def metaDataExtractor(groupedUtterances, markers):
 		for utterance in convo:
 			completedCategories = {}
 			for j, marker in enumerate(markers):
+				if(marker is "want"):
+					log(utterance)
 				# If there's a third person in the conversation, ignore the convo
 				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
 					continue
@@ -169,21 +184,21 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			
 			alignment = powerProb - baseProb
 
-			if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
-				continue
-			#if(alignment > 8):
-			#	toAppend = {}
-			#	toAppend["B&A"] = float(result["intersect"].get(category, 0))
-			#	toAppend["B&NotA"] = float(result["base"].get(category, 0))
-			#	toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-			#	toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-			#	log(toAppend["B&NotA"])
-			#	toAppend["speakerId"] = result["a"]
-			#	toAppend["replierId"] = result["b"]
-			#	toAppend["category"] = category
-			#	toAppend["alignment"] = alignment
-			#	toReturn.append(toAppend)
-			#continue
+			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
+			#	continue
+			if(alignment > 8):
+				toAppend = {}
+				#toAppend["B&A"] = float(result["intersect"].get(category, 0))
+				toAppend["B&NotA"] = float(result["base"].get(category, 0))
+				#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
+				#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
+				#log(toAppend["B&NotA"])
+				toAppend["speakerId"] = result["a"]
+				toAppend["replierId"] = result["b"]
+				toAppend["category"] = category
+				toAppend["alignment"] = alignment
+				toReturn.append(toAppend)
+			continue
 
 
 			sparsity = sparsities[(result["a"], result["b"])]
