@@ -186,7 +186,7 @@ def get_similarity(conversation_dictionary):
 				hyper = lambda s: s.hypernyms()
 				BLC_item = transform_ID(BLC_dict1[transform_SS(checked_item)])
 				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(BLC_item)
-				if BLC_item in list(checked_item.closure(hyper)):
+				if BLC_item in list(checked_item.closure(hyper)): #take away if you want to calculate pure pathsim
 					master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
 			except:
 				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
@@ -196,7 +196,7 @@ def get_similarity(conversation_dictionary):
 				hyper = lambda s: s.hypernyms()
 				BLC_item = transform_ID(BLC_dict1[transform_SS(checked_item)])
 				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(BLC_item)
-				if BLC_item in list(checked_item.closure(hyper)):
+				if BLC_item in list(checked_item.closure(hyper)): #take away if you want to calculate pure pathsim
 					master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1		
 			except:
 				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
