@@ -93,7 +93,8 @@ def parallelizer(function, args):
 def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
-		#log("On " + str(i) + " of " + str(len(groupedUtterances)))
+		if(i % 1000 is 0):
+			log("On " + str(i) + " of " + str(len(groupedUtterances)))
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
 		base = {}
@@ -186,19 +187,19 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 
 			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
 			#	continue
-			if(alignment > 8):
-				toAppend = {}
-				#toAppend["B&A"] = float(result["intersect"].get(category, 0))
-				toAppend["B&NotA"] = float(result["base"].get(category, 0))
-				#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-				#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-				#log(toAppend["B&NotA"])
-				toAppend["speakerId"] = result["a"]
-				toAppend["replierId"] = result["b"]
-				toAppend["category"] = category
-				toAppend["alignment"] = alignment
-				toReturn.append(toAppend)
-			continue
+			#if(alignment > 8):
+			#	toAppend = {}
+			#	#toAppend["B&A"] = float(result["intersect"].get(category, 0))
+			#	toAppend["B&NotA"] = float(result["base"].get(category, 0))
+			#	#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
+			#	#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
+			#	#log(toAppend["B&NotA"])
+			#	toAppend["speakerId"] = result["a"]
+			#	toAppend["replierId"] = result["b"]
+			#	toAppend["category"] = category
+			#	toAppend["alignment"] = alignment
+			#	toReturn.append(toAppend)
+			#continue
 
 
 			sparsity = sparsities[(result["a"], result["b"])]
