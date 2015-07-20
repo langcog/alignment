@@ -93,8 +93,8 @@ def parallelizer(function, args):
 def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
-		if(i % 1000 is 0):
-			log("On " + str(i) + " of " + str(len(groupedUtterances)))
+		#if(i % 1000 is 0):
+		#	log("On " + str(i) + " of " + str(len(groupedUtterances)))
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
 		base = {}
@@ -108,15 +108,17 @@ def metaDataExtractor(groupedUtterances, markers):
 		for utterance in convo:
 			completedCategories = {}
 			for j, marker in enumerate(markers):
-				if(marker is "want"):
-					log(utterance)
+				#print(marker["marker"] + " " + str(marker["marker"] is "want"))
+				
 				# If there's a third person in the conversation, ignore the convo
 				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
 					continue
+
 				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
 					continue
 				if(marker["category"] in completedCategories):
 					continue
+
 				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
 				if marker["marker"] in utterance["msgMarkers"]:
 					userMarkers[utterance["msgUserId"] + marker["category"]] = userMarkers.get(utterance["msgUserId"] + marker["category"] ,0) + 1#/(len(utterance["msgTokens"]))
@@ -157,15 +159,17 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 	toReturn = []
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
-		if(i % 1000 is 0):
-			log("On result " + str(i) + " of " + str(len(results)))
+		#if(i % 1000 is 0):
+		#	log("On result " + str(i) + " of " + str(len(results)))
 
 		for j, category in enumerate(categories):
 				
-			
+			if(result["a"]+category == "15923226want"):
+				log(result["userMarkers"])
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
-
+			if(result["a"]+category == "15923226want"):
+				log("There")
 			powerNum = float(result["intersect"].get(category, 0))
 			
 			powerDenom = float(result["userMarkers"][result["a"]+category])
@@ -187,19 +191,19 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 
 			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
 			#	continue
-			#if(alignment > 8):
-			#	toAppend = {}
-			#	#toAppend["B&A"] = float(result["intersect"].get(category, 0))
-			#	toAppend["B&NotA"] = float(result["base"].get(category, 0))
-			#	#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-			#	#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-			#	#log(toAppend["B&NotA"])
-			#	toAppend["speakerId"] = result["a"]
-			#	toAppend["replierId"] = result["b"]
-			#	toAppend["category"] = category
-			#	toAppend["alignment"] = alignment
-			#	toReturn.append(toAppend)
-			#continue
+			if(alignment > 8):
+				toAppend = {}
+				#toAppend["B&A"] = float(result["intersect"].get(category, 0))
+				toAppend["B&NotA"] = float(result["base"].get(category, 0))
+				#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
+				#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
+				#log(toAppend["B&NotA"])
+				toAppend["speakerId"] = result["a"]
+				toAppend["replierId"] = result["b"]
+				toAppend["category"] = category
+				toAppend["alignment"] = alignment
+				toReturn.append(toAppend)
+			continue
 
 
 			sparsity = sparsities[(result["a"], result["b"])]
