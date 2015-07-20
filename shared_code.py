@@ -133,7 +133,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, utterances, markerFrequency, utterancesById, age, gender):
+def calculateAlignment(results, markers, sparsities, age, gender):
 	toReturn = []
 	markerFreqRange = 15
 	categories = allMarkers(markers)
@@ -147,12 +147,6 @@ def calculateAlignment(results, markers, sparsities, utterances, markerFrequency
 			allB = 0
 			allBUtt = 0
 			
-			userUtterances = utterancesById[result["b"]]
-			allB = len(userUtterances)
-			for utterance in userUtterances:
-				#splitted = utterance.split(" ")
-				if(category in utterance):
-					allBUtt += 1
 				
 			
 			if((result["a"]+category) not in result["userMarkers"]):
