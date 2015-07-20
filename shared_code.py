@@ -119,10 +119,12 @@ def metaDataExtractor(groupedUtterances, markers):
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
-		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"], "replySentiment": utterance["replySentiment"], "msgSentiment": utterance["msgSentiment"]}
+		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
+			toAppend["replySentiment"] = utterance["replySentiment"]
+			toAppend["msgSentiment"] = utterance["msgSentiment"]
 		results.append(toAppend)
 	return results
 
