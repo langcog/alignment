@@ -23,7 +23,7 @@ def log(toPrint):
 def writeHeader(outputFile, writeType):
 	header = []
 	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
-	with open(outputFile, writeType) as f:
+	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
