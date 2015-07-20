@@ -125,6 +125,7 @@ def metaDataExtractor(groupedUtterances, markers):
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["replySentiment"] = utterance["replySentiment"]
 			toAppend["msgSentiment"] = utterance["msgSentiment"]
+
 		results.append(toAppend)
 	return results
 
@@ -208,14 +209,18 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["sparsityA"] = sparsity[0]
 			toAppend["sparsityB"] = sparsity[1]
-			toAppend["age"] = age
-			toAppend["gender"] = gender
-			toAppend["msgSentiment"] = result["msgSentiment"]
-			toAppend["replySentiment"] = result["replySentiment"]
+
+			
+			
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
-			
+				toAppend["msgSentiment"] = result["msgSentiment"]
+				toAppend["replySentiment"] = result["replySentiment"]
+			else:
+				toAppend["age"] = age
+				toAppend["gender"] = gender
+				
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
