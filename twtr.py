@@ -458,7 +458,7 @@ sparsities = shared_code.calculateSparsity(groupedUtterances)
 shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
-results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
+results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0)
 
 
 #header = [list(results[0].keys())]
