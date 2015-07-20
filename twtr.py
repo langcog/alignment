@@ -250,7 +250,7 @@ def transformCSVnonP(markers, users, sentiments, rows):
 	#averageSentiment = 0
 	
 	for i, row in enumerate(rows):
-		if(i % 1000 is 0):
+		if(i % 10000 is 0):
 			shared_code.log("On " + str(i) + " of " + str(len(rows))) 
 		
 		toAppend = processTweetCSVRow(row)
@@ -302,7 +302,7 @@ def readCSV(markers, inputFile, users):
 	averageSentiment = 0
 	toReturn = []
 	for i, row in enumerate(reader):
-		if(i % 1000 is 0):
+		if(i % 10000 is 0):
 			shared_code.log("On line " + str(i) + " of 230000")
 		row.append(i)
 		toReturn.append(row)
@@ -462,6 +462,7 @@ sparsities = shared_code.calculateSparsity(groupedUtterances)
 shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
+exit()
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0)
 shared_code.writeFile(results, outputFile)
 shared_code.initialize()
