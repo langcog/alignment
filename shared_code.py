@@ -186,19 +186,21 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 
 			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
 			#	continue
-			if(alignment > 8):
-				toAppend = {}
-				#toAppend["B&A"] = float(result["intersect"].get(category, 0))
-				toAppend["B&NotA"] = float(result["base"].get(category, 0))
-				#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-				#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-				#log(toAppend["B&NotA"])
-				toAppend["speakerId"] = result["a"]
-				toAppend["replierId"] = result["b"]
-				toAppend["category"] = category
-				toAppend["alignment"] = alignment
-				toReturn.append(toAppend)
-			continue
+			
+
+			#if(alignment > 8):
+			#	toAppend = {}
+			#	#toAppend["B&A"] = float(result["intersect"].get(category, 0))
+			#	toAppend["B&NotA"] = float(result["base"].get(category, 0))
+			#	#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
+			#	#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
+			#	#log(toAppend["B&NotA"])
+			#	toAppend["speakerId"] = result["a"]
+			#	toAppend["replierId"] = result["b"]
+			#	toAppend["category"] = category
+			#	toAppend["alignment"] = alignment
+			#	toReturn.append(toAppend)
+			#continue
 
 
 			sparsity = sparsities[(result["a"], result["b"])]
