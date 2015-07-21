@@ -7,6 +7,8 @@ import shared_code
 import datetime
 from ast import literal_eval
 from pprint import pprint
+import cProfile
+import pstats
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
@@ -17,36 +19,6 @@ markersFile = "wordlists/markers_worldenglish.csv"
 outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
-
-markerFrequency = 0
-
-def test(testFile, testMarkersFile, testOutputFile):
-	markers = shared_code.readMarkers(testMarkersFile)
-	result = readCSV(markers, testFile, False, [], [])
-	utterances = result["utterances"]
-	utterancesById = result["utterancesById"]
-	groupedUtterances = shared_code.group(utterances)
-	sparsities = shared_code.calculateSparsity(groupedUtterances)
-	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
-	
-	results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, utterances, markerFrequency, utterancesById, 0, 0)
-	
-	header = [list(results[0].keys())]
-	shared_code.writeFile(header, testOutputFile, "w")
-	toWrite = []
-	for row in results:
-		toWrite.append(list(row.values()))
-	shared_code.writeFile(toWrite, testOutputFile, "a")
-
-	results.pop(0)
-	results = sorted(results, key=lambda k: -k["alignment"])
-	leastPower = results[len(results)-1]
-	shared_code.log(leastPower)
-	shared_code.log(leastPower["alignment"])
-	if (abs(leastPower["alignment"] - -1.701344340796773) < 0.01):
-		return True
-	else:
-		return False
 
 def getCommonMarkers(utterances):
 	freqs = {}
@@ -91,12 +63,6 @@ def makeMarkerDict(markers):
 	return mdict
 
 def transformCSV(markers, users, row):
-	#utterancesById = {}
-	#averageSentiment = 0
-	
-	#for i, row in enumerate(rows):
-	#if(i % 1000 is 0):
-	#	shared_code.log("On " + str(i) + " of " + str(len(rows))) 
 	toAppend = {}
 	toAppend["docId"] = "TWITTER"
 	toAppend["corpus"] = "TWITTER"
@@ -161,11 +127,6 @@ def transformCSV(markers, users, row):
 	toAppend["msgTokens"] = messages
 	toAppend["replyTokens"] = replies
 	return toAppend
-		#userUtterances = utterancesById.get(toAppend["replyUserId"], [])
-		#userUtterances.append(toAppend["reply"])
-		#utterancesById[toAppend["replyUserId"]] = userUtterances
-	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
-	#return utterances #{"utterances": utterances, "utterancesById": utterancesById}
 
 def analyzeSentiment(tokens,sentiments):
 	msgSentiment = 0
@@ -258,22 +219,14 @@ def transformCSVnonP(markers, users, sentiments, rows):
 		toAppend["msgSentiment"] = analyzeSentiment(toAppend["msgTokens"],sentiments)
 		toAppend["replySentiment"] = analyzeSentiment(toAppend["replyTokens"],sentiments)
 		
-		#if testReplySimilarity(toAppend):
-		#	continue
 		
 		if(users is not False):
 			toAppend["verifiedSpeaker"] = verifySpeaker(udict,row[1])
 			toAppend["verifiedReplier"] = verifySpeaker(udict,row[4])
 			tests[str(toAppend["verifiedSpeaker"]) + str(toAppend["verifiedReplier"])] += 1
-		#compareCountMarkers(toAppend,markers,mdict)
 		toAppend["msgMarkers"] = countMarkers2(toAppend["msgTokens"],mdict)
 		toAppend["replyMarkers"] = countMarkers2(toAppend["replyTokens"],mdict)
 		
-		#for marker in markers:
-		#	if marker["marker"] in toAppend["msgTokens"]:
-		#		toAppend["msgMarkers"].append(marker["marker"])
-		#	if marker["marker"] in toAppend["replyTokens"]:
-		#		toAppend["replyMarkers"].append(marker["marker"])
 
 		userUtterances = utterancesById.get(toAppend["replyUserId"], [])
 		userUtterances.append(toAppend["reply"])
@@ -281,8 +234,6 @@ def transformCSVnonP(markers, users, sentiments, rows):
 		utterances.append(toAppend)
 	shared_code.log("TESTS")
 	shared_code.log(tests)
-	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
-	#pprint(vcounts)					#code to print counts of verification of speaker and replier to sanity check
 	return {"utterances": utterances, "utterancesById": utterancesById}
 
 
@@ -308,10 +259,6 @@ def readCSV(inputFile, users):
 			shared_code.log("On line " + str(i) + " of 230000")
 		row.append(i)
 		toReturn.append(row)
-		
-		#if(i > 10000):
-		#	shared_code.log("Continuing")
-		#	break
 		if header:
 			header=False
 			continue
@@ -359,7 +306,7 @@ def logInfo(results, markers):
 			averages[verifiedType+iStr] = []
 	for result in results:
 		for k in range(0, markerFreqRange):
-			if result["powerDenom1"] < k or result["baseDenom1"] < k:
+			if result["powerDenom"] < k or result["baseDenom"] < k:
 				continue
 			kStr = str(k)
 			if k < 10:
@@ -367,13 +314,13 @@ def logInfo(results, markers):
 
 			if("verifiedSpeaker" in result):
 				if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-					averages["..truetrue"+kStr].append(result["alignment1"])
+					averages["..truetrue"+kStr].append(result["alignment"])
 				elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-					averages[".truefalse"+kStr].append(result["alignment1"])
+					averages[".truefalse"+kStr].append(result["alignment"])
 				elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-					averages[".falsetrue"+kStr].append(result["alignment1"])
+					averages[".falsetrue"+kStr].append(result["alignment"])
 				else:
-					averages["falsefalse"+kStr].append(result["alignment1"])
+					averages["falsefalse"+kStr].append(result["alignment"])
 	toLog = []
 	for key in averages:
 		toAppend = {}
@@ -397,28 +344,16 @@ def combineSentiments(positives, negatives):
 	for negative in negatives:
 		toReturn[negative] = -1
 	return toReturn
+
 shared_code.initialize()
-#shared_code.parallelizer(shared_code.printer)
-#exit()
+
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
+
 sentiments = combineSentiments(positives, negatives)
-#testResult = test(testFile, testMarkers, testOutputFile)
-#if(not testResult):
-#	shared_code.log("DIDN'T PASS TEST")
-#	#exit()
 
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
-
-#rows = readCSV(markers, inputFile, users)
-#constants = (markers, users, positives, negatives)
-#variables = rows
-#toParallelize = []
-#for row in rows:
-#	toParallelize.append((markers, users, positives, negatives, row))
-#utterances = shared_code.parallelizer(transformCSV, toParallelize)
-#utterances = [x for x in utterances if x != None]
 
 def preprocessingCSV(markers, rows, inputFile, sentiments):
 	
@@ -439,8 +374,7 @@ def preprocessingCSVOld(markers, inputFile, sentiments):
 	utterances = [x for x in utterances if x != None]
 	return utterances
 
-import cProfile
-import pstats
+
 
 users = readUserInfo()
 rows = readCSV(inputFile, users)
@@ -454,8 +388,6 @@ utterancedict = preprocessingCSV(markers, rows, inputFile, sentiments)
 utterances = utterancedict["utterances"]
 utterancesById = utterancedict["utterancesById"]
 
-#markers = getCommonMarkers(utterances)
-#shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
 sparsities = shared_code.calculateSparsity(groupedUtterances)
@@ -463,7 +395,7 @@ shared_code.log("Calculated Sparsities")
 setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 
-results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0)
+results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0, 1)
 logInfo(results, markers)
 shared_code.writeFile(results, outputFile, True)
 shared_code.initialize()
