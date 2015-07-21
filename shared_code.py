@@ -38,13 +38,13 @@ def writeFile(results, outputFile, shouldWriteHeader):
 		for key in header:
 			toAppend.append(row[key])
 		toWrite.append(toAppend)
-	if(shouldWriteHeader):
-		with open(outputFile, "w") as f:
+	if shouldWriteHeader:
+		with open(outputFile, "w", newline='') as f:
 			writer = csv.writer(f)
 			writer.writerows([header])
 		f.close()
 
-	with open(outputFile, "a") as f:
+	with open(outputFile, "a", newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
 	f.close()
