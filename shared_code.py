@@ -54,7 +54,7 @@ def readMarkers(markersFile):
 	reader = csv.reader(open(markersFile))
 	markers = []
 	for i, row in enumerate(reader):
-		if(i > 100):
+		if(i > 50):
 			break
 		toAppend = {}
 		toAppend["marker"] = row[0]
@@ -109,13 +109,7 @@ def metaDataExtractor(groupedUtterances, markers):
 			completedCategories = {}
 			for j, marker in enumerate(markers):
 				#print(marker["marker"] + " " + str(marker["marker"] is "want"))
-				
-				# If there's a third person in the conversation, ignore the convo
-				if(utterance["msgUserId"] != a and utterance["replyUserId"] != a): 
-					continue
-
-				elif (utterance["msgUserId"] != b and utterance["replyUserId"] != b):
-					continue
+			
 				if(marker["category"] in completedCategories):
 					continue
 
@@ -126,8 +120,13 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1#/len(utterance["replyTokens"])
 				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
 					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
-				if (marker["marker"] in utterance["replyMarkers"] and utterance["replyUserId"] is b) or (marker["marker"] in utterance["msgMarkers"] and utterance["msgUserId"] is a):
+
+
+				if (marker["marker"] in utterance["replyMarkers"]) and (marker["marker"] not in utterance["msgMarkers"]):
 					base[marker["category"]] = base.get(marker["category"], 0) + 1
+
+
+
 				if(marker["marker"] not in utterance["replyMarkers"] and marker["marker"] not in utterance["msgMarkers"]):
 					notBNotA[marker["category"]] = notBNotA.get(marker["category"], 0) + 1
 				if(marker["marker"] not in utterance["replyMarkers"] and marker["marker"] in utterance["msgMarkers"]):
@@ -137,15 +136,20 @@ def metaDataExtractor(groupedUtterances, markers):
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
-		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"], "corpus": utterance["corpus"], "docId": utterance["docId"]}
+		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"]}
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["replySentiment"] = utterance["replySentiment"]
 			toAppend["msgSentiment"] = utterance["msgSentiment"]
+		else:
+			toAppend["corpus"] = utterance["corpus"]
+			toAppend["docId"] = utterance["docId"]
 
 		results.append(toAppend)
 	return results
+
+
 
 def allMarkers(markers):
 	categories = []
@@ -164,45 +168,50 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 
 		for j, category in enumerate(categories):
 				
-			if(result["a"]+category == "15923226want"):
-				log(result["userMarkers"])
+			
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
-			if(result["a"]+category == "15923226want"):
-				log("There")
 			powerNum = float(result["intersect"].get(category, 0))
 			
 			powerDenom = float(result["userMarkers"][result["a"]+category])
 			if(powerDenom == 0):
 				continue
 			
+			
+
 			baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
 			baseNum = float(result["base"].get(category, 0))
 			if(baseDenom == 0):
 				continue
-
+			if(result["a"]+category == "15923226want"):
+				log(result["userMarkers"])
+				log(powerNum)
+				log(baseNum)
+				log(float(result["base"].get(category, 0)))
+				#raise ValueError('test')
 			if(baseNum == 0 and powerNum == 0):
 				continue
-
-			powerProb = math.log((powerNum+0.000001)/powerDenom)
-			baseProb = math.log((baseNum+0.000001)/baseDenom)
+			smoothing = 0.000001
+			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
+			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
 			
 			alignment = powerProb - baseProb
 
 			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
 			#	continue
-			if(alignment > 8):
-				toAppend = {}
-				#toAppend["B&A"] = float(result["intersect"].get(category, 0))
-				toAppend["B&NotA"] = float(result["base"].get(category, 0))
-				#toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-				#toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-				#log(toAppend["B&NotA"])
-				toAppend["speakerId"] = result["a"]
-				toAppend["replierId"] = result["b"]
-				toAppend["category"] = category
-				toAppend["alignment"] = alignment
-				toReturn.append(toAppend)
+			toAppend = {}
+			toAppend["BA"] = float(result["intersect"].get(category, 0))
+			toAppend["BnotA"] = float(result["base"].get(category, 0))
+			toAppend["NotBnotA"] = float(result["notBNotA"].get(category, 0))
+			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
+
+			toAppend["speakerId"] = result["a"]
+			toAppend["replierId"] = result["b"]
+			toAppend["category"] = category
+			toAppend["alignment"] = alignment
+			toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
+			toAppend["verifiedReplier"] = result["verifiedReplier"]
+			toReturn.append(toAppend)
 			continue
 
 
@@ -215,8 +224,7 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
 			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
 
-			toAppend["corpus"] = result["corpus"]
-			toAppend["docId"] = result["docId"]
+			
 			toAppend["conv"] = result["conv"]
 			toAppend["speakerId"] = result["a"]
 			toAppend["replierId"] = result["b"]
@@ -240,6 +248,8 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			else:
 				toAppend["age"] = age
 				toAppend["gender"] = gender
+				toAppend["corpus"] = result["corpus"]
+				toAppend["docId"] = result["docId"]
 				
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])

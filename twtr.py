@@ -138,8 +138,8 @@ def transformCSV(markers, users, row):
 	allTokens.append(toAppend["replyTokens"])
 	allTokens = [item for sublist in allTokens for item in sublist]
 	duplicates = list(set(toAppend["msgTokens"]) & set(toAppend["replyTokens"]))
-	if(len(list(set(allTokens))) < 5):
-		return
+	#if(len(list(set(allTokens))) < 5):
+	#	return
 	if(users is not False):
 		msgUser = findUser(users, row[1])
 		if(msgUser != False):
@@ -258,8 +258,8 @@ def transformCSVnonP(markers, users, sentiments, rows):
 		toAppend["msgSentiment"] = analyzeSentiment(toAppend["msgTokens"],sentiments)
 		toAppend["replySentiment"] = analyzeSentiment(toAppend["replyTokens"],sentiments)
 		
-		if testReplySimilarity(toAppend):
-			continue
+		#if testReplySimilarity(toAppend):
+		#	continue
 		
 		if(users is not False):
 			toAppend["verifiedSpeaker"] = verifySpeaker(udict,row[1])
@@ -454,7 +454,7 @@ utterances = utterancedict["utterances"]
 utterancesById = utterancedict["utterancesById"]
 #utterancesById = getUtterancesById(utterances)
 
-#markers = getCommonMarkers(utterances)
+markers = getCommonMarkers(utterances)
 #shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
@@ -464,6 +464,6 @@ setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0)
-logInfo(results, markers)
+#logInfo(results, markers)
 shared_code.writeFile(results, outputFile, True)
 shared_code.initialize()
