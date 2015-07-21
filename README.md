@@ -10,6 +10,7 @@ Code examples
 ## changelog
 
 **6/26/2015**
+
 Derived formula for Echoes of Power:
     powerProb = ((# of times marker is said by A and B)*(# of words A says to B))/((# of words B says to A)*(# of times A says the marker))
     baseProb = (# of times B says the marker)/(# of words B says)
