@@ -232,7 +232,7 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				
 				
 			toReturn.append(toAppend)
-	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
+	toReturn = sorted(toReturn, key=lambda k: -k["alignment1"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
