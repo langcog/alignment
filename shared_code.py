@@ -31,7 +31,6 @@ def writeHeader(outputFile, writeType):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
-	header = list(results[0].keys())
 	toWrite = []
 	for row in results:
 		toAppend = []
@@ -39,6 +38,7 @@ def writeFile(results, outputFile, shouldWriteHeader):
 			toAppend.append(row[key])
 		toWrite.append(toAppend)
 	if shouldWriteHeader:
+		header = list(results[0].keys())
 		with open(outputFile, "w", newline='') as f:
 			writer = csv.writer(f)
 			writer.writerows([header])
