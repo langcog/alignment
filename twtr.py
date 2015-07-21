@@ -365,13 +365,13 @@ def logInfo(results, markers):
 
 			if("verifiedSpeaker" in result):
 				if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-					averages["..truetrue"+kStr].append(result["alignment"])
+					averages["..truetrue"+kStr].append(result["alignment1"])
 				elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-					averages[".truefalse"+kStr].append(result["alignment"])
+					averages[".truefalse"+kStr].append(result["alignment1"])
 				elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-					averages[".falsetrue"+kStr].append(result["alignment"])
+					averages[".falsetrue"+kStr].append(result["alignment1"])
 				else:
-					averages["falsefalse"+kStr].append(result["alignment"])
+					averages["falsefalse"+kStr].append(result["alignment1"])
 	toLog = []
 	for key in averages:
 		toAppend = {}
@@ -464,6 +464,6 @@ setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
 shared_code.log("Setted up Results")
 
 results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0)
-#logInfo(results, markers)
+logInfo(results, markers)
 shared_code.writeFile(results, outputFile, True)
 shared_code.initialize()

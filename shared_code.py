@@ -79,14 +79,8 @@ def tester(i):
 	return
 
 def parallelizer(function, args):
-	#print(datetime.datetime.now().time())
 	with Pool(8) as p:
 		return p.starmap(function, args)
-	#return toReturn
-	#print(datetime.datetime.now().time())
-	#for i in [1,2,3,4,5]:
-	#	printer(i)
-	#print(datetime.datetime.now().time())
 
 
 # Computers the power probabilities
@@ -191,30 +185,6 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				#raise ValueError('test')
 			if(baseNum == 0 and powerNum == 0):
 				continue
-			smoothing = 0.000001
-			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
-			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
-			
-			alignment = powerProb - baseProb
-
-			#if(abs(alignment) > 8 or abs(powerProb-baseProb) < 1):
-			#	continue
-			toAppend = {}
-			toAppend["BA"] = float(result["intersect"].get(category, 0))
-			toAppend["BnotA"] = float(result["base"].get(category, 0))
-			toAppend["NotBnotA"] = float(result["notBNotA"].get(category, 0))
-			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-
-			toAppend["speakerId"] = result["a"]
-			toAppend["replierId"] = result["b"]
-			toAppend["category"] = category
-			toAppend["alignment"] = alignment
-			toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
-			toAppend["verifiedReplier"] = result["verifiedReplier"]
-			toReturn.append(toAppend)
-			continue
-
-
 			sparsity = sparsities[(result["a"], result["b"])]
 
 			toAppend = {}
@@ -229,11 +199,6 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			toAppend["speakerId"] = result["a"]
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
-			toAppend["alignment"] = alignment
-			toAppend["powerNum"] = float(result["intersect"].get(category, 0))
-			toAppend["powerDenom"] = float(result["userMarkers"][result["a"]+category])
-			toAppend["baseNum"] = baseNum
-			toAppend["baseDenom"] = baseDenom
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["sparsityA"] = sparsity[0]
 			toAppend["sparsityB"] = sparsity[1]
@@ -250,6 +215,21 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				toAppend["gender"] = gender
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
+
+			smoothings = [1, 0.000001, 0.001]
+			for smoothing in smoothings
+				powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
+				baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
+				
+				alignment = powerProb - baseProb
+
+				
+				toAppend["alignment"+str(smoothing)] = alignment
+				toAppend["powerNum"+str(smoothing)] = float(result["intersect"].get(category, 0))
+				toAppend["powerDenom"+str(smoothing)] = float(result["userMarkers"][result["a"]+category])
+				toAppend["baseNum"+str(smoothing)] = baseNum
+				toAppend["baseDenom"+str(smoothing)] = baseDenom
+				
 				
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
