@@ -248,7 +248,7 @@ def transformCSVnonP(markers, users, sentiments, rows):
 	mdict = makeMarkerDict(markers)
 	vcounts = {}
 	#averageSentiment = 0
-	
+	tests = {"TrueTrue": 0, "TrueFalse": 0, "FalseTrue": 0, "FalseFalse": 0}
 	for i, row in enumerate(rows):
 		if(i % 10000 is 0):
 			shared_code.log("On " + str(i) + " of " + str(len(rows))) 
@@ -264,7 +264,7 @@ def transformCSVnonP(markers, users, sentiments, rows):
 		if(users is not False):
 			toAppend["verifiedSpeaker"] = verifySpeaker(udict,row[1])
 			toAppend["verifiedReplier"] = verifySpeaker(udict,row[4])
-		
+			tests[str(toAppend["verifiedSpeaker"]) + str(toAppend["verifiedReplier"])] += 1
 		#compareCountMarkers(toAppend,markers,mdict)
 		toAppend["msgMarkers"] = countMarkers2(toAppend["msgTokens"],mdict)
 		toAppend["replyMarkers"] = countMarkers2(toAppend["replyTokens"],mdict)
@@ -279,6 +279,8 @@ def transformCSVnonP(markers, users, sentiments, rows):
 		userUtterances.append(toAppend["reply"])
 		utterancesById[toAppend["replyUserId"]] = userUtterances
 		utterances.append(toAppend)
+	shared_code.log("TESTS")
+	shared_code.log(tests)
 	#shared_code.log("averageSentiment: " + str(float(averageSentiment)/float(len(utterances))))
 	#pprint(vcounts)					#code to print counts of verification of speaker and replier to sanity check
 	return {"utterances": utterances, "utterancesById": utterancesById}
@@ -357,7 +359,7 @@ def logInfo(results, markers):
 			averages[verifiedType+iStr] = []
 	for result in results:
 		for k in range(0, markerFreqRange):
-			if result["powerDenom1"] < k:
+			if result["powerDenom1"] < k or result["baseDenom1"] < k:
 				continue
 			kStr = str(k)
 			if k < 10:

@@ -86,6 +86,7 @@ def parallelizer(function, args):
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers):
 	results = []
+	
 	for i, convo in enumerate(groupedUtterances):
 		#if(i % 1000 is 0):
 		#	log("On " + str(i) + " of " + str(len(groupedUtterances)))
@@ -134,6 +135,7 @@ def metaDataExtractor(groupedUtterances, markers):
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
+			
 			toAppend["replySentiment"] = utterance["replySentiment"]
 			toAppend["msgSentiment"] = utterance["msgSentiment"]
 		else:
@@ -156,9 +158,12 @@ def allMarkers(markers):
 def calculateAlignment(results, markers, sparsities, age, gender):
 	toReturn = []
 	categories = allMarkers(markers)
+	falsefalse = 0
+	truefalse = 0
 	for i, result in enumerate(results):
 		#if(i % 1000 is 0):
 		#	log("On result " + str(i) + " of " + str(len(results)))
+
 
 		for j, category in enumerate(categories):
 				
@@ -177,16 +182,10 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 			baseNum = float(result["base"].get(category, 0))
 			if(baseDenom == 0):
 				continue
-			if(result["a"]+category == "15923226want"):
-				log(result["userMarkers"])
-				log(powerNum)
-				log(baseNum)
-				log(float(result["base"].get(category, 0)))
-				#raise ValueError('test')
 			if(baseNum == 0 and powerNum == 0):
 				continue
-			if(powerDenom < 5 or baseDenom < 5):
-				continue
+			#if(powerDenom < 5 or baseDenom < 5):
+			#	continue
 				
 			sparsity = sparsities[(result["a"], result["b"])]
 
