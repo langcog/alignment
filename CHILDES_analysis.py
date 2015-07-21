@@ -7,8 +7,9 @@ import shared_code
 
 shared_code.initialize()
 
-outputFile = "testresults.csv"
-markersFile = "test.csv"
+master_var = True
+outputFile = "ProvFreq500Results.csv"
+markersFile = "ProvFreq500.csv"
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 corpus_name = 'Providence'
 marker_list = shared_code.readMarkers(markersFile)
@@ -181,7 +182,7 @@ def calculate_sparsity(list_of_speakers, a_dictionary): # calculates number of w
 		speaker1 = a_dictionary[x][0][0]
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
-	return sparsity_measure
+	return sparsity_measure	
 
 def document_stuff(directory_location, input_file_name, marker_list, output_file_name, corpus): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number]
 	global ordered_utterance_list
@@ -205,15 +206,14 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list, child_age, child_gender)	
 	groupedUtterances = shared_code.group(utterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
-	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure, child_age, child_gender)
-	#testSetUp(groupedUtterances, markers, setUppedResults, False)
-	#testBayes(results, groupedUtterances)
-	shared_code.writeFile(results, output_file_name, "a")		
+	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure,  child_age, child_gender)
+	if len(results) > 0:
+		shared_code.writeFile(results, output_file_name, master_var)
 
-shared_code.writeHeader(outputFile, 'a')
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
 		for fname in os.listdir(dirName + '\\' + x):
 			if fname.endswith(".xml"):
 				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname , marker_list, outputFile, corpus_name)
+				document_stuff(dirName + '\\' + x, fname, marker_list, outputFile, corpus_name)
+				master_var = False
