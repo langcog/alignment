@@ -217,7 +217,7 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				toAppend["docId"] = result["docId"]
 
 			smoothings = [1, 0.000001, 0.001]
-			for smoothing in smoothings
+			for smoothing in smoothings:
 				powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
 				baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
 				
