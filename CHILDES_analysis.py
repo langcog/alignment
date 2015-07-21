@@ -207,9 +207,10 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	groupedUtterances = shared_code.group(utterances)
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
 	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure,  child_age, child_gender)
-	#testSetUp(groupedUtterances, markers, setUppedResults, False)
-	#testBayes(results, groupedUtterances)
-	shared_code.writeFile(results, output_file_name, master_var)		
+	if len(results) = 0:
+		continue
+	else:	
+		shared_code.writeFile(results, output_file_name, master_var)		
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
