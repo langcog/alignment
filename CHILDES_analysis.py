@@ -208,9 +208,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
 	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure,  child_age, child_gender)
 	if len(results) > 0:
-		shared_code.writeFile(results, output_file_name, master_var)	
-	else:	
-		continue		
+		shared_code.writeFile(results, output_file_name, master_var)
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
