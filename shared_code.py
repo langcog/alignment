@@ -155,7 +155,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, age, gender):
+def calculateAlignment(results, markers, sparsities, age, gender, smoothing):
 	toReturn = []
 	categories = allMarkers(markers)
 	falsefalse = 0
@@ -218,23 +218,21 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
 
-			smoothings = [1, 0.000001, 0.001]
-			for smoothing in smoothings:
-				powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
-				baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
-				
-				alignment = powerProb - baseProb
+			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
+			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
+			
+			alignment = powerProb - baseProb
 
-				
-				toAppend["alignment"+str(smoothing)] = alignment
-				toAppend["powerNum"+str(smoothing)] = float(result["intersect"].get(category, 0))
-				toAppend["powerDenom"+str(smoothing)] = float(result["userMarkers"][result["a"]+category])
-				toAppend["baseNum"+str(smoothing)] = baseNum
-				toAppend["baseDenom"+str(smoothing)] = baseDenom
+			
+			toAppend["alignment"] = alignment
+			toAppend["powerNum"] = float(result["intersect"].get(category, 0))
+			toAppend["powerDenom"] = float(result["userMarkers"][result["a"]+category])
+			toAppend["baseNum"] = baseNum
+			toAppend["baseDenom"] = baseDenom
 				
 				
 			toReturn.append(toAppend)
-	toReturn = sorted(toReturn, key=lambda k: -k["alignment1"])
+	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
 
 # Finds a conversation given it's conversation #
