@@ -155,7 +155,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, age, gender, smoothing):
+def calculateAlignment(results, markers, sparsities, age, gender, smoothing, formula):
 	toReturn = []
 	categories = allMarkers(markers)
 	falsefalse = 0
@@ -170,28 +170,13 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing):
 			
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
-			powerNum = float(result["intersect"].get(category, 0))
 			
-			powerDenom = float(result["userMarkers"][result["a"]+category])
-			if(powerDenom == 0):
-				continue
-			
-			
-
-			baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
-			baseNum = float(result["base"].get(category, 0))
-			if(baseDenom == 0):
-				continue
-			if(baseNum == 0 and powerNum == 0):
-				continue
-			#if(powerDenom < 5 or baseDenom < 5):
-			#	continue
 				
 			sparsity = sparsities[(result["a"], result["b"])]
 
 			toAppend = {}
-			toAppend["B&A"] = float(result["intersect"].get(category, 0))
-			toAppend["B&NotA"] = float(result["base"].get(category, 0))
+			toAppend["BAndA"] = float(result["intersect"].get(category, 0))
+			toAppend["BAndNotA"] = float(result["base"].get(category, 0))
 			#log(toAppend["B&NotBA"])
 			toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
 			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
@@ -218,17 +203,47 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing):
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
 
-			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
-			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
+			if(formula == "DNM"):
+				powerNum = toAppend["BAndA"]
+				powerDenom = (toAppend["BAndA"]+toAppend["NotBA"])
+				baseNum = (toAppend["BAndA"]+toAppend["BAndNotA"])
+				baseDenom = toAppend["numUtterances"]
+				alignment = powerNum/powerDenom - baseNum/baseDenom
+
+				toAppend["alignment"] = alignment
+				toAppend["powerNum"] = powerNum
+				toAppend["powerDenom"] = powerDenom
+				toAppend["baseNum"] = baseNum
+				toAppend["baseDenom"] = baseDenom
+
+			elif(formula == "TRUE_POWER"):
+
+				powerNum = float(result["intersect"].get(category, 0))
 			
-			alignment = powerProb - baseProb
+				powerDenom = float(result["userMarkers"][result["a"]+category])
+				if(powerDenom == 0):
+					continue
+			
+
+				baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
+				baseNum = float(result["base"].get(category, 0))
+				if(baseDenom == 0):
+					continue
+				if(baseNum == 0 and powerNum == 0):
+					continue
+
+
+				powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
+				baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
+			
+				alignment = powerProb - baseProb
 
 			
-			toAppend["alignment"] = alignment
-			toAppend["powerNum"] = float(result["intersect"].get(category, 0))
-			toAppend["powerDenom"] = float(result["userMarkers"][result["a"]+category])
-			toAppend["baseNum"] = baseNum
-			toAppend["baseDenom"] = baseDenom
+				toAppend["alignment"] = alignment
+				toAppend["powerNum"] = powerNum
+				toAppend["powerDenom"] = powerDenom
+				toAppend["baseNum"] = baseNum
+				toAppend["baseDenom"] = baseDenom
 				
 				
 			toReturn.append(toAppend)
