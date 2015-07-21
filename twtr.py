@@ -293,7 +293,7 @@ def getUtterancesById(utterances):
 	return utterancesById
 
 # Reads in tweets
-def readCSV(markers, inputFile, users):
+def readCSV(inputFile, users):
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
 	utterances = []
 	header=True
@@ -357,7 +357,7 @@ def logInfo(results, markers):
 			averages[verifiedType+iStr] = []
 	for result in results:
 		for k in range(0, markerFreqRange):
-			if result["powerDenom"] < k:
+			if result["powerDenom1"] < k:
 				continue
 			kStr = str(k)
 			if k < 10:
@@ -409,7 +409,7 @@ sentiments = combineSentiments(positives, negatives)
 users = readUserInfo()
 markers = shared_code.readMarkers(markersFile)
 
-rows = readCSV(markers, inputFile, users)
+#rows = readCSV(markers, inputFile, users)
 #constants = (markers, users, positives, negatives)
 #variables = rows
 #toParallelize = []
@@ -418,9 +418,8 @@ rows = readCSV(markers, inputFile, users)
 #utterances = shared_code.parallelizer(transformCSV, toParallelize)
 #utterances = [x for x in utterances if x != None]
 
-def preprocessingCSV(markers, inputFile, sentiments):
-	users = readUserInfo()
-	rows = readCSV(markers, inputFile, users)
+def preprocessingCSV(markers, rows, inputFile, sentiments):
+	
 	utterancedict = transformCSVnonP(markers, users, sentiments,rows)
 	utterances = utterancedict["utterances"]
 	utterancesById = utterancedict["utterancesById"]
@@ -439,22 +438,21 @@ def preprocessingCSVOld(markers, inputFile, sentiments):
 	return utterances
 
 import cProfile
-#cProfile.run('utterancedict = preprocessingCSV(markers, inputFile, positives, negatives)','nstats.tmp')
-#cProfile.run('utterances = preprocessingCSVOld(markers, inputFile, positives, negatives)','ostats.tmp')
 import pstats
 
-#n = pstats.Stats('nstats.tmp')
-#n.strip_dirs().sort_stats('cumulative').print_stats(25)
-#
-#o = pstats.Stats('ostats.tmp')
-#o.strip_dirs().sort_stats('cumulative').print_stats(25)
+users = readUserInfo()
+rows = readCSV(inputFile, users)
+realRows = []
+for row in rows:
+	realRows.append(processTweetCSVRow(row))
+markers = getCommonMarkers(realRows)
 
-utterancedict = preprocessingCSV(markers, inputFile, sentiments)
+
+utterancedict = preprocessingCSV(markers, rows, inputFile, sentiments)
 utterances = utterancedict["utterances"]
 utterancesById = utterancedict["utterancesById"]
-#utterancesById = getUtterancesById(utterances)
 
-markers = getCommonMarkers(utterances)
+#markers = getCommonMarkers(utterances)
 #shared_code.log(markers)
 groupedUtterances = shared_code.group(utterances)
 shared_code.log("Grouped utterances")
