@@ -185,6 +185,9 @@ def calculateAlignment(results, markers, sparsities, age, gender):
 				#raise ValueError('test')
 			if(baseNum == 0 and powerNum == 0):
 				continue
+			if(powerDenom < 5 or baseDenom < 5):
+				continue
+				
 			sparsity = sparsities[(result["a"], result["b"])]
 
 			toAppend = {}
