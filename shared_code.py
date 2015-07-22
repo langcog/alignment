@@ -43,34 +43,43 @@ def metaDataExtractor(groupedUtterances, markers):
 		base = {}
 		notBNotA = {}
 		notBA = {}
+		for marker in markers:
+			intersect[marker["category"]] = 0
+			base[marker["category"]] = 0
+			notBNotA[marker["category"]] = 0
+			notBA[marker["category"]] = 0
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
-		if(a == b): # No self aligning stuff
-			continue
-		for utterance in convo:
-			completedCategories = {}
-			for j, marker in enumerate(markers):
-				if(marker["category"] in completedCategories):
-					continue
-				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
-				if marker["marker"] in utterance["msgMarkers"]:
-					userMarkers[utterance["msgUserId"] + marker["category"]] = userMarkers.get(utterance["msgUserId"] + marker["category"] ,0) + 1#/(len(utterance["msgTokens"]))
-				if marker["marker"] in utterance["replyMarkers"]:
-					userMarkers[utterance["replyUserId"] + marker["category"]] = userMarkers.get(utterance["replyUserId"] + marker["category"] ,0) + 1#/len(utterance["replyTokens"])
-				if marker["marker"] in utterance["msgMarkers"] and marker["marker"] in utterance["replyMarkers"]:
-					intersect[marker["category"]] = intersect.get(marker["category"],0) + 1
-				if (marker["marker"] in utterance["replyMarkers"]) and (marker["marker"] not in utterance["msgMarkers"]):
-					base[marker["category"]] = base.get(marker["category"], 0) + 1
-				if(marker["marker"] not in utterance["replyMarkers"] and marker["marker"] not in utterance["msgMarkers"]):
-					notBNotA[marker["category"]] = notBNotA.get(marker["category"], 0) + 1
-				if(marker["marker"] not in utterance["replyMarkers"] and marker["marker"] in utterance["msgMarkers"]):
-					notBA[marker["category"]] = notBA.get(marker["category"], 0) + 1
-				completedCategories[marker["category"]] = True
 		convoUtterances = []
 		for utterance in convo:
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
+			completedCategories = {}
+			for j, marker in enumerate(markers):
+				category = marker["category"]
+				if(category in completedCategories):
+					continue
+				msgMarker = False
+				replyMarker = False
+				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
+				if category in utterance["msgMarkers"]:
+					msgMarker = True
+					userMarkers[utterance["msgUserId"] + category] = userMarkers.get(utterance["msgUserId"] + category ,0) + 1
+				if category in utterance["replyMarkers"]:
+					replyMarker = True
+					userMarkers[utterance["replyUserId"] + category] = userMarkers.get(utterance["replyUserId"] + category,0) + 1
+				
+				if msgMarker and replyMarker:
+					intersect[category] += 1
+				elif replyMarker and not msgMarker:
+					base[category] += 1
+				elif not replyMarker and msgMarker:
+					notBNotA[category] += 1
+				else:
+					notBA[category] += 1
+				completedCategories[category] = True
+			
 		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"]}
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
