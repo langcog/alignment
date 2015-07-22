@@ -55,6 +55,10 @@ def readCSV(inputFile, users, numOfMarkers):
 		if(i % 10000 is 0):
 			logger.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
+		if("”" in row["msg"]):
+			continue
+		if("”" in row["reply"]):
+			continue
 		if(row["msgUserId"] == row["replyUserId"]):
 			continue
 		for word in row["msgTokens"]:

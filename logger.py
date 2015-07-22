@@ -19,5 +19,5 @@ def log(toPrint):
 def finish(start):
 	end = time.time()
 	print("--------------")
-	print("Program finished executing in " + str(end-start) + " seconds")
+	print("Finished executing after " + str(end-start) + " seconds")
 	print("--------------")
