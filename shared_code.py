@@ -20,6 +20,11 @@ def log(toPrint):
 	print(toPrint)
 	print("---------")
 
+def finish(start, end):
+	print("--------------")
+	print("Program finished executing in " + str(end-start) + " seconds")
+	print("--------------")
+
 def writeHeader(outputFile, writeType):
 	header = []
 	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
@@ -88,8 +93,8 @@ def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	
 	for i, convo in enumerate(groupedUtterances):
-		#if(i % 1000 is 0):
-		#	log("On " + str(i) + " of " + str(len(groupedUtterances)))
+		if(i % 1000 is 0):
+			log("On " + str(i) + " of " + str(len(groupedUtterances)))
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
 		base = {}
@@ -135,9 +140,6 @@ def metaDataExtractor(groupedUtterances, markers):
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
-			
-			toAppend["replySentiment"] = utterance["replySentiment"]
-			toAppend["msgSentiment"] = utterance["msgSentiment"]
 		else:
 			toAppend["corpus"] = utterance["corpus"]
 			toAppend["docId"] = utterance["docId"]
@@ -161,8 +163,8 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing, for
 	falsefalse = 0
 	truefalse = 0
 	for i, result in enumerate(results):
-		#if(i % 1000 is 0):
-		#	log("On result " + str(i) + " of " + str(len(results)))
+		if(i % 1000 is 0):
+			log("On result " + str(i) + " of " + str(len(results)))
 
 
 		for j, category in enumerate(categories):
@@ -195,8 +197,6 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing, for
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
-				toAppend["msgSentiment"] = result["msgSentiment"]
-				toAppend["replySentiment"] = result["replySentiment"]
 			else:
 				toAppend["age"] = age
 				toAppend["gender"] = gender

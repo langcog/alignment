@@ -1,3 +1,10 @@
+data/pairedtweets.txt
+data/pairedtweets.txt.userinfo
+data/pairedtweets1000.txt
+data/pairedtweets1000.txt.userinfo
+data/pairedtweets2.txt
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
