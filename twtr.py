@@ -29,12 +29,9 @@ shouldWriteHeader = True
 # Need this function for power proxy
 def readUserInfo():
 	reader=csv.reader(open(userFile),dialect="excel-tab")
+	next(reader, None)
 	users = []
-	header=True
 	for row in reader:
-		if header:
-			header=False
-			continue
 		toAppend = {}
 		toAppend["uid"] = row[0]
 		toAppend["screenname"] = row[1]
@@ -50,23 +47,21 @@ def readUserInfo():
 # Reads in tweets
 def readCSV(inputFile, users, numOfMarkers):
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
+	next(reader, None)
 	utterances = []
-	header=True
 	toReturn = []
 	freqs = {}
 	for i, row in enumerate(reader):
 		if(i % 10000 is 0):
 			logger.log("On line " + str(i) + " of 230000")
-		row.append(i)
 		row = processTweetCSVRow(row)
+		if(row["msgUserId"] == row["replyUserId"]):
+			continue
 		for word in row["msgTokens"]:
 			freqs[word] = freqs.get(word, 0) + 1
 		for word in row["replyTokens"]:
 			freqs[word] = freqs.get(word, 0) + 1
 		toReturn.append(row)
-		if header:
-			header=False
-			continue
 	markers = []
 	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
@@ -140,12 +135,10 @@ def transformCSVnonP(markers, users, rows):
 	utterances = []
 	udict = makeUserDict(users)
 	mdict = makeMarkerDict(markers)
-	vcounts = {}
 	tests = {"TrueTrue": 0, "TrueFalse": 0, "FalseTrue": 0, "FalseFalse": 0}
 	for i, row in enumerate(rows):
 		if(i % 10000 is 0):
 			logger.log("On " + str(i) + " of " + str(len(rows))) 
-
 		if(users is not False):
 			row["verifiedSpeaker"] = verifySpeaker(udict,row["msgUserId"])
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
@@ -163,28 +156,27 @@ def logInfo(results, markers):
 	categories = shared_code.allMarkers(markers)
 	types = ["..truetrue", ".truefalse", ".falsetrue", "falsefalse"]
 	for verifiedType in types:
-		for i in range(0, markerFreqRange):
-			iStr = str(i)
-			if i < 10:
-				iStr = "0"+iStr
-			averages[verifiedType+iStr] = []
+		for markerFreq in range(0, markerFreqRange):
+			markerFreqStr = str(markerFreq)
+			if markerFreq < 10:
+				markerFreqStr = "0"+markerFreqStr
+			averages[verifiedType+markerFreqStr] = []
 	for result in results:
-		for k in range(0, markerFreqRange):
-			if result["powerDenom"] < k or result["baseDenom"] < k:
+		for markerFreq in range(0, markerFreqRange):
+			if result["powerDenom"] < markerFreq or result["baseDenom"] < markerFreq:
 				continue
-			kStr = str(k)
-			if k < 10:
-				kStr = "0"+kStr
-
+			markerFreqStr = str(markerFreq)
+			if markerFreq < 10:
+				markerFreqStr = "0"+markerFreqStr
 			if("verifiedSpeaker" in result):
 				if(result["verifiedSpeaker"] and result["verifiedReplier"]):
-					averages["..truetrue"+kStr].append(result["alignment"])
+					averages["..truetrue"+markerFreqStr].append(result["alignment"])
 				elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-					averages[".truefalse"+kStr].append(result["alignment"])
+					averages[".truefalse"+markerFreqStr].append(result["alignment"])
 				elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-					averages[".falsetrue"+kStr].append(result["alignment"])
+					averages[".falsetrue"+markerFreqStr].append(result["alignment"])
 				else:
-					averages["falsefalse"+kStr].append(result["alignment"])
+					averages["falsefalse"+markerFreqStr].append(result["alignment"])
 	toLog = []
 	for key in averages:
 		toAppend = {}
