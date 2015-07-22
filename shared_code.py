@@ -6,6 +6,12 @@ import math
 from multiprocessing import Pool
 import logger
 
+def ngrams(input, n):
+  output = []
+  for i in range(len(input)-n+1):
+    output.append(tuple(input[i:i+n]))
+  return output
+
 def calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader):
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
@@ -53,6 +59,23 @@ def metaDataExtractor(groupedUtterances, markers):
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		convoUtterances = []
 		for utterance in convo:
+			maxNgram = 1
+			ngramLengths = [2,3,4,5]
+			ngramPercent = 0
+			for ngramLength in ngramLengths:
+				msgTrigrams = set(ngrams(utterance["msgTokens"], ngramLength))
+				replyTrigrams = set(ngrams(utterance["replyTokens"], ngramLength))
+				quoted = set(msgTrigrams).intersection(set(replyTrigrams))
+				if len(quoted) == 0:
+					maxNgram = ngramLength - 1
+					ngramPercent = maxNgram/len(utterance["msgTokens"])
+					break
+			if(maxNgram == 1):
+				ngramPercent = 0
+			if(ngramPercent > 0.8):
+				logger.log(utterance["msgTokens"])
+				logger.log(utterance["replyTokens"])
+				logger.log(" ")
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
 			completedCategories = {}
@@ -80,7 +103,20 @@ def metaDataExtractor(groupedUtterances, markers):
 					notBA[category] += 1
 				completedCategories[category] = True
 			
-		toAppend = {"notBNotA": notBNotA, "notBA": notBA, "base": base, "utterances": convoUtterances, "numUtterances": numUtterances,  "intersect": intersect, "userMarkers": userMarkers, "a": a, "b": b, "conv": convo[0]["convId"]}
+		toAppend = {}
+		toAppend["ngramPercent"] = ngramPercent
+		toAppend["maxNgram"] = maxNgram
+		toAppend["notBNotA"] = notBNotA
+		toAppend["notBA"] = notBA
+		toAppend["base"] = base
+		toAppend["utterances"] = convoUtterances
+		toAppend["numUtterances"] = numUtterances
+		toAppend["intersect"] = intersect
+		toAppend["userMarkers"] = userMarkers
+		toAppend["a"] = a
+		toAppend["b"] = b
+		toAppend["conv"] =convo[0]["convId"]
+
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
@@ -119,9 +155,12 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["sparsityA"] = sparsity[0]
 			toAppend["sparsityB"] = sparsity[1]
+
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
+				toAppend["maxNgram"] = result["maxNgram"]
+				toAppend["ngramPercent"] = result["ngramPercent"]
 			else:
 				toAppend["age"] = result["age"]
 				toAppend["gender"] = result["gender"]
