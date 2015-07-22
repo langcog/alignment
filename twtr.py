@@ -4,12 +4,11 @@ import itertools
 import re
 import traceback
 import shared_code
-import datetime
 from ast import literal_eval
 from pprint import pprint
 import cProfile
 import pstats
-import time
+import logger
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
@@ -20,6 +19,11 @@ markersFile = "wordlists/markers_worldenglish.csv"
 outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
+
+numMarkers = 50
+smoothing = 1
+formulaType = "TRUE_POWER" # alternative is DMN
+shouldWriteHeader = True
 
 # Reads in info about users
 # Need this function for power proxy
@@ -44,20 +48,34 @@ def readUserInfo():
 	return users
 
 # Reads in tweets
-def readCSV(inputFile, users):
+def readCSV(inputFile, users, numOfMarkers):
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
 	utterances = []
 	header=True
 	toReturn = []
+	freqs = {}
 	for i, row in enumerate(reader):
 		if(i % 10000 is 0):
-			shared_code.log("On line " + str(i) + " of 230000")
+			logger.log("On line " + str(i) + " of 230000")
 		row.append(i)
+		row = processTweetCSVRow(row)
+		for word in row["msgTokens"]:
+			freqs[word] = freqs.get(word, 0) + 1
+		for word in row["replyTokens"]:
+			freqs[word] = freqs.get(word, 0) + 1
 		toReturn.append(row)
 		if header:
 			header=False
 			continue
-	return toReturn
+	markers = []
+	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
+	subset = freqs[0:numOfMarkers]
+	for subsetTuple in subset:
+		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
+			continue
+		markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+	logger.log(markers)
+	return {"rows": toReturn, "markers": markers}
 
 #Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
 def processTweetCSVRow(row):
@@ -73,6 +91,7 @@ def processTweetCSVRow(row):
 	toAppend["replyMarkers"] = []
 	toAppend["msgTokens"] = toAppend["msg"].split(" ")
 	toAppend["replyTokens"] = toAppend["reply"].split(" ")
+	
 	return toAppend
 
 def getCommonMarkers(utterances, numOfMarkers):
@@ -84,16 +103,10 @@ def getCommonMarkers(utterances, numOfMarkers):
 		reply = utterance["reply"].split(" ")
 		for word in reply:
 			freqs[word] = freqs.get(word, 0) + 1
-	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
-	toReturn = []
-	shared_code.log(len(freqs))
-	subset = freqs[0:numOfMarkers]
 	
-	for subsetTuple in subset:
-		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
-			continue
-		toReturn.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
-	shared_code.log(toReturn)
+	toReturn = []
+	logger.log(len(freqs))
+	
 	return toReturn
 
 def makeUserDict(users):
@@ -108,19 +121,19 @@ def makeMarkerDict(markers):
 		mdict[marker["marker"]] = marker
 	return mdict
 
-def findUser2(udict,uid):
+def findUser(udict,uid):
 	return udict.get(uid, False)
 
 #Code to take in the user dictionary & a user ID and return if that user is verified
 #	Note: users with missing data are considered unverified
 def verifySpeaker(udict,uid):
-	msgUser = findUser2(udict,uid)
+	msgUser = findUser(udict,uid)
 	if(msgUser != False):
 		return msgUser["verified"]
 	else:
 		return False
 
-def countMarkers2(tokens,markers):
+def countMarkers(tokens,markers):
 	return [val for val in tokens if val in markers.keys()]
 
 def transformCSVnonP(markers, users, rows):
@@ -131,19 +144,17 @@ def transformCSVnonP(markers, users, rows):
 	tests = {"TrueTrue": 0, "TrueFalse": 0, "FalseTrue": 0, "FalseFalse": 0}
 	for i, row in enumerate(rows):
 		if(i % 10000 is 0):
-			shared_code.log("On " + str(i) + " of " + str(len(rows))) 
-		
-		toAppend = processTweetCSVRow(row)
+			logger.log("On " + str(i) + " of " + str(len(rows))) 
 
 		if(users is not False):
-			toAppend["verifiedSpeaker"] = verifySpeaker(udict,row[1])
-			toAppend["verifiedReplier"] = verifySpeaker(udict,row[4])
-			tests[str(toAppend["verifiedSpeaker"]) + str(toAppend["verifiedReplier"])] += 1
-		toAppend["msgMarkers"] = countMarkers2(toAppend["msgTokens"],mdict)
-		toAppend["replyMarkers"] = countMarkers2(toAppend["replyTokens"],mdict)
+			row["verifiedSpeaker"] = verifySpeaker(udict,row["msgUserId"])
+			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
+			tests[str(row["verifiedSpeaker"]) + str(row["verifiedReplier"])] += 1
+		row["msgMarkers"] = countMarkers(row["msgTokens"],mdict)
+		row["replyMarkers"] = countMarkers(row["replyTokens"],mdict)
 
-		utterances.append(toAppend)
-	shared_code.log(tests)
+		utterances.append(row)
+	logger.log(tests)
 	return utterances
 
 def logInfo(results, markers):
@@ -188,31 +199,14 @@ def logInfo(results, markers):
 		toLog.append(toAppend)
 	toLog = sorted(toLog, key=lambda k: k["freq"])
 	for logging in toLog:
-		shared_code.log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
+		logger.log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
 
-
-shared_code.initialize()
-start = time.time()
-
+start = logger.initialize()
 users = readUserInfo()
-markers = shared_code.readMarkers(markersFile)
-
-rows = readCSV(inputFile, users)
-
-realRows = []
-for row in rows:
-	realRows.append(processTweetCSVRow(row))
-markers = getCommonMarkers(realRows, 50)
-
-
+result = readCSV(inputFile, users, numMarkers)
+rows = result["rows"]
+markers = result["markers"]
 utterances = transformCSVnonP(markers, users,rows)
-smoothing = 1
-formulaType = "TRUE_POWER" # alternative is DMN
-shouldWriteHeader = True
-
 results = shared_code.calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader)
-
 logInfo(results, markers)
-
-done = time.time()
-shared_code.finish(start, done)
+logger.finish(start)
