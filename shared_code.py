@@ -25,15 +25,6 @@ def finish(start, end):
 	print("Program finished executing in " + str(end-start) + " seconds")
 	print("--------------")
 
-def writeHeader(outputFile, writeType):
-	header = []
-	header.insert(0, ["Corpus", "DocId", "ConvId", "SpeakerA", "SpeakerB", "Marker", "Alignment", "Utterances that A and B have said with the marker", "Utterances that A has said with marker", "Utterances B has said with marker", "Total utterances", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
-	with open(outputFile, writeType, newline='') as f:
-		writer = csv.writer(f)
-		writer.writerows(header)
-	f.close()
-
-
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
 	header = list(results[0].keys())
@@ -77,16 +68,6 @@ def group(utterances):
 	for key, items in itertools.groupby(utterances, operator.itemgetter('convId')):
 		list1.append(list(items))
 	return list1
-
-def tester(i):
-	for i in range(0, 100000000):
-		continue
-	return
-
-def parallelizer(function, args):
-	with Pool(8) as p:
-		return p.starmap(function, args)
-
 
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers):
@@ -156,8 +137,17 @@ def allMarkers(markers):
 
 	return list(set(categories))
 
+
+def calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader):
+	groupedUtterances = group(utterances)
+	sparsities = calculateSparsity(groupedUtterances)
+	metaData = metaDataExtractor(groupedUtterances, markers)
+	results = runFormula(metaData, markers, sparsities, smoothing, formulaType)
+	writeFile(results, outputFile, shouldWriteHeader)
+	return results
+
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def calculateAlignment(results, markers, sparsities, age, gender, smoothing, formula):
+def runFormula(results, markers, sparsities, smoothing, formula):
 	toReturn = []
 	categories = allMarkers(markers)
 	falsefalse = 0
@@ -198,8 +188,8 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing, for
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
 			else:
-				toAppend["age"] = age
-				toAppend["gender"] = gender
+				toAppend["age"] = result["age"]
+				toAppend["gender"] = result["gender"]
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
 
@@ -244,18 +234,9 @@ def calculateAlignment(results, markers, sparsities, age, gender, smoothing, for
 				toAppend["powerDenom"] = powerDenom
 				toAppend["baseNum"] = baseNum
 				toAppend["baseDenom"] = baseDenom
-				
-				
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
-
-# Finds a conversation given it's conversation #
-def findConvo(convo, groupedUtterances):
-	for groupedUtterance in groupedUtterances:
-		if groupedUtterance[0]["convId"] == convo:
-			return groupedUtterance
-	return False
 
 def calculateSparsity(groupedUtterances): # calculates number of words speaker has said to replier/replier to speaker total
 	sparsity_measure = {}
@@ -266,14 +247,3 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 		for utterance in convo:
 			sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
 	return sparsity_measure
-
-# Prints the conversations with the max and least powers
-def testBoundaries(results, groupedUtterances):
-	results.pop(0)
-	results = sorted(results, key=lambda k: -k[6])
-	maxPower = results[1]
-	maxConvo = findConvo(maxPower[0], groupedUtterances)
-	leastPower = results[len(results)-1]
-	leastConvo = findConvo(leastPower[0], groupedUtterances)
-	log("Max Alignment: " + str(maxPower))
-	log("Min Alignment: " + str(leastPower))
