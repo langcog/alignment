@@ -206,16 +206,13 @@ markers = getCommonMarkers(realRows, 50)
 
 
 utterances = transformCSVnonP(markers, users,rows)
+smoothing = 1
+formulaType = "TRUE_POWER" # alternative is DMN
+shouldWriteHeader = True
 
-groupedUtterances = shared_code.group(utterances)
-shared_code.log("Grouped utterances")
-sparsities = shared_code.calculateSparsity(groupedUtterances)
-shared_code.log("Calculated Sparsities")
-setUppedResults = shared_code.metaDataExtractor(groupedUtterances, markers)
-shared_code.log("Setted up Results")
+results = shared_code.calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader)
 
-results = shared_code.calculateAlignment(setUppedResults, markers, sparsities, 0, 0, 1, "TRUE_POWER")
 logInfo(results, markers)
-shared_code.writeFile(results, outputFile, True)
+
 done = time.time()
 shared_code.finish(start, done)
