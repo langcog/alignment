@@ -203,7 +203,7 @@ def writeFile(results, outputFile, shouldWriteHeader):
 		logger.log("No results to write =(")
 		return
 	toWrite = []
-	header = list(results[0].keys())
+	header = sorted(list(results[0].keys()))
 	for row in results:
 		toAppend = []
 		for key in header:
