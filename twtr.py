@@ -111,7 +111,9 @@ def readCSV(inputFile, users, numOfMarkers):
 	markers = []
 	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
+
 	for subsetTuple in subset:
+		logger.log(subsetTuple)
 		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
 			continue
 		markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
