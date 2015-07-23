@@ -157,8 +157,6 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				toAppend["maxNgram"] = result["maxNgram"]
 				toAppend["ngramPercent"] = result["ngramPercent"]
 			else:
-				toAppend["age"] = result["age"]
-				toAppend["gender"] = result["gender"]
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
 			if(formula == "dnm"):
