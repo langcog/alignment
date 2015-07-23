@@ -44,8 +44,29 @@ def readUserInfo():
 		users.append(toAppend)
 	return users
 
+#Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
+def processTweetCSVRow(row):
+	toAppend = {}
+	toAppend["docId"] = "TWITTER"
+	toAppend["corpus"] = "TWITTER"
+	toAppend["convId"] = (row[1], row[4])
+	toAppend["msgUserId"] = row[1]
+	toAppend["msg"] = row[2].lower()
+	toAppend["replyUserId"] = row[4]
+	toAppend["reply"] = row[5].lower()
+	toAppend["msgMarkers"] = []
+	toAppend["replyMarkers"] = []
+	toAppend["msgTokens"] = toAppend["msg"].split(" ")
+	toAppend["replyTokens"] = toAppend["reply"].split(" ")
+	
+	return toAppend
+
+def remove_values_from_list(the_list, val):
+   return [value for value in the_list if value != val]
+
 # Reads in tweets
 def readCSV(inputFile, users, numOfMarkers):
+	reciprocities = {}
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
 	next(reader, None)
 	utterances = []
@@ -55,6 +76,18 @@ def readCSV(inputFile, users, numOfMarkers):
 		if(i % 10000 is 0):
 			logger.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
+		reciprocities[row["convId"]] = False
+		
+		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
+		realMessage = remove_values_from_list(realMessage, "[url]")
+		if(len(realMessage) == 0):
+			continue
+
+		realReply = remove_values_from_list(row["replyTokens"], "[mention]")
+		realReply = remove_values_from_list(realReply, "[url]")
+		if(len(realReply) == 0):
+			continue
+
 		if("”" in row["msg"]):
 			continue
 		if("”" in row["reply"]):
@@ -73,7 +106,14 @@ def readCSV(inputFile, users, numOfMarkers):
 			freqs[word] = freqs.get(word, 0) + 1
 		for word in row["replyTokens"]:
 			freqs[word] = freqs.get(word, 0) + 1
-		toReturn.append(row)
+		utterances.append(row)
+	for reciprocity in reciprocities:
+		reverse = (reciprocity[1], reciprocity[0])
+		if reverse in reciprocities:
+			reciprocities[reciprocity] = True
+	for utterance in utterances:
+		if reciprocities[utterance["convId"]]:
+			toReturn.append(utterance)
 	markers = []
 	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
@@ -84,22 +124,7 @@ def readCSV(inputFile, users, numOfMarkers):
 	logger.log(markers)
 	return {"rows": toReturn, "markers": markers}
 
-#Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
-def processTweetCSVRow(row):
-	toAppend = {}
-	toAppend["docId"] = "TWITTER"
-	toAppend["corpus"] = "TWITTER"
-	toAppend["convId"] = (row[1], row[4])
-	toAppend["msgUserId"] = row[1]
-	toAppend["msg"] = row[2].lower()
-	toAppend["replyUserId"] = row[4]
-	toAppend["reply"] = row[5].lower()
-	toAppend["msgMarkers"] = []
-	toAppend["replyMarkers"] = []
-	toAppend["msgTokens"] = toAppend["msg"].split(" ")
-	toAppend["replyTokens"] = toAppend["reply"].split(" ")
-	
-	return toAppend
+
 
 def getCommonMarkers(utterances, numOfMarkers):
 	freqs = {}
