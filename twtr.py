@@ -1,13 +1,7 @@
 import csv
-import operator
-import itertools
-import re
-import traceback
 import shared_code
 from ast import literal_eval
-from pprint import pprint
 import cProfile
-import pstats
 import logger
 
 testMarkers = "debug/test_markers.csv"
@@ -77,7 +71,7 @@ def readCSV(inputFile, users, numOfMarkers):
 			logger.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
-		
+
 		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
 		realMessage = remove_values_from_list(realMessage, "[url]")
 		if(len(realMessage) == 0):
