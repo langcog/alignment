@@ -19,6 +19,8 @@ smoothing = 1
 formulaType = "TRUE_POWER" # alternative is DMN
 shouldWriteHeader = True
 
+
+
 # Reads in info about users
 # Need this function for power proxy
 def readUserInfo():
@@ -60,6 +62,8 @@ def remove_values_from_list(the_list, val):
 
 # Reads in tweets
 def readCSV(inputFile, users, numOfMarkers):
+	functionWords = "of, at, in, without, between, he, they, anybody, it, one, the, a, that, my, more, much, either, neither, and, that, when, while, although, or, be, is, am, are, were, was, have, has, had, got, do, did, doing, no, not, nor, as"
+	functionWords = functionWords.split(" ")
 	reciprocities = {}
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
 	next(reader, None)
@@ -117,6 +121,8 @@ def readCSV(inputFile, users, numOfMarkers):
 		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
 			continue
 		markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+		if(subsetTuple[0] in functionWords):
+			markers.append({"marker": subsetTuple[0], "category": "FunctionWords"})
 	logger.log(markers)
 	return {"rows": toReturn, "markers": markers}
 
