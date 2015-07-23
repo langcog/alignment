@@ -59,6 +59,14 @@ def readCSV(inputFile, users, numOfMarkers):
 			continue
 		if("”" in row["reply"]):
 			continue
+		if("[mention] :" in row["msg"]):
+			continue
+		if("[mention] :" in row["reply"]):
+			continue
+		if(" rt " in row["msg"]):
+			continue
+		if(" rt " in row["reply"]):
+			continue
 		if(row["msgUserId"] == row["replyUserId"]):
 			continue
 		for word in row["msgTokens"]:

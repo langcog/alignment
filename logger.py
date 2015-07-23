@@ -12,7 +12,11 @@ def initialize():
 # Prints the name of the function that called log and prints the line number
 # Useful for debugging
 def log(toPrint):
-	print(traceback.extract_stack()[1][2] + " line " + str(traceback.extract_stack()[1][1]) + " at " + str(datetime.datetime.now().time()))
+	stack = traceback.extract_stack()
+	stack = stack[0:-1]
+	function = stack[-1][2]
+	line = stack[-1][1]
+	print(str(function) + " line " + str(line) + " at " + str(datetime.datetime.now().time()))
 	print(toPrint)
 	print("---------")
 
