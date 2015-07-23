@@ -200,7 +200,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
-	header = list(results[0].keys())
+	header = sorted(list(results[0].keys()))
 	toWrite = []
 	for row in results:
 		toAppend = []
