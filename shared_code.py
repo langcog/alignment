@@ -199,19 +199,21 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
+	if len(results) == 0:
+		logger.log("No results to write =(")
+		return
 	toWrite = []
-	try:
-		header = list(results[0].keys())
-		for row in results:
-			toAppend = []
-			for key in header:
-				toAppend.append(row[key])
-			toWrite.append(toAppend)
-		if shouldWriteHeader:
-			with open(outputFile, "w", newline='') as f:
-				writer = csv.writer(f)
-				writer.writerows([header])
-			f.close()
+	header = list(results[0].keys())
+	for row in results:
+		toAppend = []
+		for key in header:
+			toAppend.append(row[key])
+		toWrite.append(toAppend)
+	if shouldWriteHeader:
+		with open(outputFile, "w", newline='') as f:
+			writer = csv.writer(f)
+			writer.writerows([header])
+		f.close()
 	with open(outputFile, "a", newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
@@ -233,11 +235,9 @@ def readMarkers(markersFile):
 		markers.append(toAppend)
 	return markers
 
-def checkMarkers(markers, blackList):
+def checkMarkers(markers):
 	toReturn = []
 	for marker in markers:
-		if(marker in blackList):
-			continue
 		if isinstance(marker, str):
 			toReturn.append({"marker": marker, "category": marker})
 		toReturn.append(marker)
