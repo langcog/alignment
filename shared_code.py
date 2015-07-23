@@ -197,10 +197,6 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
-<<<<<<< HEAD
-=======
-	header = sorted(list(results[0].keys()))
->>>>>>> 08feeed932d6d12efb2195a6929e08df274f331f
 	toWrite = []
 	try:
 		header = list(results[0].keys())
