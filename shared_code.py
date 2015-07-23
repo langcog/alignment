@@ -11,6 +11,7 @@ def ngrams(input, n):
   return output
 
 def calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader):
+	formulaType = formulaType.lower()
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
 	metaData = metaDataExtractor(groupedUtterances, markers)
@@ -159,7 +160,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				toAppend["gender"] = result["gender"]
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
-			if(formula == "DNM"):
+			if(formula == "dnm"):
 				powerNum = toAppend["BAndA"]
 				powerDenom = (toAppend["BAndA"]+toAppend["NotBA"])
 				baseNum = (toAppend["BAndA"]+toAppend["BAndNotA"])
@@ -172,7 +173,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				toAppend["powerDenom"] = powerDenom
 				toAppend["baseNum"] = baseNum
 				toAppend["baseDenom"] = baseDenom
-			elif(formula == "TRUE_POWER"):
+			elif(formula == "true_power"):
 				powerNum = float(result["intersect"].get(category, 0))
 				powerDenom = float(result["userMarkers"][result["a"]+category])
 				if(powerDenom == 0):
@@ -229,3 +230,13 @@ def readMarkers(markersFile):
 			toAppend["category"] = row[0]
 		markers.append(toAppend)
 	return markers
+
+def checkMarkers(markers, blackList):
+	toReturn = []
+	for marker in markers:
+		if(marker in blackList):
+			continue
+		if isinstance(marker, str):
+			toReturn.append({"marker": marker, "category": marker})
+		toReturn.append(marker)
+	return toReturn

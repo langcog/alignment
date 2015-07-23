@@ -7,6 +7,10 @@ Code examples
     - Grouping list of dictionaries
         https://www.daniweb.com/software-development/python/code/216750/group-a-list-of-dictionaries-python
 
+Formulas
+    - TRUE_POWER (Outputs the expected results)
+    - DNM (Formula used in "Echoes of Power" - http://www.cs.cornell.edu/~cristian/Echoes_of_power_files/echoes_of_power.pdf)
+    
 ## changelog
 
 **6/26/2015**
@@ -34,3 +38,14 @@ Our new formula is:
 powerProb = log((# of utterances where A and B both say marker)/(Number of utterances where A says the marker))
 baseProb = log((# of utterances where B says the marker and A doesn't)/(# of utterances that A doesn't say the marker))
 prob = powerProb - baseProb
+
+**7/23/2015**
+SHARED_CODE:
+    Fixed a bug which was reducing our BNOTA
+TWTR:
+    Updated readCSV to discard more utterances which quote a speaker
+        - Check for unicode quotes
+        - Check if speakers acknowledge each other
+        - Check if utterance contains "RT"
+        - Check if utterance contains "[mention]: "
+CHILDES:
