@@ -72,10 +72,6 @@ def metaDataExtractor(groupedUtterances, markers):
 					break
 			if(maxNgram == 1):
 				ngramPercent = 0
-			if(ngramPercent > 0.8):
-				logger.log(utterance["msgTokens"])
-				logger.log(utterance["replyTokens"])
-				logger.log(" ")
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
 			completedCategories = {}
@@ -171,6 +167,8 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				powerDenom = (toAppend["BAndA"]+toAppend["NotBA"])
 				baseNum = (toAppend["BAndA"]+toAppend["BAndNotA"])
 				baseDenom = toAppend["numUtterances"]
+				if(baseDenom == 0 or powerDenom == 0):
+					continue
 				alignment = powerNum/powerDenom - baseNum/baseDenom
 				toAppend["alignment"] = alignment
 				toAppend["powerNum"] = powerNum
