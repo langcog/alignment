@@ -179,9 +179,9 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	determine_possible_conversations(speaker_list)
 	squisher(ordered_utterance_list)
 	convo_grouper(squished_dict)
-	calculate_sparsity(speaker_list, convo_dict)
-	
-	results = shared_code.calculateAlignment(convo_dict, marker_list, 1, 'TRUE_POWER', output_file_name, var_x)	
+
+	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list, child_age, child_gender)	
+	results = shared_code.calculateAlignment(utterances, marker_list, 1, 'TRUE_POWER', output_file_name, var_x)	
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
