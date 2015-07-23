@@ -1,9 +1,7 @@
 import csv
 import operator
 import itertools
-from random import randint
 import math
-from multiprocessing import Pool
 import logger
 
 def ngrams(input, n):
@@ -151,7 +149,6 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["sparsityA"] = sparsity[0]
 			toAppend["sparsityB"] = sparsity[1]
-
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
