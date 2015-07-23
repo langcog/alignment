@@ -9,8 +9,10 @@ from nltk.corpus import PlaintextCorpusReader
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
 import operator
-
-shared_code.initialize()
+from nltk.stem import *
+from nltk.stem.snowball import SnowballStemmer
+import logger
+logger.initialize()
 
 desired_length = 300
 outputFile = "ProvidenceFreq500v2.csv"
@@ -22,12 +24,25 @@ child_utterance_list = []
 freq_dict = {}
 fdist = {}
 BNC_top1000 = []
+stemmed_list = []
 
 def initialize(): # clean slates the variables
 	global ordered_utterance_list
 	global child_utterance_list
+	global stemmed_list
 	ordered_utterance_list = []
 	child_utterance_list = []
+	stemmed_list = []
+
+def read_BNC_baby_stem(root_local):
+	global fdist
+	BNCBaby = []
+	stemmer = SnowballStemmer("english")
+	wordlists = PlaintextCorpusReader(root_local, '.*', encoding='latin-1')
+	for word in wordlists.words():
+		BNC_baby.append(stemmer.stem(word))
+	fdist = FreqDist(word.lower() for word in BNC_baby)
+	return(fdist)
 
 def read_BNC_baby(root_local):
 	global fdist
@@ -58,6 +73,13 @@ def isolate_CHI(list_of_utterances):
 			utterance = utterance[1:(len(utterance) - 1)]
 			child_utterance_list.append(utterance)
 	return(child_utterance_list)
+
+def CHI_stemmer(chilist):
+	global stemmed_list
+	stemmer = SnowballStemmer("english")
+	for word in chilist:
+		stemmed_list.append(stemmer.stem(word))
+	return(stemmed_list)	
 
 def word_filter(cu_list):
 	d = enchant.Dict("en_US")
@@ -102,7 +124,22 @@ def write_freq(output_file_name, freq_d):
 	with open(output_file_name, "a", newline='') as f:
 		magic_writer = csv.writer(f)
 		magic_writer.writerows(output_list[0:(desired_length - 1)])
-		f.close()	
+		f.close()
+
+def write_stemmed_freq(output_file_name, freq_d):
+	global BNC_top1000
+	output_list = []
+	for w in sorted(freq_d, key=freq_d.get, reverse=True):
+		try:
+			if w in BNC_top1000:
+				if len(w) > 1 or w == 'a' or w == 'i':
+					output_list.append([w, freq_d[w]])
+		except:
+			continue			
+	with open(output_file_name, "a", newline='') as f:
+		magic_writer = csv.writer(f)
+		magic_writer.writerows(output_list[0:(desired_length - 1)])
+		f.close()			
 	
 def writeHeader(output_File):
 	header = []
@@ -112,7 +149,7 @@ def writeHeader(output_File):
 		writer.writerows(header)
 	f.close()
 
-read_BNC_baby(BNC_root)
+read_BNC_baby_stem(BNC_root)
 sort_fdist()
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
@@ -123,4 +160,4 @@ for dirName, subdirList, fileList in os.walk(corpus_dir):
 				get_freq_e(dirName + '\\' + x, fname)
 
 writeHeader(outputFile)
-write_freq(outputFile, freq_dict)				
+write_stemmed_freq(outputFile, freq_dict)				
