@@ -1,13 +1,7 @@
 import csv
-import operator
-import itertools
-import re
-import traceback
 import shared_code
 from ast import literal_eval
-from pprint import pprint
 import cProfile
-import pstats
 import logger
 
 testMarkers = "debug/test_markers.csv"
