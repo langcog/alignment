@@ -197,18 +197,23 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
+<<<<<<< HEAD
+=======
 	header = sorted(list(results[0].keys()))
+>>>>>>> 08feeed932d6d12efb2195a6929e08df274f331f
 	toWrite = []
-	for row in results:
-		toAppend = []
-		for key in header:
-			toAppend.append(row[key])
-		toWrite.append(toAppend)
-	if shouldWriteHeader:
-		with open(outputFile, "w", newline='') as f:
-			writer = csv.writer(f)
-			writer.writerows([header])
-		f.close()
+	try:
+		header = list(results[0].keys())
+		for row in results:
+			toAppend = []
+			for key in header:
+				toAppend.append(row[key])
+			toWrite.append(toAppend)
+		if shouldWriteHeader:
+			with open(outputFile, "w", newline='') as f:
+				writer = csv.writer(f)
+				writer.writerows([header])
+			f.close()
 	with open(outputFile, "a", newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(toWrite)
