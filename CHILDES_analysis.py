@@ -4,12 +4,14 @@ import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 import shared_code
+import logger
 
-shared_code.initialize()
+logger.initialize()
 
+corpus = 'Providence'
 smoothing_values = [0, 1]
-outputFile = "ProvFreq500Results.csv"
-markersFile = "ProvFreq500.csv"
+outputFile = "ProvFreq300Results.csv"
+markersFile = "PF300.csv"
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 corpus_name = 'Providence'
 marker_list = shared_code.readMarkers(markersFile)
@@ -179,9 +181,10 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	determine_possible_conversations(speaker_list)
 	squisher(ordered_utterance_list)
 	convo_grouper(squished_dict)
-
-	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list, child_age, child_gender)	
-	results = shared_code.calculateAlignment(utterances, marker_list, 1, 'TRUE_POWER', output_file_name, var_x)	
+	calculate_sparsity(speaker_list, convo_dict)
+	
+	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
+	results = shared_code.calculateAlignments(utterances, marker_list, 1, 'TRUE_POWER', output_file_name, var_x)	
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
