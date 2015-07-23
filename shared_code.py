@@ -94,9 +94,9 @@ def metaDataExtractor(groupedUtterances, markers):
 				elif replyMarker and not msgMarker:
 					base[category] += 1
 				elif not replyMarker and msgMarker:
-					notBNotA[category] += 1
-				else:
 					notBA[category] += 1
+				else:
+					notBNotA[category] += 1
 				completedCategories[category] = True
 			
 		toAppend = {}
@@ -140,8 +140,8 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				continue
 			sparsity = sparsities[(result["a"], result["b"])]
 			toAppend = {}
-			toAppend["BAndA"] = float(result["intersect"].get(category, 0))
-			toAppend["BAndNotA"] = float(result["base"].get(category, 0))
+			toAppend["BA"] = float(result["intersect"].get(category, 0))
+			toAppend["BNotA"] = float(result["base"].get(category, 0))
 			toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
 			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
 			toAppend["conv"] = result["conv"]
@@ -162,9 +162,9 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
 			if(formula == "dnm"):
-				powerNum = toAppend["BAndA"]
-				powerDenom = (toAppend["BAndA"]+toAppend["NotBA"])
-				baseNum = (toAppend["BAndA"]+toAppend["BAndNotA"])
+				powerNum = toAppend["BA"]
+				powerDenom = (toAppend["BA"]+toAppend["NotBA"])
+				baseNum = (toAppend["BA"]+toAppend["BNotA"])
 				baseDenom = toAppend["numUtterances"]
 				if(baseDenom == 0 or powerDenom == 0):
 					continue
