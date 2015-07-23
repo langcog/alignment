@@ -11,6 +11,7 @@ def ngrams(input, n):
   return output
 
 def calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader):
+	markers = checkMarkers(markers)
 	formulaType = formulaType.lower()
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
