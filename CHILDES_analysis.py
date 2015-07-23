@@ -5,6 +5,8 @@ import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 import shared_code
 import logger
+from nltk.stem import *
+from nltk.stem.snowball import SnowballStemmer
 
 logger.initialize()
 
@@ -80,9 +82,19 @@ def initialize(): # clean slates the variables
 	possible_conversation_list = []
 	project_x = []
 
+def get_childes_stemmed(root_location, file_name):
+	global ordered_utterance_list
+	stemmer = SnowballStemmer("english")
+	corpus_root = nltk.data.find(root_location) 
+	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
+	ordered_utterance_list = file_setup.sents()
+	for utterance in ordered_utterance_list:
+		for i in range(1, len(utterance) - 1):
+			utterance[i] = stemmer.stem(utterance[i])
+	return(ordered_utterance_list)
+
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
-	global child_age
 	corpus_root = nltk.data.find(root_location) 
 	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
 	ordered_utterance_list = file_setup.sents()
