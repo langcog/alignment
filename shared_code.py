@@ -45,15 +45,17 @@ def metaDataExtractor(groupedUtterances, markers):
 		if(i % 1000 is 0):
 			logger.log("On " + str(i) + " of " + str(len(groupedUtterances)))
 		userMarkers = {}
-		intersect = {} # Number of times Person A and person B says the marker["marker"]
-		base = {}
-		notBNotA = {}
-		notBA = {}
+		ba = {} # Number of times Person A and person B says the marker["marker"]
+		bna = {}
+		nbna = {}
+		nba = {}
+
 		for marker in markers:
-			intersect[marker["category"]] = 0
-			base[marker["category"]] = 0
-			notBNotA[marker["category"]] = 0
-			notBA[marker["category"]] = 0
+			ba[marker["category"]] = 0
+			bna[marker["category"]] = 0
+			nbna[marker["category"]] = 0
+			nba[marker["category"]] = 0
+
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
@@ -81,7 +83,7 @@ def metaDataExtractor(groupedUtterances, markers):
 					continue
 				msgMarker = False
 				replyMarker = False
-				# Increments values of userMarkers and intersect depending on whether a marker["marker"] is in the current utterance
+				# Increments values of userMarkers and ba depending on whether a marker["marker"] is in the current utterance
 				if category in utterance["msgMarkers"]:
 					msgMarker = True
 					userMarkers[utterance["msgUserId"] + category] = userMarkers.get(utterance["msgUserId"] + category ,0) + 1
@@ -90,24 +92,24 @@ def metaDataExtractor(groupedUtterances, markers):
 					userMarkers[utterance["replyUserId"] + category] = userMarkers.get(utterance["replyUserId"] + category,0) + 1
 				
 				if msgMarker and replyMarker:
-					intersect[category] += 1
+					ba[category] += 1
 				elif replyMarker and not msgMarker:
-					base[category] += 1
+					bna[category] += 1
 				elif not replyMarker and msgMarker:
-					notBA[category] += 1
+					nba[category] += 1
 				else:
-					notBNotA[category] += 1
+					nbna[category] += 1
 				completedCategories[category] = True
 			
 		toAppend = {}
 		toAppend["ngramPercent"] = ngramPercent
 		toAppend["maxNgram"] = maxNgram
-		toAppend["notBNotA"] = notBNotA
-		toAppend["notBA"] = notBA
-		toAppend["base"] = base
+		toAppend["nbna"] = nbna
+		toAppend["nba"] = nba
+		toAppend["bna"] = bna
 		toAppend["utterances"] = convoUtterances
 		toAppend["numUtterances"] = numUtterances
-		toAppend["intersect"] = intersect
+		toAppend["ba"] = ba
 		toAppend["userMarkers"] = userMarkers
 		toAppend["a"] = a
 		toAppend["b"] = b
@@ -116,6 +118,11 @@ def metaDataExtractor(groupedUtterances, markers):
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
+			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
+			toAppend["replierFollowers"] = convo[0]["replierFollowers"]
+			if((convo[0]["replierFollowers"] + convo[0]["speakerFollowers"] > 0) and (convo[0]["speakerFollowers"] != 0) and (convo[0]["replierFollowers"] > 0)):
+				toAppend["percentDiff"] = convo[0]["speakerFollowers"]/(convo[0]["replierFollowers"] + convo[0]["speakerFollowers"])
+			
 		else:
 			toAppend["corpus"] = utterance["corpus"]
 			toAppend["docId"] = utterance["docId"]
@@ -140,59 +147,63 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 				continue
 			sparsity = sparsities[(result["a"], result["b"])]
 			toAppend = {}
-			toAppend["BA"] = float(result["intersect"].get(category, 0))
-			toAppend["BNotA"] = float(result["base"].get(category, 0))
-			toAppend["NotBNotA"] = float(result["notBNotA"].get(category, 0))
-			toAppend["NotBA"] = float(result["notBA"].get(category, 0))
-			toAppend["conv"] = result["conv"]
+			toAppend["ba"] = float(result["ba"].get(category, 0))
+			toAppend["bna"] = float(result["bna"].get(category, 0))
+			toAppend["nbna"] = float(result["nbna"].get(category, 0))
+			toAppend["nba"] = float(result["nba"].get(category, 0))
 			toAppend["speakerId"] = result["a"]
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
-			toAppend["sparsityA"] = sparsity[0]
-			toAppend["sparsityB"] = sparsity[1]
+			
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
 				toAppend["maxNgram"] = result["maxNgram"]
 				toAppend["ngramPercent"] = result["ngramPercent"]
+				toAppend["speakerFollowers"] = result["speakerFollowers"]
+				toAppend["replierFollowers"] = result["replierFollowers"]
+				if("percentDiff" in result):
+					if(result["percentDiff"] == 0):
+						logger.log(result["percentDiff"])
+					toAppend["percentDiff"] = result["percentDiff"]
+				else:
+					continue
 			else:
-				toAppend["age"] = result["age"]
-				toAppend["gender"] = result["gender"]
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
-			if(formula == "dnm"):
-				powerNum = toAppend["BA"]
-				powerDenom = (toAppend["BA"]+toAppend["NotBA"])
-				baseNum = (toAppend["BA"]+toAppend["BNotA"])
-				baseDenom = toAppend["numUtterances"]
-				if(baseDenom == 0 or powerDenom == 0):
-					continue
-				alignment = powerNum/powerDenom - baseNum/baseDenom
-				toAppend["alignment"] = alignment
-				toAppend["powerNum"] = powerNum
-				toAppend["powerDenom"] = powerDenom
-				toAppend["baseNum"] = baseNum
-				toAppend["baseDenom"] = baseDenom
-			elif(formula == "true_power"):
-				powerNum = float(result["intersect"].get(category, 0))
-				powerDenom = float(result["userMarkers"][result["a"]+category])
-				if(powerDenom == 0):
-					continue
-				baseDenom = result["numUtterances"]-float(result["userMarkers"][result["a"]+category])
-				baseNum = float(result["base"].get(category, 0))
-				if(baseDenom == 0):
-					continue
-				if(baseNum == 0 and powerNum == 0):
-					continue
-				powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
-				baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
-				alignment = powerProb - baseProb
-				toAppend["alignment"] = alignment
-				toAppend["powerNum"] = powerNum
-				toAppend["powerDenom"] = powerDenom
-				toAppend["baseNum"] = baseNum
-				toAppend["baseDenom"] = baseDenom
+				toAppend["sparsityA"] = sparsity[0]
+				toAppend["sparsityB"] = sparsity[1]
+			
+			powerNum = toAppend["ba"]
+			powerDenom = (toAppend["ba"]+toAppend["nba"])
+			baseNum = (toAppend["ba"]+toAppend["bna"])
+			baseDenom = toAppend["numUtterances"]
+			if(baseDenom == 0 or powerDenom == 0):
+				continue
+			alignment = powerNum/powerDenom - baseNum/baseDenom
+			toAppend["alignment"] = alignment
+			toAppend["baseDenom"] = baseDenom
+			toAppend["powerDenom"] = powerDenom
+			toAppend["dnmalignment"] = alignment
+
+			powerNum = toAppend["ba"]
+			powerDenom = float(result["userMarkers"][result["a"]+category])
+			if(powerDenom == 0):
+				continue
+			baseDenom = toAppend["numUtterances"]-float(result["userMarkers"][result["a"]+category])
+			baseNum = toAppend["bna"]
+			if(baseDenom == 0):
+				continue
+			if(baseNum == 0 and powerNum == 0):
+				continue
+			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
+			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
+			alignment = powerProb - baseProb
+			toAppend["alignment"] = alignment
+			toAppend["baseDenom"] = baseDenom
+			toAppend["powerDenom"] = powerDenom
+
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
