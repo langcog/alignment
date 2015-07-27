@@ -114,6 +114,7 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["a"] = a
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
+		toAppend["reciprocity"] = convo[0]["reciprocity"]
 
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
@@ -126,6 +127,7 @@ def metaDataExtractor(groupedUtterances, markers):
 		else:
 			toAppend["corpus"] = utterance["corpus"]
 			toAppend["docId"] = utterance["docId"]
+
 		results.append(toAppend)
 	return results
 
@@ -155,6 +157,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
+			toAppend["reciprocity"] = result["reciprocity"]
 			
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
