@@ -296,3 +296,93 @@ def get_similarity(conversation_dictionary):
 			except:
 				master_dict[(speaker1, speaker2)][1][key] = 'NA'	
 	return(master_dict)
+
+def get_hyp_avg(conversation_dictionary):
+	global master_dict
+	global convo_dict
+	global pathsim_avg
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0]
+		trill_ct = 0
+		trill_total = 0
+		for key in master_dict[(speaker1, speaker2)][0].keys():
+			if master_dict[(speaker1, speaker2)][0][key] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][0][key]
+				trill_ct += 1
+		if trill_ct > 0:
+			pathsim_avg[(speaker1, speaker2)][0] = trill_total / trill_ct
+		else:
+			pathsim_avg[(speaker1, speaker2)][0] = 'NA'
+		trill_ct = 0
+		trill_total = 0
+		for key in master_dict[(speaker1, speaker2)][1].keys():			
+			if master_dict[(speaker1, speaker2)][1][key] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][1][key]
+				trill_ct += 1
+		if trill_ct > 0:
+			pathsim_avg[(speaker1, speaker2)][1] = trill_total / trill_ct
+		else:
+			pathsim_avg[(speaker1, speaker2)][1] = 'NA'
+	return(pathsim_avg)		
+
+def document_stuff(directory_location, input_file_name, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
+	global ordered_utterance_list
+	global convo_dict
+	global sparsity_measure
+	global output_almost
+	global final_counter
+	global alignment_dict
+	global possible_conversation_list
+	global speaker_list
+	global master_dict
+	global fdist
+	global pathsim_avg
+	initialize()
+	get_childes_files(directory_location, input_file_name)
+	determine_speakers(ordered_utterance_list)
+	determine_possible_conversations(speaker_list)
+	squisher(ordered_utterance_list)
+	convo_grouper(squished_dict)
+	calculate_sparsity(speaker_list, convo_dict)
+	dict_initialize(speaker_list)
+	isolate_nouns(convo_dict)
+	get_similarity(convo_dict)
+	get_hyp_avg(convo_dict)
+	for x in range(0, (len(convo_dict) - 1)):
+		speaker1 = convo_dict[x][0][0]
+		speaker2 = convo_dict[x][1][0]
+		output_almost[final_counter] = [input_file_name, speaker1, speaker2, pathsim_avg[(speaker1, speaker2)][0], pathsim_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+		final_counter += 1
+	for y in range(0, (len(output_almost) - 1)):	
+		if output_almost[y] not in for_output_list:
+			for_output_list.append(output_almost[y])	
+	with open(output_file_name, "a", newline='') as f:
+		magic_writer = csv.writer(f)
+		magic_writer.writerows(for_output_list)
+		f.close()		
+
+
+corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
+corpus_name = 'Providence'
+
+def writeHeader(outputFile, writeType):
+	header = []
+	header.insert(0, ["DocId", "Speaker", "Replier", 'S-Pathsim Avg', 'R-Pathsim Avg', "Sparsity S-R", "Sparsity R-S"])
+	with open(outputFile, writeType, newline='') as f:
+		writer = csv.writer(f)
+		writer.writerows(header)
+	f.close()
+
+read_BNC_baby(BNC_root)
+writeHeader('Providence_FLT_pathsimNEW.csv', 'a')
+
+for dirName, subdirList, fileList in os.walk(corpus_dir):
+	for x in subdirList:
+		for fname in os.listdir(dirName + '\\' + x):
+			if fname.endswith(".xml"):
+				os.path.join(dirName + '\\' + x, fname)
+				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsimNEW.csv')
+
+
+				
