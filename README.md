@@ -58,3 +58,7 @@ TWTR:
     - Check if speakers acknowledge each other
     - Check if utterance contains "RT"
     - Check if utterance contains "[mention]: "
+
+**7/27/2015**
+
+    - No longer discard if speakers don't acknowledge each other

@@ -76,6 +76,8 @@ def readCSV(inputFile, users, numOfMarkers):
 	selfAligns = 0
 	wholes = 0
 	freqs = {}
+	msgLove = 0
+	replyLove = 0
 	for i, row in enumerate(reader):
 		if(i % 10000 is 0):
 			logger.log("On line " + str(i) + " of 230000")
@@ -111,7 +113,16 @@ def readCSV(inputFile, users, numOfMarkers):
 			reciprocities[reciprocity] = True
 	for utterance in utterances:
 		if reciprocities[utterance["convId"]]:
-			toReturn.append(utterance)
+			utterance["reciprocity"] = True
+		else:
+			utterance["reciprocity"] = False
+		#logger.log(utterance["msgMarkers"])
+		if("up" in utterance["msgTokens"]):
+			msgLove += 1
+			replyLove += 1
+		toReturn.append(utterance)
+	logger.log(msgLove)
+	logger.log(replyLove)
 	markers = []
 	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
@@ -120,7 +131,8 @@ def readCSV(inputFile, users, numOfMarkers):
 		logger.log(subsetTuple)
 		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
 			continue
-		markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+		else:
+			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
 		#if(subsetTuple[0] in functionWords):
 		#	markers.append({"marker": subsetTuple[0], "category": "FunctionWords"})
 		#elif(subsetTuple[0] in string.punctuation):
