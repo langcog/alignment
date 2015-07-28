@@ -211,7 +211,7 @@ def runFormula(results, markers, sparsities, smoothing):
 			baseNum = toAppend["bna"]
 			if(baseDenom == 0):
 				continue
-			if(baseNum == 0 and powerNum == 0):
+			if(baseNum == 0 or powerNum == 0):
 				continue
 			powerProb = math.log((powerNum+smoothing)/(powerDenom+2*smoothing))
 			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
