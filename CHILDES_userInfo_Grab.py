@@ -3,6 +3,8 @@ import csv
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 
+Subdirs = True
+
 info_list = []
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 
@@ -48,13 +50,25 @@ def writeFile(outputFile, writeType, file_name, toWrite):
 		writer.writerows(toWrite)
 	f.close()	
 
-writeHeader('Providence_userInfo.csv', 'a')
+outfile = 'Providence_userInfo.csv'
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				initialize()
-				get_childes_files(dirName + '\\' + x, fname)
-				writeFile('Providence_userInfo.csv', 'a', fname, info_list)	
+writeHeader(outfile, 'a')
+
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					initialize()
+					get_childes_files(dirName + '\\' + x, fname)
+					writeFile(outfile, 'a', fname, info_list)
+
+if Subdirs == False:
+	for fname in os.listdir(corpus_dir):
+		if fname.endswith(".xml"):
+			os.path.join(corpus_dir, fname)
+			initialize()
+			get_childes_files(corpus_dir, fname)
+			writeFile(outfile, 'a', fname, info_list)
+				
