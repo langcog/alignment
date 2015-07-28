@@ -10,13 +10,12 @@ def ngrams(input, n):
     output.append(tuple(input[i:i+n]))
   return output
 
-def calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader):
+def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader):
 	markers = checkMarkers(markers)
-	formulaType = formulaType.lower()
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
 	metaData = metaDataExtractor(groupedUtterances, markers)
-	results = runFormula(metaData, markers, sparsities, smoothing, formulaType)
+	results = runFormula(metaData, markers, sparsities, smoothing)
 	writeFile(results, outputFile, shouldWriteHeader)
 	return results
 
@@ -142,7 +141,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def runFormula(results, markers, sparsities, smoothing, formula):
+def runFormula(results, markers, sparsities, smoothing):
 	toReturn = []
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
