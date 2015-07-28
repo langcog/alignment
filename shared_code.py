@@ -2,7 +2,7 @@ import csv
 import operator
 import itertools
 import math
-import logger
+import logger1
 
 def ngrams(input, n):
   output = []
@@ -43,7 +43,7 @@ def metaDataExtractor(groupedUtterances, markers):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
 		if(i % 1000 is 0):
-			logger.log("On " + str(i) + " of " + str(len(groupedUtterances)))
+			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
 		userMarkers = {}
 		intersect = {} # Number of times Person A and person B says the marker["marker"]
 		base = {}
@@ -134,7 +134,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
 		if(i % 1000 is 0):
-			logger.log("On result " + str(i) + " of " + str(len(results)))
+			logger1.log("On result " + str(i) + " of " + str(len(results)))
 		for j, category in enumerate(categories):
 			if((result["a"]+category) not in result["userMarkers"]):
 				continue
@@ -198,7 +198,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
 	if len(results) == 0:
-		logger.log("No results to write =(")
+		logger1.log("No results to write =(")
 		return
 	toWrite = []
 	header = sorted(list(results[0].keys()))
