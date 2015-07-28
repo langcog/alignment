@@ -357,10 +357,10 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
-			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[0][key][2], master_dict[0][key][0], master_dict[0][key][1], 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[speaker1, speaker2][0][key][2], master_dict[speaker1, speaker2][0][key][0], master_dict[speaker1, speaker2][0][key][1], 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
 			final_counter += 1
 		for key in master_dict[(speaker1, speaker2)][1].keys():
-			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[1][key][2], master_dict[1][key][0], 'NA', master_dict[1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[speaker1, speaker2][1][key][2], master_dict[speaker1, speaker2][1][key][0], 'NA', master_dict[speaker1, speaker2][1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
 			final_counter += 1	
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
