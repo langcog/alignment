@@ -5,12 +5,14 @@ import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 import shared_code
 import logger
+from nltk.stem import *
+from nltk.stem.snowball import SnowballStemmer
 
 logger.initialize()
 
 corpus = 'Providence'
 smoothing_values = [0, 1]
-outputFile = "ProvFreq300Results.csv"
+outputFile = "ProvFreq300ResultsOldFormula.csv"
 markersFile = "PF300.csv"
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 corpus_name = 'Providence'
@@ -37,6 +39,8 @@ for_output_list = []
 possible_conversation_list = []
 project_x = []
 super_var = True
+Stemmed = False
+Subdirs = True
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -80,9 +84,19 @@ def initialize(): # clean slates the variables
 	possible_conversation_list = []
 	project_x = []
 
+def get_childes_stemmed(root_location, file_name):
+	global ordered_utterance_list
+	stemmer = SnowballStemmer("english")
+	corpus_root = nltk.data.find(root_location) 
+	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
+	ordered_utterance_list = file_setup.sents()
+	for utterance in ordered_utterance_list:
+		for i in range(1, len(utterance) - 1):
+			utterance[i] = stemmer.stem(utterance[i])
+	return(ordered_utterance_list)
+
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
-	global child_age
 	corpus_root = nltk.data.find(root_location) 
 	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
 	ordered_utterance_list = file_setup.sents()
@@ -176,7 +190,10 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	global possible_conversation_list
 	global speaker_list
 	initialize()
-	get_childes_files(directory_location, input_file_name)
+	if Stemmed == False:
+		get_childes_files(directory_location, input_file_name)
+	if Stemmed == True:
+		get_childes_stemmed(directory_location, input_file_name)	
 	determine_speakers(ordered_utterance_list)
 	determine_possible_conversations(speaker_list)
 	squisher(ordered_utterance_list)
@@ -184,12 +201,19 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	calculate_sparsity(speaker_list, convo_dict)
 	
 	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
-	results = shared_code.calculateAlignments(utterances, marker_list, 1, 'TRUE_POWER', output_file_name, var_x)	
+	results = shared_code.calculateAlignments(utterances, marker_list, 1, 'dnm', output_file_name, var_x)	
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, marker_list, outputFile, super_var)
-				super_var = False
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					document_stuff(dirName + '\\' + x, fname, marker_list, outputFile, super_var)
+					super_var = False
+if Subdirs == False:
+	for fname in os.listdir(corpus_dir):
+		if fname.endswith(".xml"):
+			os.path.join(corpus_dir, fname)
+			document_stuff(corpus_dir, fname, marker_list, outputFile, super_var)
+			super_var = False				

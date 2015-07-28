@@ -4,6 +4,8 @@ import csv
 import os
 import re
 from mychildes import CHILDESCorpusReaderX #modified nltk
+from nltk.corpus import PlaintextCorpusReader
+from nltk.probability import FreqDist
 
 speaker_list = []
 utterance_dict = {}
@@ -19,10 +21,10 @@ output_almost = {}
 final_counter = 0
 for_output_list = []
 possible_conversation_list = []
-BLC_list1= []
-BLC_dict1 = {}
 master_dict = {}
 magic_counter = {}
+fdist = {}
+pathsim_avg = {}
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -41,6 +43,7 @@ def initialize(): # clean slates the variables
 	global possible_conversation_list
 	global master_dict
 	global magic_counter
+	global pathsim_avg
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
@@ -57,6 +60,16 @@ def initialize(): # clean slates the variables
 	possible_conversation_list = []
 	master_dict = {}
 	magic_counter = {}
+	pathsim_avg = {}
+
+BNC_root = r'C:\Users\Aaron\Desktop\BNCBaby\BNCBaby'
+
+def read_BNC_baby(root_local):
+	global fdist
+	wordlists = PlaintextCorpusReader(root_local, '.*', encoding='latin-1')
+	BNC_baby = wordlists.words()
+	fdist = FreqDist(word.lower() for word in BNC_baby)
+	return(fdist)	
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -117,28 +130,34 @@ def calculate_sparsity(list_of_speakers, a_dictionary):
 		speaker1 = a_dictionary[x][0][0]
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
-
-def read_BLC_database(file_name, out_list):
-	with open(file_name) as new_file:
-			for line in new_file:
-				out_list.append(line.strip())
-	return(out_list)
-
-def transform_BLC1():
-	global BLC_list1
-	global BLC_dict1
-	for item in BLC_list1:
-		BLC_dict1[item.split()[0]] = item.split()[1]	
-	return(BLC_dict1)		
-		
-read_BLC_database(r'C:\Python34\Wordnet-3.0\freqmin50\all\BLCnoun.rel', BLC_list1)
-transform_BLC1()
 			 
 def dict_initialize(list_of_speakers):
+	global master_dict
+	global pathsim_avg
 	for a in list_of_speakers:
 		for b in list_of_speakers:
 			master_dict[(a, b)] = [{}, {}]
-	return(master_dict)
+			pathsim_avg[(a, b)] = ['NA', 'NA']
+	return(master_dict, pathsim_avg)
+
+def isolate_nouns(conversation_dictionary):
+	global master_dict
+	global magic_counter	
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0] 
+		y_tokenized = nltk.pos_tag(conversation_dictionary[x][0])
+		for i in range(1, len(y_tokenized) - 1):	
+			if y_tokenized[i][1] == 'NN':
+				if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
+					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = 'NA'
+		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
+		for i in range(1, len(z_tokenized) - 1):
+			if z_tokenized[i][1] == 'NN':
+				if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
+					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = 'NA'
+	return(master_dict)	
+
 
 def noun_counter(conversation_dictionary): # calculates number of nouns and total hypernyms those nouns have 
 	global master_dict
@@ -154,7 +173,7 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1]
 				else:
 					magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [ 0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]
+					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
 			if z_tokenized[i][1] == 'NN':
@@ -166,43 +185,148 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])]]
 	return(master_dict)	
 
-def transform_ID(ID):
-    #Given a Synset ID (e.g. 01234567-n) return a synset
-    return wn._synset_from_pos_and_offset(str(ID[-1:]), int(ID[:8]))
-
-def transform_SS(Synset):
-	#Given a Synset, returns a synset ID
-	return(str(Synset._offset).zfill(8)+'-n')
-
-def get_similarity(conversation_dictionary):
+def get_similarity_full_range(conversation_dictionary):
 	global master_dict
-	global BLC_dict1
+	global fdist
+	temp_list = []
+	hyper = lambda s: s.hypernyms()
+	hypo = lambda s: s.hyponyms()
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
 			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = 'NA'
 				checked_item = wn.synset(key + '.n.01')
-				hyper = lambda s: s.hypernyms()
-				BLC_item = transform_ID(BLC_dict1[transform_SS(checked_item)])
-				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(BLC_item)
-				if BLC_item in list(checked_item.closure(hyper)): #take away if you want to calculate pure pathsim
-					master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
+				temp_list.append(key)
+				for item in list(checked_item.closure(hyper)):
+					temp_list.append(item.lemmas()[0].name())
+				for item in list(checked_item.closure(hypo)):
+					temp_list.append(item.lemmas()[0].name())
+				for word in temp_list:
+					try:
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						biggest_word = biggest_word		
+				master_dict[(speaker1, speaker2)][0][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+					master_dict[(speaker1, speaker2)][0][key] = master_dict[(speaker1, speaker2)][0][key] * -1
 			except:
-				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+				master_dict[(speaker1, speaker2)][0][key] = 'NA'
+			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
 			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = 'NA'
 				checked_item = wn.synset(key + '.n.01')
-				hyper = lambda s: s.hypernyms()
-				BLC_item = transform_ID(BLC_dict1[transform_SS(checked_item)])
-				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(BLC_item)
-				if BLC_item in list(checked_item.closure(hyper)): #take away if you want to calculate pure pathsim
-					master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1		
+				temp_list.append(key)
+				for item in list(checked_item.closure(hyper)):
+					temp_list.append(item.lemmas()[0].name())
+				for item in list(checked_item.closure(hypo)):
+					temp_list.append(item.lemmas()[0].name())
+				for word in temp_list:
+					try:	
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						biggest_word = biggest_word		
+				master_dict[(speaker1, speaker2)][1][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+					master_dict[(speaker1, speaker2)][1][key] = master_dict[(speaker1, speaker2)][1][key] * -1			
 			except:
-				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
-	return(master_dict)			
+				master_dict[(speaker1, speaker2)][1][key] = 'NA'	
+	return(master_dict)		
 
-def document_stuff(directory_location, input_file_name, output_file_name, corpus): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
+def get_similarity(conversation_dictionary):
+	global master_dict
+	global fdist
+	temp_list = []
+	hyper = lambda s: s.hypernyms()
+	hypo = lambda s: s.hyponyms()
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0]
+		for key in master_dict[(speaker1, speaker2)][0].keys():
+			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = 'NA'
+				checked_item = wn.synset(key + '.n.01')
+				temp_list.append(key)
+				for item in list(checked_item.closure(hyper)):
+					temp_list.append(item.lemmas()[0].name())
+				for item in list(checked_item.closure(hypo)):
+					temp_list.append(item.lemmas()[0].name())
+				for word in temp_list:
+					try:
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						biggest_word = biggest_word		
+				master_dict[(speaker1, speaker2)][0][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+			except:
+				master_dict[(speaker1, speaker2)][0][key] = 'NA'
+			temp_list = []	
+		for key in master_dict[(speaker1, speaker2)][1].keys():
+			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = 'NA'
+				checked_item = wn.synset(key + '.n.01')
+				temp_list.append(key)
+				for item in checked_item.closure(hyper):
+					temp_list.append(item.lemmas()[0].name())
+				for item in checked_item.closure(hypo):
+					temp_list.append(item.lemmas()[0].name())
+				for word in temp_list:
+					try:
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						biggest_word = biggest_word		
+				master_dict[(speaker1, speaker2)][1][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))			
+			except:
+				master_dict[(speaker1, speaker2)][1][key] = 'NA'	
+	return(master_dict)
+
+def get_hyp_avg(conversation_dictionary):
+	global master_dict
+	global convo_dict
+	global pathsim_avg
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0]
+		trill_ct = 0
+		trill_total = 0
+		for key in master_dict[(speaker1, speaker2)][0].keys():
+			if master_dict[(speaker1, speaker2)][0][key] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][0][key]
+				trill_ct += 1
+		if trill_ct > 0:
+			pathsim_avg[(speaker1, speaker2)][0] = trill_total / trill_ct
+		else:
+			pathsim_avg[(speaker1, speaker2)][0] = 'NA'
+		trill_ct = 0
+		trill_total = 0
+		for key in master_dict[(speaker1, speaker2)][1].keys():			
+			if master_dict[(speaker1, speaker2)][1][key] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][1][key]
+				trill_ct += 1
+		if trill_ct > 0:
+			pathsim_avg[(speaker1, speaker2)][1] = trill_total / trill_ct
+		else:
+			pathsim_avg[(speaker1, speaker2)][1] = 'NA'
+	return(pathsim_avg)		
+
+def document_stuff(directory_location, input_file_name, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
@@ -212,7 +336,8 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	global possible_conversation_list
 	global speaker_list
 	global master_dict
-	global BLC_dict1
+	global fdist
+	global pathsim_avg
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -221,17 +346,14 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
 	dict_initialize(speaker_list)
-	noun_counter(convo_dict)
+	isolate_nouns(convo_dict)
 	get_similarity(convo_dict)
+	get_hyp_avg(convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		for key in master_dict[(speaker1, speaker2)][0]:
-			output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, key, master_dict[(speaker1, speaker2)][0][key][0], master_dict[(speaker1, speaker2)][0][key][1], 'NA', 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
-			final_counter += 1
-		for key in master_dict[(speaker1, speaker2)][1]:
-			output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, key, 'NA', 'NA', master_dict[(speaker1, speaker2)][1][key][0], master_dict[(speaker1, speaker2)][1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
-			final_counter += 1	
+		output_almost[final_counter] = [input_file_name, speaker1, speaker2, pathsim_avg[(speaker1, speaker2)][0], pathsim_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+		final_counter += 1
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
 			for_output_list.append(output_almost[y])	
@@ -246,21 +368,21 @@ corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "Speaker", "Replier", 'Word', 'S-Distance', 'S-Word Count', "R-Distance", "R-Word Count", "Sparsity S-R", "Sparsity R-S"])
+	header.insert(0, ["DocId", "Speaker", "Replier", 'S-Pathsim Avg', 'R-Pathsim Avg', "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
-read_BLC_database(r'C:\Python34\Wordnet-3.0\freqmin50\all\BLCnoun.rel', BLC_list1)
-transform_BLC1()
-
-writeHeader('Providence_FLT_pathsim.csv', 'a')
-
+read_BNC_baby(BNC_root)
+writeHeader('Providence_FLT_pathsimNEW.csv', 'a')
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
 		for fname in os.listdir(dirName + '\\' + x):
 			if fname.endswith(".xml"):
 				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsim.csv', corpus_name)
+				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsimNEW.csv')
+
+
+				
