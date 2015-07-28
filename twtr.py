@@ -266,7 +266,7 @@ result = readCSV(inputFile, users, numMarkers)
 rows = result["rows"]
 markers = result["markers"]
 utterances = transformCSVnonP(markers, users,rows)
-results = shared_code.calculateAlignments(utterances, markers, smoothing, formulaType, outputFile, shouldWriteHeader)
+results = shared_code.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
 #exit()
 logInfo(results, markers)
 logger1.finish(start)
