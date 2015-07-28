@@ -151,12 +151,12 @@ def isolate_nouns(conversation_dictionary):
 		for i in range(1, len(y_tokenized) - 1):	
 			if y_tokenized[i][1] == 'NN':
 				if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = 'NA'
+					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 0, 'NA']
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
 			if z_tokenized[i][1] == 'NN':
 				if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
-					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = 'NA'
+					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 0, 'NA']
 	return(master_dict)	
 
 
@@ -351,7 +351,7 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
 	dict_initialize(speaker_list)
-	isolate_nouns(convo_dict)
+	noun_counter(convo_dict)
 	get_similarity_full_range(convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
