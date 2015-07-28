@@ -15,7 +15,7 @@ outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 50
+numMarkers = 100
 smoothing = 1
 formulaType = "TRUE_POWER" # alternative is DMN
 shouldWriteHeader = True
