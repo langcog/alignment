@@ -11,13 +11,13 @@ from nltk.probability import FreqDist
 import operator
 from nltk.stem import *
 from nltk.stem.snowball import SnowballStemmer
-import logger
-logger.initialize()
+import logger1
+logger1.initialize()
 
 desired_length = 300
-outputFile = "ProvidenceFreq500v2.csv"
-corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
-corpus_name = 'Providence'
+outputFile = "ThomasMarker300Stem.csv"
+corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Thomas'
+corpus_name = 'Thomas'
 BNC_root = r'C:\Users\Aaron\Desktop\BNCBaby\BNCBaby'
 ordered_utterance_list = []
 child_utterance_list = []
@@ -25,6 +25,8 @@ freq_dict = {}
 fdist = {}
 BNC_top1000 = []
 stemmed_list = []
+subdirs = False
+stemmed = True
 
 def initialize(): # clean slates the variables
 	global ordered_utterance_list
@@ -36,7 +38,7 @@ def initialize(): # clean slates the variables
 
 def read_BNC_baby_stem(root_local):
 	global fdist
-	BNCBaby = []
+	BNC_baby = []
 	stemmer = SnowballStemmer("english")
 	wordlists = PlaintextCorpusReader(root_local, '.*', encoding='latin-1')
 	for word in wordlists.words():
@@ -118,7 +120,7 @@ def write_freq(output_file_name, freq_d):
 			if d.check(w) == True:
 				if w in BNC_top1000:
 					if len(w) > 1 or w == 'a' or w == 'i':
-						output_list.append([w, freq_d[w]])
+						output_list.append([w])
 		except:
 			continue			
 	with open(output_file_name, "a", newline='') as f:
@@ -133,7 +135,7 @@ def write_stemmed_freq(output_file_name, freq_d):
 		try:
 			if w in BNC_top1000:
 				if len(w) > 1 or w == 'a' or w == 'i':
-					output_list.append([w, freq_d[w]])
+					output_list.append([w])
 		except:
 			continue			
 	with open(output_file_name, "a", newline='') as f:
@@ -149,15 +151,30 @@ def writeHeader(output_File):
 		writer.writerows(header)
 	f.close()
 
-read_BNC_baby_stem(BNC_root)
-sort_fdist()
+if stemmed == True:
+	read_BNC_baby_stem(BNC_root)
+	sort_fdist()
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				get_freq_e(dirName + '\\' + x, fname)
+if stemmed == False:
+	read_BNC_baby(BNC_root)
+	sort_fdist()
 
-writeHeader(outputFile)
-write_stemmed_freq(outputFile, freq_dict)				
+if subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					get_freq_e(dirName + '\\' + x, fname)
+
+
+if subdirs == False:
+	for fname in os.listdir(corpus_dir):
+		if fname.endswith(".xml"):
+			os.path.join(corpus_dir, fname)
+			get_freq_e(corpus_dir, fname)
+
+if stemmed == True:
+	write_stemmed_freq(outputFile, freq_dict)
+if stemmed == False:
+		write_freq(outputFile, freq_dict)				
