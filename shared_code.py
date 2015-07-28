@@ -116,10 +116,11 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["a"] = a
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
-		toAppend["reciprocity"] = convo[0]["reciprocity"]
+		
 		toAppend["lovePercent"] = loveMsg/float(numUtterances)
 
 		if("verifiedSpeaker" in convo[0]):
+			toAppend["reciprocity"] = convo[0]["reciprocity"]
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
@@ -160,10 +161,11 @@ def runFormula(results, markers, sparsities, smoothing):
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
-			toAppend["reciprocity"] = result["reciprocity"]
+			
 
 			
 			if("verifiedSpeaker" in result):
+				toAppend["reciprocity"] = result["reciprocity"]
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
 				toAppend["maxNgram"] = result["maxNgram"]
