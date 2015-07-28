@@ -4,16 +4,16 @@ import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
 import shared_code
-import logger
+import logger1
 from nltk.stem import *
 from nltk.stem.snowball import SnowballStemmer
 
-logger.initialize()
+logger1.initialize()
 
 corpus = 'Providence'
 smoothing_values = [0, 1]
-outputFile = "ProvFreq300ResultsOldFormula.csv"
-markersFile = "PF300.csv"
+outputFile = "Providence300Results.csv"
+markersFile = "ProvidenceMarker300.csv"
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 corpus_name = 'Providence'
 marker_list = shared_code.readMarkers(markersFile)
@@ -201,7 +201,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	calculate_sparsity(speaker_list, convo_dict)
 	
 	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
-	results = shared_code.calculateAlignments(utterances, marker_list, 1, 'dnm', output_file_name, var_x)	
+	results = shared_code.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x)	
 
 if Subdirs == True:
 	for dirName, subdirList, fileList in os.walk(corpus_dir):
