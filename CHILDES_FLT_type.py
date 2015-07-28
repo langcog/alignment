@@ -1,10 +1,9 @@
 import nltk
 from nltk.corpus import wordnet as wn
-import re
 import csv
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-from nltk.corpus.reader import NOUN
+import re
 
 speaker_list = []
 utterance_dict = {}
@@ -23,6 +22,7 @@ possible_conversation_list = []
 hypernym_dict = {}
 hypernym_count = {}
 magic_counter = {}
+hyp_avg = {}
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -42,6 +42,7 @@ def initialize(): # clean slates the variables
 	global hypernym_dict
 	global hypernym_count
 	global magic_counter
+	global hyp_avg
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
@@ -59,6 +60,7 @@ def initialize(): # clean slates the variables
 	hypernym_count = {}
 	hypernym_dict = {}
 	magic_counter = {}
+	hyp_avg = {}
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -114,11 +116,13 @@ def hypernym_initialize(list_of_speakers): # initializes hypernym counters
 	for a in list_of_speakers:
 		for b in list_of_speakers:
 			hypernym_count[(a, b)] = [{},{}]
+			hyp_avg[(a, b)] = []
 	return(hypernym_count)
 
 def hypernym_calculator(conversation_dictionary): # calculates number of nouns and total hypernyms those nouns have 
 	global hypernym_count
-	global magic_counter	
+	global magic_counter
+	hyper = lambda s: s.hypernyms()	
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0] 
@@ -129,10 +133,10 @@ def hypernym_calculator(conversation_dictionary): # calculates number of nouns a
 					checked_item = wn.synset(y_tokenized[i][0] + '.n.01')
 					if y_tokenized[i][0] not in hypernym_count[(speaker1, speaker2)][0]:
 						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
-						hypernym_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [len(checked_item.hypernyms()), 1]
+						hypernym_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [len(list(checked_item.closure(hyper))), 1]
 					else:
 						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-						hypernym_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [len(checked_item.hypernyms()), magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]	
+						hypernym_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [len(list(checked_item.closure(hyper))), magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]	
 			except:
 				continue	
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
@@ -142,10 +146,10 @@ def hypernym_calculator(conversation_dictionary): # calculates number of nouns a
 					checked_item = wn.synset(z_tokenized[i][0] + '.n.01')
 					if z_tokenized[i][0] not in hypernym_count[(speaker1, speaker2)][1]:
 						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
-						hypernym_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [len(checked_item.hypernyms()), 1]
+						hypernym_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [len(list(checked_item.closure(hyper))), 1]
 					else:
 						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1
-						hypernym_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [len(checked_item.hypernyms()), magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])]]			
+						hypernym_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [len(list(checked_item.closure(hyper))), magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])]]			
 			except:
 				continue			
 	return(hypernym_count)	
@@ -160,7 +164,39 @@ def calculate_sparsity(list_of_speakers, a_dictionary):
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
 
-def document_stuff(directory_location, input_file_name, output_file_name, corpus): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
+def get_hyp_avg():
+	global hypernym_count
+	global hyp_avg
+	global convo_dict
+	for x in range(0, (len(convo_dict) - 1)):
+		speaker1 = convo_dict[x][0][0]
+		speaker2 = convo_dict[x][1][0]
+		hyp_ct_s = 0
+		hyp_num_s = 0
+		hyp_ct_r = 0
+		hyp_num_r = 0
+		for key in hypernym_count[(speaker1, speaker2)][0]:
+			hyp_ct_s += hypernym_count[(speaker1, speaker2)][0][key][0]
+			hyp_num_s += 1
+		for key in hypernym_count[(speaker1, speaker2)][1]:
+			hyp_ct_r += hypernym_count[(speaker1, speaker2)][1][key][0] 
+			hyp_num_r += 1
+		if hyp_num_s == 0 and hyp_num_r == 0:
+			hyp1 = 'NA'
+			hyp2 = 'NA'
+		elif hyp_num_s == 0:
+			hyp1 = 'NA'
+			hyp2 = hyp_ct_r / hyp_num_r	
+		elif hyp_num_r == 0:
+			hyp1 = hyp_ct_s / hyp_num_s
+			hyp2 = 'NA'
+		else:
+			hyp1 = hyp_ct_s / hyp_num_s
+			hyp2 = hyp_ct_r / hyp_num_r				
+		hyp_avg[(speaker1, speaker2)] = [hyp1, hyp2]
+	return(hyp_avg)	
+
+def document_stuff(directory_location, input_file_name, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
@@ -171,7 +207,8 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	global speaker_list
 	global hypernym_count
 	global magic_counter
-	global hypernym_dict
+	global hyp_avg
+	global for_output_list
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -180,16 +217,13 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	convo_grouper(squished_dict)
 	hypernym_initialize(speaker_list)
 	hypernym_calculator(convo_dict)
+	get_hyp_avg()
 	calculate_sparsity(speaker_list, convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		for key in hypernym_count[(speaker1, speaker2)][0]:
-			output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, key, hypernym_count[(speaker1, speaker2)][0][key][0], hypernym_count[(speaker1, speaker2)][0][key][1], 'NA', 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
-			final_counter += 1
-		for key in hypernym_count[(speaker1, speaker2)][1]:
-			output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, key, 'NA', 'NA', hypernym_count[(speaker1, speaker2)][1][key][0], hypernym_count[(speaker1, speaker2)][1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
-			final_counter += 1	
+		output_almost[final_counter] = [input_file_name, speaker1, speaker2, hyp_avg[(speaker1, speaker2)][0], hyp_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+		final_counter += 1
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
 			for_output_list.append(output_almost[y])
@@ -200,21 +234,20 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 		f.close()		
 
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
-corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "Speaker", "Replier", 'Word', 'S-Hypernym Count', 'S-Word Count', "R-Hypernym Count", "R-Word Count", "Sparsity S-R", "Sparsity R-S"])
+	header.insert(0, ["DocId", "Speaker", "Replier", "Hyp Avg S", "Hyp Avg R", "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
-writeHeader('Providence_FLT_analysis.csv', 'a')
+writeHeader('Providence_FLT_hypclose.csv', 'a')
 
 for dirName, subdirList, fileList in os.walk(corpus_dir):
 	for x in subdirList:
 		for fname in os.listdir(dirName + '\\' + x):
 			if fname.endswith(".xml"):
 				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_analysis.csv', corpus_name)
+				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_hypclose.csv')
