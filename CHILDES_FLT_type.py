@@ -23,6 +23,7 @@ hypernym_dict = {}
 hypernym_count = {}
 magic_counter = {}
 hyp_avg = {}
+Subdirs = True
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -243,11 +244,21 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
-writeHeader('Providence_FLT_hypclose.csv', 'a')
+outfile = 'Providence_FLT_hypclose.csv'
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_hypclose.csv')
+writeHeader(outfile, 'a')
+
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					document_stuff(dirName + '\\' + x, fname, outfile)
+if Subdirs == False:
+	for fname in os.listdir(corpus_dir):
+			if fname.endswith(".xml")
+				os.path.join(corpus_dir, fname)
+				document_stuff(corpus_dir, fname, outfile)
+
+				
