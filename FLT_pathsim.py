@@ -375,8 +375,10 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
+outfile = 'Providence_FLT_pathsimNEW.csv'
+
 read_BNC_baby(BNC_root)
-writeHeader('Providence_FLT_pathsimNEW.csv', 'a')
+writeHeader(outfile, 'a')
 
 if Subdirs == True:
 	for dirName, subdirList, fileList in os.walk(corpus_dir):
@@ -384,9 +386,11 @@ if Subdirs == True:
 			for fname in os.listdir(dirName + '\\' + x):
 				if fname.endswith(".xml"):
 					os.path.join(dirName + '\\' + x, fname)
-					document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsimNEW.csv')
+					document_stuff(dirName + '\\' + x, fname, outfile)
 if Subdirs == False:
 	for fname in os.listdir(corpus_dir):
 			if fname.endswith(".xml")
 				os.path.join(corpus_dir, fname)
-				document_stuff(corpus_dir, fname, 'Providence_FLT_pathsimNEW.csv')
+				document_stuff(corpus_dir, fname, outfile)
+
+				
