@@ -171,19 +171,19 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 			if y_tokenized[i][1] == 'NN':
 				if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
 					magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1]
+					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
 				else:
 					magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]
+					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
 			if z_tokenized[i][1] == 'NN':
 				if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
 					magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
-					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [ 0, 1]
+					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
 				else:
 					magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
-					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])]]
+					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
 	return(master_dict)	
 
 def get_similarity_full_range(conversation_dictionary):
@@ -213,11 +213,12 @@ def get_similarity_full_range(conversation_dictionary):
 							biggest_word = word
 					except:
 						biggest_word = biggest_word		
-				master_dict[(speaker1, speaker2)][0][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
 				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
-					master_dict[(speaker1, speaker2)][0][key] = master_dict[(speaker1, speaker2)][0][key] * -1
+					master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
 			except:
-				master_dict[(speaker1, speaker2)][0][key] = 'NA'
+				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
 			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
 			try:	
@@ -237,11 +238,12 @@ def get_similarity_full_range(conversation_dictionary):
 							biggest_word = word
 					except:
 						biggest_word = biggest_word		
-				master_dict[(speaker1, speaker2)][1][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
 				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
-					master_dict[(speaker1, speaker2)][1][key] = master_dict[(speaker1, speaker2)][1][key] * -1			
+					master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1			
 			except:
-				master_dict[(speaker1, speaker2)][1][key] = 'NA'	
+				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
 	return(master_dict)		
 
 def get_similarity(conversation_dictionary):
@@ -271,9 +273,10 @@ def get_similarity(conversation_dictionary):
 							biggest_word = word
 					except:
 						biggest_word = biggest_word		
-				master_dict[(speaker1, speaker2)][0][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
 			except:
-				master_dict[(speaker1, speaker2)][0][key] = 'NA'
+				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
 			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
 			try:	
@@ -282,20 +285,21 @@ def get_similarity(conversation_dictionary):
 				biggest_word = 'NA'
 				checked_item = wn.synset(key + '.n.01')
 				temp_list.append(key)
-				for item in checked_item.closure(hyper):
+				for item in list(checked_item.closure(hyper)):
 					temp_list.append(item.lemmas()[0].name())
-				for item in checked_item.closure(hypo):
+				for item in list(checked_item.closure(hypo)):
 					temp_list.append(item.lemmas()[0].name())
 				for word in temp_list:
-					try:
+					try:	
 						if fdist[word] > biggest_amount:
 							biggest_amount = fdist[word]
 							biggest_word = word
 					except:
 						biggest_word = biggest_word		
-				master_dict[(speaker1, speaker2)][1][key] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))			
+				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
 			except:
-				master_dict[(speaker1, speaker2)][1][key] = 'NA'	
+				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
 	return(master_dict)
 
 def get_hyp_avg(conversation_dictionary):
@@ -308,8 +312,8 @@ def get_hyp_avg(conversation_dictionary):
 		trill_ct = 0
 		trill_total = 0
 		for key in master_dict[(speaker1, speaker2)][0].keys():
-			if master_dict[(speaker1, speaker2)][0][key] != 'NA':
-				trill_total = trill_total + master_dict[(speaker1, speaker2)][0][key]
+			if master_dict[(speaker1, speaker2)][0][key][0] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][0][key][0]
 				trill_ct += 1
 		if trill_ct > 0:
 			pathsim_avg[(speaker1, speaker2)][0] = trill_total / trill_ct
@@ -318,8 +322,8 @@ def get_hyp_avg(conversation_dictionary):
 		trill_ct = 0
 		trill_total = 0
 		for key in master_dict[(speaker1, speaker2)][1].keys():			
-			if master_dict[(speaker1, speaker2)][1][key] != 'NA':
-				trill_total = trill_total + master_dict[(speaker1, speaker2)][1][key]
+			if master_dict[(speaker1, speaker2)][1][key][0] != 'NA':
+				trill_total = trill_total + master_dict[(speaker1, speaker2)][1][key][0]
 				trill_ct += 1
 		if trill_ct > 0:
 			pathsim_avg[(speaker1, speaker2)][1] = trill_total / trill_ct
@@ -348,13 +352,16 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	calculate_sparsity(speaker_list, convo_dict)
 	dict_initialize(speaker_list)
 	isolate_nouns(convo_dict)
-	get_similarity(convo_dict)
-	get_hyp_avg(convo_dict)
+	get_similarity_full_range(convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		output_almost[final_counter] = [input_file_name, speaker1, speaker2, pathsim_avg[(speaker1, speaker2)][0], pathsim_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
-		final_counter += 1
+		for key in master_dict[(speaker1, speaker2)][0].keys():
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[0][key][2], master_dict[0][key][0], master_dict[0][key][1], 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			final_counter += 1
+		for key in master_dict[(speaker1, speaker2)][1].keys():
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[1][key][2], master_dict[1][key][0], 'NA', master_dict[1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			final_counter += 1	
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
 			for_output_list.append(output_almost[y])	
@@ -369,13 +376,13 @@ corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["DocId", "Speaker", "Replier", 'S-Pathsim Avg', 'R-Pathsim Avg', "Sparsity S-R", "Sparsity R-S"])
+	header.insert(0, ["DocId", "Speaker", "Replier", 'Word', 'BLC', 'Path Similarity', 'S Frequency', 'R Frequency', "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
-outfile = 'Providence_FLT_pathsimNEW.csv'
+outfile = 'Providence_FLT_pathsim_words.csv'
 
 read_BNC_baby(BNC_root)
 writeHeader(outfile, 'a')
@@ -389,7 +396,7 @@ if Subdirs == True:
 					document_stuff(dirName + '\\' + x, fname, outfile)
 if Subdirs == False:
 	for fname in os.listdir(corpus_dir):
-			if fname.endswith(".xml")
+			if fname.endswith(".xml"):
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
 
