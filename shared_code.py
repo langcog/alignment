@@ -41,6 +41,7 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers):
 	results = []
+	percentages = []
 	for i, convo in enumerate(groupedUtterances):
 		if(i % 1000 is 0):
 			logger.log("On " + str(i) + " of " + str(len(groupedUtterances)))
@@ -60,7 +61,10 @@ def metaDataExtractor(groupedUtterances, markers):
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		convoUtterances = []
+		loveMsg = 0
 		for utterance in convo:
+			if("love" in utterance["msgMarkers"]):
+				loveMsg += 1
 			maxNgram = 1
 			ngramLengths = [2,3,4,5]
 			ngramPercent = 0
@@ -100,7 +104,6 @@ def metaDataExtractor(groupedUtterances, markers):
 				else:
 					nbna[category] += 1
 				completedCategories[category] = True
-			
 		toAppend = {}
 		toAppend["ngramPercent"] = ngramPercent
 		toAppend["maxNgram"] = maxNgram
@@ -115,6 +118,7 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
 		toAppend["reciprocity"] = convo[0]["reciprocity"]
+		toAppend["lovePercent"] = loveMsg/float(numUtterances)
 
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
@@ -158,6 +162,7 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["reciprocity"] = result["reciprocity"]
+
 			
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
@@ -184,10 +189,17 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			baseDenom = toAppend["numUtterances"]
 			if(baseDenom == 0 or powerDenom == 0):
 				continue
+			toAppend["bMarkerPercent"] = (toAppend["ba"] + toAppend["bna"])/(toAppend["ba"] + toAppend["bna"] + toAppend["nba"]+ toAppend["nbna"])
+			toAppend["aMarkerPercent"] = powerDenom/(baseDenom+powerDenom)
 			alignment = powerNum/powerDenom - baseNum/baseDenom
+
 			toAppend["alignment"] = alignment
 			toAppend["baseDenom"] = baseDenom
 			toAppend["powerDenom"] = powerDenom
+			if(powerNum != 0 and baseNum != 0):
+				toAppend["logdnmalignment"] = math.log(float(powerNum)/float(powerDenom)) - math.log(float(baseNum)/float(baseDenom))
+			else:
+				toAppend["logdnmalignment"] = False
 			toAppend["dnmalignment"] = alignment
 
 			powerNum = toAppend["ba"]
@@ -206,6 +218,11 @@ def runFormula(results, markers, sparsities, smoothing, formula):
 			toAppend["alignment"] = alignment
 			toAppend["baseDenom"] = baseDenom
 			toAppend["powerDenom"] = powerDenom
+
+			powerProb = ((powerNum+smoothing)/(powerDenom+2*smoothing))
+			baseProb = ((baseNum+smoothing)/(baseDenom+2*smoothing))
+			alignment = powerProb - baseProb
+			toAppend["noLogAlign"] = alignment
 
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
