@@ -6,6 +6,7 @@ import re
 from mychildes import CHILDESCorpusReaderX #modified nltk
 from nltk.corpus import PlaintextCorpusReader
 from nltk.probability import FreqDist
+import enchant
 
 speaker_list = []
 utterance_dict = {}
@@ -161,6 +162,7 @@ def isolate_nouns(conversation_dictionary):
 
 
 def noun_counter(conversation_dictionary): # calculates number of nouns and total hypernyms those nouns have 
+	d = enchant.Dict("en_US")
 	global master_dict
 	global magic_counter	
 	for x in range(0, (len(conversation_dictionary) - 1)):
@@ -168,22 +170,24 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 		speaker2 = conversation_dictionary[x][1][0] 
 		y_tokenized = nltk.pos_tag(conversation_dictionary[x][0])
 		for i in range(1, len(y_tokenized) - 1):	
-			if y_tokenized[i][1] == 'NN':
-				if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
-					magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
-				else:
-					magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-					master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
+			if d.check(y_tokenized[i][0]) == True:
+				if y_tokenized[i][1] == 'NN':
+					if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
+						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
+						master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
+					else:
+						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
+						master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
-			if z_tokenized[i][1] == 'NN':
-				if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
-					magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
-					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
-				else:
-					magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
-					master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
+			if d.check(z_tokenized[i][0]) == True:
+				if z_tokenized[i][1] == 'NN':
+					if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
+						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
+						master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
+					else:
+						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
+						master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
 	return(master_dict)	
 
 def get_similarity_full_range(conversation_dictionary):
