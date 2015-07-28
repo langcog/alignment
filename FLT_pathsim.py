@@ -25,6 +25,7 @@ master_dict = {}
 magic_counter = {}
 fdist = {}
 pathsim_avg = {}
+Subdirs = True
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -377,12 +378,15 @@ def writeHeader(outputFile, writeType):
 read_BNC_baby(BNC_root)
 writeHeader('Providence_FLT_pathsimNEW.csv', 'a')
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsimNEW.csv')
-
-
-				
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_pathsimNEW.csv')
+if Subdirs == False:
+	for fname in os.listdir(corpus_dir):
+			if fname.endswith(".xml")
+				os.path.join(corpus_dir, fname)
+				document_stuff(corpus_dir, fname, 'Providence_FLT_pathsimNEW.csv')
