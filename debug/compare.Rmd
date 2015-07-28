@@ -1,0 +1,56 @@
+---
+title: "compare"
+output: html_document
+---
+
+Loading the most recent results.
+
+```{r,echo=FALSE}
+library(data.table)
+library(bit64)
+library(dplyr)
+library(ggplot2)
+df <- fread('results.csv', header=T)
+#df2 <- fread('results-withquotes.csv',header=T)
+```
+
+Cleaning down the data table:
+
+```{r}
+d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
+              vspeak=verifiedSpeaker,vreply=verifiedReplier,
+              sid=speakerId,rid=replierId,category=category,
+              pyalign=alignment,percentDiff=percentDiff),]
+
+```
+
+Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
+
+```{r}
+smoothalign <- function(df,sm) {
+  return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+} 
+
+smoothalignold <- function(df,sm) {
+  return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
+}
+
+d$sm0 <- smoothalign(d,0)
+d$sm1 <- smoothalign(d,1)
+d$osm0 <- smoothalignold(d,0)
+
+max(abs(d$sm1-d$pyalign))
+
+```
+
+We plot 2 histograms of 
+  1) Verified speakers talking to an unverified repliers
+  2) Unverified speakers talking to verified repliers
+```{r}
+trueFalse <- subset(df,powerDenom>5&baseDenom>5&verifiedSpeaker=="TRUE"&verifiedReplier=="FALSE")
+falseTrue <- subset(df,powerDenom>5&baseDenom>5&verifiedSpeaker=="FALSE"&verifiedReplier=="TRUE")
+hist(trueFalse$alignment,col=rgb(1,0,0,0.5),freq=F)
+hist(falseTrue$alignment, add=T,col=rgb(0,0,1,0.5),freq=F)
+legend("topright", c("trueFalse", "falseTrue"), fill=c("red", "blue"))
+
+```
