@@ -3,12 +3,15 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
+import logger1
 import shared_code
+from nltk.stem import *
+from nltk.stem.snowball import SnowballStemmer
 
-shared_code.initialize()
+logger1.initialize()
 
-outputFile = "recursive_markers_results.csv"
-markersFile = "test.csv"
+master_var = True
+outputFile = "recursive_markers_results2.csv"
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
 corpus_name = 'Providence'
 temp_marker_list = []
@@ -36,6 +39,9 @@ possible_conversation_list = []
 project_x = []
 child_marker_list = []
 temp_marker_list = []
+var_x = True
+Stemmed = False
+Subdirs = True
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -80,6 +86,17 @@ def initialize(): # clean slates the variables
 	possible_conversation_list = []
 	project_x = []
 	temp_marker_list = []
+
+def get_childes_stemmed(root_location, file_name):
+	global ordered_utterance_list
+	stemmer = SnowballStemmer("english")
+	corpus_root = nltk.data.find(root_location) 
+	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
+	ordered_utterance_list = file_setup.sents()
+	for utterance in ordered_utterance_list:
+		for i in range(1, len(utterance) - 1):
+			utterance[i] = stemmer.stem(utterance[i])
+	return(ordered_utterance_list)
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -158,7 +175,7 @@ def marker_list_joiner(master_list, temp_list):
 			master_list.append({"marker": item, "category": item})
 	return master_list						
 		
-def convo_converter(corpusname, filename, conversation_dictionary, marker_list):
+def convo_converter(corpusname, filename, conversation_dictionary, marker_list, age, gender):
 	global project_x
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = convo_dict[x][0][0]
@@ -194,7 +211,10 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	global possible_conversation_list
 	global speaker_list
 	initialize()
-	get_childes_files(directory_location, input_file_name)
+	if Stemmed == False:
+		get_childes_files(directory_location, input_file_name)
+	if Stemmed == True:
+		get_childes_stemmed(directory_location, input_file_name)	
 	determine_speakers(ordered_utterance_list)
 	magic_marker_grabber(ordered_utterance_list, 'CHI')
 	determine_possible_conversations(speaker_list)
@@ -202,25 +222,42 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	convo_grouper(squished_dict)
 	calculate_sparsity(speaker_list, convo_dict)
 	
-	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)	
-	groupedUtterances = shared_code.group(utterances)
-	setUppedResults = shared_code.metaDataExtractor(groupedUtterances, marker_list)
-	results = shared_code.calculateAlignment(setUppedResults, marker_list, sparsity_measure)
-	#testSetUp(groupedUtterances, markers, setUppedResults, False)
-	#testBayes(results, groupedUtterances)
-	shared_code.writeFile(results, output_file_name, "a")		
-
-
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		markers = []
-		for fname in os.listdir(dirName + '\\' + x):
-			if fname.endswith(".xml"):
-				if fname.endswith("01.xml"):
-					get_childes_files(dirName + '\\' + x, fname)
-					magic_marker_grabber(ordered_utterance_list, 'CHI')
-					marker_list_joiner(markers, temp_marker_list)
-				else: 
-					os.path.join(dirName + '\\' + x, fname)
-					document_stuff(dirName + '\\' + x, fname , markers, outputFile, corpus_name)
-					marker_list_joiner(markers, temp_marker_list)
+	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
+	results = shared_code.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x)	
+		
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			markers = []
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					if fname.endswith("01.xml"):
+						if Stemmed == False:
+							get_childes_files(dirName + '\\' + x, fname)
+						if Stemmed == True:
+							get_childes_stemmed(dirName + '\\' + x, fname)	
+						magic_marker_grabber(ordered_utterance_list, 'CHI')
+						marker_list_joiner(markers, temp_marker_list)
+					else: 
+						os.path.join(dirName + '\\' + x, fname)
+						document_stuff(dirName + '\\' + x, fname , markers, outputFile, corpus_name)
+						marker_list_joiner(markers, temp_marker_list)
+						master_var = False
+						var_x = False
+if Subdirs == False:
+	markers = []
+	for fname in os.listdir(corpus_dir):
+		if fname.endswith(".xml"):
+			if fname.endswith("01.xml"):
+				if Stemmed == False:
+					get_childes_files(corpus_dir, fname)
+				if Stemmed == True:
+					get_childes_stemmed(corpus_dir, fname)	
+				magic_marker_grabber(ordered_utterance_list, 'CHI')
+				marker_list_joiner(markers, temp_marker_list)
+			else: 
+				os.path.join(corpus_dir, fname)
+				document_stuff(corpus_dir, fname , markers, outputFile, corpus_name)
+				marker_list_joiner(markers, temp_marker_list)
+				master_var = False
+				var_x = False						
