@@ -1,22 +1,27 @@
 ---
-title: "compare"
-output: html_document
+title: "DNM vs Alignment Comparison"
+author: "Jake Prasad"
+date: "Tuesday, July 28, 2015"
+output: pdf_document
 ---
 
-Loading the most recent results.
+
 
 ```{r,echo=FALSE}
+# Loading the most recent results.
 library(data.table)
 library(bit64)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
+
 df <- fread('results.csv', header=T)
-#df2 <- fread('results-withquotes.csv',header=T)
 ```
 
-Cleaning down the data table:
 
-```{r}
+
+```{r, echo=FALSE}
+# Cleaning down the data table:
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
               vspeak=verifiedSpeaker,vreply=verifiedReplier,
               sid=speakerId,rid=replierId,category=category,
@@ -24,9 +29,10 @@ d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
 
 ```
 
-Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
 
-```{r}
+```{r, echo=FALSE}
+# Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
+
 smoothalign <- function(df,sm) {
   return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
 } 
@@ -39,18 +45,61 @@ d$sm0 <- smoothalign(d,0)
 d$sm1 <- smoothalign(d,1)
 d$osm0 <- smoothalignold(d,0)
 
-max(abs(d$sm1-d$pyalign))
+#max(abs(d$sm1-d$pyalign))
 
 ```
 
-We plot 2 histograms of 
-  1) Verified speakers talking to an unverified repliers
-  2) Unverified speakers talking to verified repliers
+Alignment (Verified/NonVerified):
+
+Our standard measure for alignment uses Verified/Not verified as a power proxy. Using Verified/Not verified, we're able to clearly see that an influential speaker/uninfluential replier pair results in a stronger alignment than an uninfluential speaker/influential replier pair.
+
 ```{r}
-trueFalse <- subset(df,powerDenom>5&baseDenom>5&verifiedSpeaker=="TRUE"&verifiedReplier=="FALSE")
-falseTrue <- subset(df,powerDenom>5&baseDenom>5&verifiedSpeaker=="FALSE"&verifiedReplier=="TRUE")
-hist(trueFalse$alignment,col=rgb(1,0,0,0.5),freq=F)
-hist(falseTrue$alignment, add=T,col=rgb(0,0,1,0.5),freq=F)
-legend("topright", c("trueFalse", "falseTrue"), fill=c("red", "blue"))
+subsetted <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
+subsetted = transform(subsetted,logdnmalignment=as.numeric(logdnmalignment))
+d2 <- subsetted %>%
+  group_by(verifiedSpeaker,speakerId,replierId) %>%
+  summarize(convs=n(), alignment=alignment, vreply=verifiedReplier, dnmalignment=dnmalignment, noLogAlign=noLogAlign, logdnmalignment=logdnmalignment) %>%
+  gather(alignmentType,alignmentValue,c(alignment, dnmalignment, logdnmalignment, noLogAlign))
+
+levels(d2$alignmentType)=c("alignment","noLogAlign","logdnmalignment","dnmalignment")
+
+ggplot(d2,aes(x=paste(verifiedSpeaker,vreply),y=alignmentValue)) + geom_violin() + labs(title="Log-Comparison of Different Alignment Formulas",x="Speaker verified?",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + stat_summary(geom="point",fun.y="mean")
 
 ```
+
+Follower Bins:
+
+The Echoes Of Power paper used follower count as a power proxy. If follower count isn't a good power proxy it could explain why alignment wasn't found. We bin follower counts for speaker and repliers and plot the results.
+
+```{r}
+d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
+d2$speakerBins <- cut(d2$speakerFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 1000", "< 10000", "< 100000", "> 100000"))
+d2$replierBins <- cut(d2$replierFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 1000", "< 10000", "< 100000", "> 100000"))
+ggplot(d2,aes(x=paste(speakerBins,replierBins),y=alignment)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title="Speaker/Replier Follower Count (Absolute values)",x="Speaker Follower Count, Replier Follower Count",y="Alignment")
+```
+
+This is an interesting plot. It appears that follower count does have a strong effect on alignment. Let's also try plotting the percent difference between speaker follower count and replier follower count.
+
+```{r}
+d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
+subsetted = transform(subsetted,logdnmalignment=as.numeric(logdnmalignment))
+d2 <- subsetted %>%
+  group_by(verifiedSpeaker,speakerId,replierId) %>%
+  summarize(convs=n(), alignment=alignment, vreply=verifiedReplier, dnmalignment=dnmalignment, noLogAlign=noLogAlign, logdnmalignment=logdnmalignment, percentDiff=percentDiff) %>%
+  gather(alignmentType,alignmentValue,c(alignment, dnmalignment, logdnmalignment, noLogAlign))
+
+d2$followerBins <- cut(d2$percentDiff, breaks=c(0,0.1,0.5,0.9, 0.99, 0.999, 1), labels=c("0-0.1","0.1-0.5", "0.5-0.9", "0.9-0.99", "0.99-0.999", "0.999-1"))
+
+levels(d2$alignmentType)=c("alignment","noLogAlign","logdnmalignment","dnmalignment")
+
+ggplot(d2,aes(x=followerBins,y=alignmentValue)) + geom_violin() + labs(title="Speaker/Replier Follower Count Percent Difference",x="Percent Difference between Speaker Follower Count and Replier Follower Count",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + stat_summary(geom="point",fun.y="mean")
+```
+
+This is unexpected. It appears that we only see power alignment when the speaker/replier follower percent difference >0.99. Could this be because of sparsity?
+
+```{r}
+barplot(height=table(d2$followerBins))
+
+```
+
+It seems that there is some sparsity but 0.1-0.5 and 0.5-0.9 have more than 5000 values each, so it may be another problem

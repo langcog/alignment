@@ -1,5 +1,5 @@
 import csv
-import shared_code
+import alignment
 from ast import literal_eval
 import cProfile
 import logger1
@@ -17,9 +17,7 @@ userFile = "data/pairedtweets.txt.userinfo"
 
 numMarkers = 100
 smoothing = 1
-formulaType = "TRUE_POWER" # alternative is DMN
 shouldWriteHeader = True
-
 
 
 # Reads in info about users
@@ -70,30 +68,20 @@ def readCSV(inputFile, users, numOfMarkers):
 	next(reader, None)
 	utterances = []
 	toReturn = []
-	quotes = 0
-	colons = 0
-	rts = 0
-	selfAligns = 0
-	wholes = 0
 	freqs = {}
-	msgLove = 0
-	replyLove = 0
 	for i, row in enumerate(reader):
 		if(i % 10000 is 0):
 			logger1.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
-
 		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
 		realMessage = remove_values_from_list(realMessage, "[url]")
 		if(len(realMessage) == 0):
 			continue
-
 		realReply = remove_values_from_list(row["replyTokens"], "[mention]")
 		realReply = remove_values_from_list(realReply, "[url]")
 		if(len(realReply) == 0):
 			continue
-
 		if("”" in row["reply"] and row["msg"] in row["reply"]):
 			continue
 		if("[mention] :" in row["reply"] and row["msg"] in row["reply"]):
@@ -116,13 +104,7 @@ def readCSV(inputFile, users, numOfMarkers):
 			utterance["reciprocity"] = True
 		else:
 			utterance["reciprocity"] = False
-		#logger1.log(utterance["msgMarkers"])
-		if("up" in utterance["msgTokens"]):
-			msgLove += 1
-			replyLove += 1
 		toReturn.append(utterance)
-	logger1.log(msgLove)
-	logger1.log(replyLove)
 	markers = []
 	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
@@ -133,16 +115,8 @@ def readCSV(inputFile, users, numOfMarkers):
 			continue
 		else:
 			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
-		#if(subsetTuple[0] in functionWords):
-		#	markers.append({"marker": subsetTuple[0], "category": "FunctionWords"})
-		#elif(subsetTuple[0] in string.punctuation):
-		#	markers.append({"marker": subsetTuple[0], "category": "Punctuation"})
-		#elif("'" not in subsetTuple[0]):
-		#	markers.append({"marker": subsetTuple[0], "category": "ContentWords"})
 	logger1.log(markers)
 	return {"rows": toReturn, "markers": markers}
-
-
 
 def getCommonMarkers(utterances, numOfMarkers):
 	freqs = {}
@@ -159,23 +133,17 @@ def getCommonMarkers(utterances, numOfMarkers):
 	
 	return toReturn
 
-def makeUserDict(users):
-	udict = {}
-	for user in users:
-		udict[user["uid"]] = user
-	return udict
-
-def makeMarkerDict(markers):
-	mdict = {}
-	for marker in markers:
-		mdict[marker["marker"]] = marker
-	return mdict
+def makeDict(toConvert, key):
+	toReturn = {}
+	for element in toConvert:
+		toReturn[element[key]] = element
+	return toReturn
 
 def findUser(udict,uid):
 	return udict.get(uid, False)
 
-#Code to take in the user dictionary & a user ID and return if that user is verified
-#	Note: users with missing data are considered unverified
+# Code to take in the user dictionary & a user ID and return if that user is verified
+# Note: users with missing data are considered unverified
 def verifySpeaker(udict,uid):
 	msgUser = findUser(udict,uid)
 	if(msgUser != False):
@@ -183,8 +151,8 @@ def verifySpeaker(udict,uid):
 	else:
 		return False
 
-#Code to take in the user dictionary & a user ID and return if that user is verified
-#	Note: users with missing data are considered unverified
+# Code to take in the user dictionary & a user ID and return if that user is verified
+# Note: users with missing data are considered unverified
 def numFollowers(udict,uid):
 	msgUser = findUser(udict,uid)
 	if(msgUser != False):
@@ -197,8 +165,8 @@ def countMarkers(tokens,markers):
 
 def transformCSVnonP(markers, users, rows):
 	utterances = []
-	udict = makeUserDict(users)
-	mdict = makeMarkerDict(markers)
+	udict = makeDict(users, "uid")
+	mdict = makeDict(markers, "marker")
 	tests = {"TrueTrue": 0, "TrueFalse": 0, "FalseTrue": 0, "FalseFalse": 0}
 	for i, row in enumerate(rows):
 		if(i % 10000 is 0):
@@ -208,57 +176,12 @@ def transformCSVnonP(markers, users, rows):
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
 			row["speakerFollowers"] = numFollowers(udict, row["msgUserId"])
 			row["replierFollowers"] = numFollowers(udict, row["replyUserId"])
-
 			tests[str(row["verifiedSpeaker"]) + str(row["verifiedReplier"])] += 1
 		row["msgMarkers"] = countMarkers(row["msgTokens"],mdict)
 		row["replyMarkers"] = countMarkers(row["replyTokens"],mdict)
-
 		utterances.append(row)
 	logger1.log(tests)
 	return utterances
-
-def logInfo(results, markers):
-	averages = {}
-	markerFreqRange = 15
-	categories = shared_code.allMarkers(markers)
-	types = ["..truetrue", ".truefalse", ".falsetrue", "falsefalse"]
-	for verifiedType in types:
-		for markerFreq in range(0, markerFreqRange):
-			markerFreqStr = str(markerFreq)
-			if markerFreq < 10:
-				markerFreqStr = "0"+markerFreqStr
-			averages[verifiedType+markerFreqStr] = []
-	for result in results:
-		for markerFreq in range(0, markerFreqRange):
-			if result["powerDenom"] < markerFreq or result["baseDenom"] < markerFreq:
-				continue
-			markerFreqStr = str(markerFreq)
-			if markerFreq < 10:
-				markerFreqStr = "0"+markerFreqStr
-			if("verifiedSpeaker" in result):
-				if(result["percentDiff"] > 0.9182 and result["percentDiff"] is not 1 and result["verifiedSpeaker"]):
-					averages["..truetrue"+markerFreqStr].append(result["alignment"])
-				#elif(result["verifiedSpeaker"] and not result["verifiedReplier"]):
-				#	averages[".truefalse"+markerFreqStr].append(result["alignment"])
-				#elif((not result["verifiedSpeaker"]) and result["verifiedReplier"]):
-				#	averages[".falsetrue"+markerFreqStr].append(result["alignment"])
-				elif (result["percentDiff"] < 0.2296 and not result["verifiedReplier"]):
-					averages["falsefalse"+markerFreqStr].append(result["alignment"])
-	toLog = []
-	for key in averages:
-		toAppend = {}
-		toAppend["freq"] = int(key[-2:])
-		toAppend["verif"] = key[:10]
-		value = averages[key]
-		if(len(value) == 0):
-			continue
-		average =  sum(value) / float(len(value))
-		toAppend["average"] = average
-		toAppend["alignments"] = str(len(value))
-		toLog.append(toAppend)
-	toLog = sorted(toLog, key=lambda k: k["freq"])
-	for logging in toLog:
-		logger1.log(str(logging["freq"]) + ": " + str(logging["average"]) + " - for " + logging["alignments"] + " alignments " + logging["verif"])
 
 start = logger1.initialize()
 users = readUserInfo()
@@ -266,7 +189,5 @@ result = readCSV(inputFile, users, numMarkers)
 rows = result["rows"]
 markers = result["markers"]
 utterances = transformCSVnonP(markers, users,rows)
-results = shared_code.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
-#exit()
-logInfo(results, markers)
+results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
 logger1.finish(start)
