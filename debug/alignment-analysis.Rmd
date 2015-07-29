@@ -1,0 +1,200 @@
+---
+title: "Untitled"
+author: "Gabe Doyle"
+date: "Monday, July 20, 2015"
+output: pdf_document
+---
+
+Loading the most recent results.
+
+```{r,echo=FALSE}
+library(data.table)
+library(bit64)
+library(dplyr)
+library(ggplot2)
+df <- fread('results.csv', header=T)
+#df2 <- fread('results-withquotes.csv',header=T)
+```
+
+Cleaning down the data table:
+
+```{r}
+d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
+              vspeak=verifiedSpeaker,vreply=verifiedReplier,
+              sid=speakerId,rid=replierId,category=category,
+              pyalign=alignment,percentDiff=percentDiff),]
+
+```
+
+Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
+
+```{r}
+smoothalign <- function(df,sm) {
+  return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+} 
+
+smoothalignold <- function(df,sm) {
+  return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
+}
+
+d$sm0 <- smoothalign(d,0)
+d$sm1 <- smoothalign(d,1)
+d$osm0 <- smoothalignold(d,0)
+
+max(abs(d$sm1-d$pyalign))
+
+```
+
+Plotting by-marker aggregated results:
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+theme_set(theme_grey())
+
+d2 <- d %>%
+  filter(vreply==F) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(sm1))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2)) + labs(title="Non-verified repliers' alignments\naggregated by marker(Smoothing=1)",x="Speaker verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker")
+```
+
+Hmm, there's an effect of # of pairs using the marker and its estimated alignment. That may be a base-rate effect; to check, let's sample all the markers down to being used by the same number of speaker-replier pairs.  If the same basic spread remains, then it's suggestive that this has to do with the markers' base rate.  I'm also switching the color to be the mean of p(B) and p(A) -- i.e., an estimate of the base rate of usage of the marker.
+
+```{r}
+d2 <- d %>%
+filter(vreply==F) %>%
+mutate(speakerrate=(ba+nba)/(ba+nba+bna+nbna),replierrate=(ba+bna)/(ba+nba+bna+nbna)) %>%
+group_by(vspeak,category) %>%
+sample_n(400) %>%
+summarize(convs=n(),mean=mean(sm1),baserate=mean((speakerrate+replierrate)/2))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=baserate,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2)) + labs(title="Non-verified repliers' alignments\naggregated by marker(Smoothing=1)",x="Speaker verification",y="Mean alignment",color="Base rate of\nmarker usage")
+```
+
+Sure enough, a base-rate effect remains even when we look at equivalent numbers of conversation pairs.  Based on our work on the toy examples, this is probably not a bias driven by the alignment calculation but rather something inherent to the base-rate, such as less commonly occurring markers having more ability to be aligned on.
+
+Looking with a cut-off to remove sparse markers; only incuding speaker-replier pairs where the speaker has used the marker at least N times and has not used the marker at least N times (both are important, for assessing the two probabilities p(B|A) and p(B|notA).)
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(sm1))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2)) + labs(title="Non-verified repliers' alignments\naggregated by marker(Smoothing=1,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker")
+```
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,is.finite(sm0),(ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(sm0))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2)) + labs(title="Non-verified repliers' alignments\naggregated by marker(Smoothing=0,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker")
+```
+
+LAstly, let's look at the violin plot on DNM's alignment (p(B|A)-p(B)).  It looks surprising.
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(osm0))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2)) + labs(title="Non-verified repliers' DNM alignments\naggregated by marker(Smoothing=0,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker")
+```
+
+### Alignment to power
+
+Clearly there's a positive effect of alignment on the markers in aggregate as well as most individual markers.  But do we see an effect of additional alignment to power? running some very basic by-marker paired t-tests to test the effect of power on alignment:
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(sm1))
+d3 <- d2 %>% group_by(category) %>% mutate(tvalue=sum(mean*vspeak),fvalue=sum(mean*(1-vspeak))) %>% filter(vspeak=TRUE)
+qplot(tvalue-fvalue,category,data=d3) + geom_text(aes(label=category)) + labs(title="Difference in marker alignments by non-verified speakers\n(Smoothing=1,Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word")
+t.test(d3$tvalue,d3$fvalue)
+
+```
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,is.finite(sm0),(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(sm0))
+d3 <- d2 %>% group_by(category) %>% mutate(tvalue=sum(mean*vspeak),fvalue=sum(mean*(1-vspeak))) %>% filter(vspeak=TRUE)
+qplot(tvalue-fvalue,category,data=d3) + geom_text(aes(label=category)) + labs(title="Difference in marker alignments by non-verified speakers\n(Smoothing=0,Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word")
+t.test(d3$tvalue,d3$fvalue)
+
+```
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),mean=mean(osm0))
+d3 <- d2 %>% group_by(category) %>% mutate(tvalue=sum(mean*vspeak),fvalue=sum(mean*(1-vspeak))) %>% filter(vspeak=TRUE)
+qplot(tvalue-fvalue,category,data=d3) + geom_text(aes(label=category)) + labs(title="Difference in marker DNM alignments by non-verified speakers\n(Smoothing=0,Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word")
+t.test(d3$tvalue,d3$fvalue)
+
+```
+
+Okay, so we're seeing something good in that there is a significant positive effect of power on alignment under our calculations.  But under the DNM calculation, we're seeing a negative significant alignment to power?!  That is very surprising.  We need to look carefully at our methods here. Also we need to implement category-based alignment calculations to check our results more precisely against theirs.
+
+### By-pair rather than by-marker
+
+Plotting by-pair aggregated results
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,is.finite(sm0),(ba+nba)>5,(bna+nbna)>5) %>%
+  group_by(vspeak,sid,rid) %>%
+  summarize(convs=n(),mean=mean(sm0))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs)) + geom_violin() + geom_point() + labs(title="Non-verified repliers' alignments\naggregated by users (Smoothing=0,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="#markers used\nby the pair")
+```
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>5,(bna+nbna)>5) %>%
+  mutate(convos=ba+bna+nba+nbna) %>%
+  group_by(vspeak,sid,rid) %>%
+  summarize(markers=n(),mean=mean(osm0),tweets=mean(convos))
+
+ggplot(d2,aes(x=vspeak,y=mean,color=markers)) + geom_violin() + geom_point() + labs(title="Non-verified repliers' alignments\naggregated by users (Smoothing=1,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="#markers used\nby the pair")
+```
+
+```{r}
+ggplot(d2[tweets<250,],aes(x=tweets,y=mean,color=vspeak)) + geom_point(alpha=.5) + geom_smooth() + labs(title="Non-verified repliers' alignments\naggregated by users (Smoothing=1,Cutoff=5)",x="# of replies by replier to speaker",y="Mean alignment",color="Speaker\nverified?") +theme_bw()
+```
+
+I'm concerned here about the increase in alignment with number of replies.  On the one hand, this would be expected, because of homophily.  On the other, I'm concerned in could be an unintended side-effect of our alignment calculation, similar to the bump we saw in the toy examples.  Looking at the DNM alignments, we see a similar growth in alignments with number of replies but here, there's more alignment to unverified than verified tweeters.
+
+### reciprocity
+
+Okay, so here's something I'd like to look at: Is there an effect of reciprocity? (i.e., is it less noisy when we look at users who engage with each other instead of just one talking at the other?)  This isn't entirely valid as-is; reciprocity needs to be handled within teh Python code because we're losing speakers who talk to each other but do not use the right markers or don't use them enough.  But consider this an initial stab at investigating this question.
+
+```{r}
+d2 <- d %>%
+  mutate(cid=paste(pmin(sid,rid),pmax(sid,rid))) %>%  #Create a conversation ID as the combined ascending order uids
+  mutate(aconvos=ba+nba,naconvos=bna+nbna) %>%        #Total number of conversations in each direction
+  group_by(cid) %>%                                   #Grouping by convo id
+  mutate(recip=(n_distinct(sid)==2)) %>%              #conversation is reciprocal if both users in convo appear as speaker in our data
+  filter(aconvos>=5,naconvos>=5,vreply==F) %>%
+  group_by(vspeak,sid,rid,recip) %>%
+  summarize(markers=n(),mean=mean(sm1),tweets=mean(aconvos+naconvos))
+
+ggplot(d2[tweets<250,],aes(x=vspeak,y=mean,color=recip)) + geom_violin() + labs(title="Non-verified repliers' alignments\naggregated by users (Smoothing=1,Cutoff=5)",x="Speaker verified?",y="Mean alignment",color="reciprocal\nconversation?")
+```
+
+```{r}
+ggplot(d2[(tweets<250),],aes(x=tweets,y=mean,color=paste(recip,vspeak))) + geom_point(alpha=.3) + geom_smooth() + labs(title="Non-verified repliers' alignments\naggregated by users (Smoothing=1,Cutoff=5)",x="#Tweets",y="Mean alignment",color="reciprocal?\nspeaker verified?") + theme_bw()
+```
+

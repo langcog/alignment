@@ -168,13 +168,9 @@ def runFormula(results, markers, sparsities, smoothing):
 				toAppend["reciprocity"] = result["reciprocity"]
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
-				toAppend["maxNgram"] = result["maxNgram"]
-				toAppend["ngramPercent"] = result["ngramPercent"]
 				toAppend["speakerFollowers"] = result["speakerFollowers"]
 				toAppend["replierFollowers"] = result["replierFollowers"]
 				if("percentDiff" in result):
-					if(result["percentDiff"] == 0):
-						logger1.log(result["percentDiff"])
 					toAppend["percentDiff"] = result["percentDiff"]
 				else:
 					continue
@@ -217,8 +213,6 @@ def runFormula(results, markers, sparsities, smoothing):
 			baseProb = math.log((baseNum+smoothing)/(baseDenom+2*smoothing))
 			alignment = powerProb - baseProb
 			toAppend["alignment"] = alignment
-			toAppend["baseDenom"] = baseDenom
-			toAppend["powerDenom"] = powerDenom
 
 			powerProb = ((powerNum+smoothing)/(powerDenom+2*smoothing))
 			baseProb = ((baseNum+smoothing)/(baseDenom+2*smoothing))

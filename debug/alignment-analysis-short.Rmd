@@ -1,0 +1,160 @@
+---
+title: "Short Twitter Alignment Tests"
+author: "Gabe Doyle"
+date: "Monday, July 20, 2015"
+output: pdf_document
+---
+
+Loading the most recent results.
+
+```{r,echo=FALSE}
+options(warn=-1)
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(bit64))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(corrgram))
+
+if (getwd()=="C:/stuff/stanford") {
+  setwd("C:/stuff/stanford/alignment")
+}
+df <- fread('results.csv', header=T)
+#df2 <- fread('results-withquotes.csv',header=T)
+
+d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
+              vspeak=verifiedSpeaker,vreply=verifiedReplier,
+              sid=speakerId,rid=replierId,category=category,
+              pyalign=alignment,reciprocity=reciprocity,dnm=dnmalignment),]
+options(warn=0)
+```
+
+Some basic info about the data:
+
+```{r}
+nrow(d)
+
+head(d,2)
+
+tail(d,2)
+```
+
+
+Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
+
+```{r}
+smoothalign <- function(df,sm,align="logodds") {
+  if (align=="logodds") {
+    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+  } else if (align=="subodds") {
+    return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+sm)/(df$bna+df$nbna+2*sm))
+  } else if (align=="logdnm") {
+    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+df$ba+sm)+log(df$nba+df$ba+df$bna+df$nbna+2*sm))
+  } else if (align=="subdnm") {
+    return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
+  } else {
+    stop("Invalid alignment type.")
+  }
+} 
+
+d$lo1 <- smoothalign(d,1,"logodds")
+d$sd0 <- smoothalign(d,0,"subdnm")
+
+stopifnot(max(abs(d$lo1-d$pyalign))<.00001)
+stopifnot(max(abs(d$sd0-d$dnm))<.00001)
+
+
+```
+
+### core results with the main two alignment measures
+
+First things first, we'd like to get a sense of how the alignmnt measure decisions affect the outcomes. We're currently considering three variables in the calculation of alignment:
+
+1. Baseline measure ($p(B)$ vs. $p(B|\neg A)$)
+2. Logarithmic vs. non-logarithmic space
+3. Smoothing
+
+Our proposed metric uses the $p(B|\neg A)$ baseline, in log space, with +1 smoothing.  The DNM metric that has been standardly used has the $p(B)$ baseline, in non-log space, with no smoothing.  We'll look at each of the influence of each of these factors in turn.
+
+Why do we want to change the measure in the first place?  Our toy example work found some problems with the original metric.  For low-frequency markers, it limits the amount of positive alignment that can be detected (alignment is at most $p(B|A)$ since $p(B) \ge 0$).  This is an especially noticeable problem with the short messages on Twitter and in child-directed/produced speech.  Moving to log-space removes this upper limit.  The original metric also loses discriminative power for moderate- and high-frequency markers, as $p(B) = p(A) p(B|A) + (1-p(A)) p(B|\neg A)$, which linearly approaches $p(B|A)$ as the marker frequency increases.  Changing the baseline to $p(B|\neg A)$ addresses this problem.  Both of these changes can increase noise in our estimates, however.
+
+We find substantially different distributions and results depending on the alignment measure. First, we compare our canonical +1 smoothed measure to the unsmoothed DNM.  Looking at these two plotted against each other by marker (and split by verification status, since we think that affects the means of the markers), we see that DNM shows substantially reduced and less discriminative values.  Only when the range of alignments is very large (as in the verified replier cases) do we see substantial correlation between the two.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,vreply,category) %>%
+  summarize(convs=n(),Ours=mean(lo1),DNM=mean(sd0))
+
+ggplot(d2,aes(x=Ours,y=DNM,color=convs,label=category)) + geom_text() + geom_smooth(method="loess") +facet_grid(vspeak ~ vreply,labeller = label_both) + labs(title="Comparing alignments by unverified repliers\naggregated by marker (Cutoff=5)",x="Mean our alignment (Smoothing=1)",y="Mean DNM alignment (Smoothing=0)",color="Speaker-replier\npairs using\nthe marker") + theme_bw()
+
+```
+
+The correlations by speaker-replier verification:
+
+```{r}
+d2 %>% group_by(vspeak,vreply) %>% summarize(correlation=cor(Ours,DNM))
+```
+
+So there're some decent correlations; these measures aren't measuring completely different things.  The main difference is that our measure appears to have somewhat better resolution, for the reasons argued above, on the fairly small positive alignment effects that are predicted under accommodation theories.
+
+Now let's turn to our basic main research question: alignment to power. We find clearer effects under our log-odds measure than under the DNM measure.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=5,(bna+nbna)>=5) %>%
+  mutate(Ours=lo1,DNM=sd0) %>%
+  gather(alignment,mean,Ours,DNM)
+
+
+ggplot(d2,aes(x=paste(vspeak,vreply,sep="\n"),y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title="Alignments over all\nspeaker-replier-marker triplets (Cutoff=5)",x="Speaker/replier verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~ alignment,scales="free") + theme_grey()
+
+```
+
+Our metric has clearer differences in the means, and less variance (relative to the mean's distance from zero) as well.  Let's look at the results for unverified repliers, as we have more data for them and have a clear expectation of increased alignment to verified speakers.
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),Ours=mean(lo1),DNM=mean(sd0)) %>%
+  gather(alignment,mean,Ours,DNM)
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + labs(title="Non-verified repliers' alignments\naggregated by marker (Cutoff=5)",x="Speaker verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~ alignment,scales="free") + theme_grey()
+
+```
+
+And let's test the by-marker alignment to power (the difference in alignment values when responding to a verified vs. unverified speaker):
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(mean=mean(lo1)) %>%
+  spread(vspeak,mean,fill=NA) %>%
+  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+
+ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in our marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+
+t.test(d2$tvalue,d2$fvalue)
+```
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(mean=mean(sd0)) %>%
+  spread(vspeak,mean,fill=NA) %>%
+  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+
+ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in DNM marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+
+t.test(d2$tvalue,d2$fvalue)
+```
+
+Our alignment measure is positive for most markers, with many of the negative power-based alignments occurring with personal pronouns, which often show negative alignments in previous work.  We also see an overall significant positive power-based alignment based on a paired t-test.  The DNM alignments, on the other hand, are more evenly divided between positive and negative power-based alignments, without a clear pattern in the negative alignment words. There is also a marginal *negative* power-based alignment, which I don't think any of the previous literature would predict.
+
+So, in summary, we can argue that our alignment measure is more appropriate for distributions like those we expect (mostly positive by-marker alignments, with low- to moderate-frequency markers) than the DNM alignment measure.  Looking at the distribution of alignment estimates, the two measures are correlated but ours seems to better distinguish small positive alignments from zero (see the DNM vs. ours scatterplot) and looks less noisy (see the violin plot). Thanks to these advantages, our measure is able to identify a power-based aligment that the DNM measure does not.
+
