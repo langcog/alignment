@@ -7,6 +7,7 @@ from mychildes import CHILDESCorpusReaderX #modified nltk
 from nltk.corpus import PlaintextCorpusReader
 from nltk.probability import FreqDist
 import enchant
+from nltk.corpus import brown
 
 speaker_list = []
 utterance_dict = {}
@@ -65,6 +66,15 @@ def initialize(): # clean slates the variables
 	pathsim_avg = {}
 
 BNC_root = r'C:\Users\Aaron\Desktop\BNCBaby\BNCBaby'
+
+def get_Freq_Brown():
+	global fdist
+	temp_brown = brown.tagged_words()
+	fdist_temp = FreqDist(temp_brown)
+	for key in fdist_temp.keys():
+		if key[1] == 'NN' or key[1] == 'NNS':
+			fdist[key[0]] = fdist_temp[key]
+	return(fdist)
 
 def read_BNC_baby(root_local):
 	global fdist
@@ -169,25 +179,27 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0] 
 		y_tokenized = nltk.pos_tag(conversation_dictionary[x][0])
-		for i in range(1, len(y_tokenized) - 1):	
-			if d.check(y_tokenized[i][0]) == True:
-				if y_tokenized[i][1] == 'NN':
-					if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
-						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
-						master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
-					else:
-						magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-						master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
+		for i in range(1, len(y_tokenized) - 1):
+			if len(y_tokenized[i][0]) > 1:	
+				if d.check(y_tokenized[i][0]) == True:
+					if y_tokenized[i][1] == 'NN':
+						if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
+							magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
+							master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
+						else:
+							magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
+							master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
-			if d.check(z_tokenized[i][0]) == True:
-				if z_tokenized[i][1] == 'NN':
-					if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
-						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
-						master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
-					else:
-						magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
-						master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
+			if len(z_tokenized[i][0]) > 1:
+				if d.check(z_tokenized[i][0]) == True:
+					if z_tokenized[i][1] == 'NN':
+						if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
+							magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
+							master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
+						else:
+							magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
+							master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
 	return(master_dict)	
 
 def get_similarity_full_range(conversation_dictionary):
@@ -203,7 +215,7 @@ def get_similarity_full_range(conversation_dictionary):
 			try:	
 				temp_list = []
 				biggest_amount = 0
-				biggest_word = 'NA'
+				biggest_word = '$$$'
 				checked_item = wn.synset(key + '.n.01')
 				temp_list.append(key)
 				for item in list(checked_item.closure(hyper)):
@@ -216,7 +228,7 @@ def get_similarity_full_range(conversation_dictionary):
 							biggest_amount = fdist[word]
 							biggest_word = word
 					except:
-						biggest_word = biggest_word		
+						continue		
 				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
 				master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
 				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
@@ -228,7 +240,7 @@ def get_similarity_full_range(conversation_dictionary):
 			try:	
 				temp_list = []
 				biggest_amount = 0
-				biggest_word = 'NA'
+				biggest_word = '$$$'
 				checked_item = wn.synset(key + '.n.01')
 				temp_list.append(key)
 				for item in list(checked_item.closure(hyper)):
@@ -241,7 +253,7 @@ def get_similarity_full_range(conversation_dictionary):
 							biggest_amount = fdist[word]
 							biggest_word = word
 					except:
-						biggest_word = biggest_word		
+						continue		
 				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
 				master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
 				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
@@ -263,7 +275,7 @@ def get_similarity(conversation_dictionary):
 			try:	
 				temp_list = []
 				biggest_amount = 0
-				biggest_word = 'NA'
+				biggest_word = '$$$'
 				checked_item = wn.synset(key + '.n.01')
 				temp_list.append(key)
 				for item in list(checked_item.closure(hyper)):
@@ -286,7 +298,7 @@ def get_similarity(conversation_dictionary):
 			try:	
 				temp_list = []
 				biggest_amount = 0
-				biggest_word = 'NA'
+				biggest_word = '$$$'
 				checked_item = wn.synset(key + '.n.01')
 				temp_list.append(key)
 				for item in list(checked_item.closure(hyper)):
@@ -372,7 +384,7 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	with open(output_file_name, "a", newline='') as f:
 		magic_writer = csv.writer(f)
 		magic_writer.writerows(for_output_list)
-		f.close()		
+		f.close()
 
 
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
@@ -386,9 +398,9 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
-outfile = 'Providence_FLT_pathsim_words.csv'
+outfile = 'ProvidenceFLTPathsimNew.csv'
 
-read_BNC_baby(BNC_root)
+get_Freq_Brown()
 writeHeader(outfile, 'a')
 
 if Subdirs == True:
@@ -403,5 +415,3 @@ if Subdirs == False:
 			if fname.endswith(".xml"):
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
-
-				
