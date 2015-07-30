@@ -3,7 +3,7 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-import shared_code
+import alignment
 import logger1
 from nltk.stem import *
 from nltk.stem.snowball import SnowballStemmer
@@ -201,7 +201,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	calculate_sparsity(speaker_list, convo_dict)
 	
 	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
-	results = shared_code.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x)	
+	results = alignment.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x)	
 
 if Subdirs == True:
 	for dirName, subdirList, fileList in os.walk(corpus_dir):
