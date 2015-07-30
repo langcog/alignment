@@ -53,7 +53,8 @@ def processTweetCSVRow(row):
 	toAppend["replyMarkers"] = []
 	toAppend["msgTokens"] = toAppend["msg"].split(" ")
 	toAppend["replyTokens"] = toAppend["reply"].split(" ")
-	
+	toAppend["msgChars"] = list(toAppend["msg"])
+	toAppend["replyChars"] = list(toAppend["reply"])
 	return toAppend
 
 def remove_values_from_list(the_list, val):
