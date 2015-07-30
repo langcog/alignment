@@ -30,22 +30,27 @@ d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
 ```
 
 
-```{r, echo=FALSE}
-# Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
-
-smoothalign <- function(df,sm) {
-  return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+```{r}
+smoothalign <- function(df,sm,align="logodds") {
+  if (align=="logodds") {
+    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+  } else if (align=="subodds") {
+    return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+sm)/(df$bna+df$nbna+2*sm))
+  } else if (align=="logdnm") {
+    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+df$ba+sm)+log(df$nba+df$ba+df$bna+df$nbna+2*sm))
+  } else if (align=="subdnm") {
+    return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
+  } else {
+    stop("Invalid alignment type.")
+  }
 } 
 
-smoothalignold <- function(df,sm) {
-  return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
-}
+d$lo1 <- smoothalign(d,1,"logodds")
+d$sd0 <- smoothalign(d,0,"subdnm")
 
-d$sm0 <- smoothalign(d,0)
-d$sm1 <- smoothalign(d,1)
-d$osm0 <- smoothalignold(d,0)
+stopifnot(max(abs(d$lo1-d$pyalign))<.00001)
+stopifnot(max(abs(d$sd0-d$dnm))<.00001)
 
-#max(abs(d$sm1-d$pyalign))
 
 ```
 
@@ -74,7 +79,7 @@ The Echoes Of Power paper used follower count as a power proxy. If follower coun
 d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
 d2$speakerBins <- cut(d2$speakerFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("Speaker Count < 10^3", "Speaker Count < 10^4", "Speaker Count < 10^5", "Speaker Count > 10^5"))
 d2$replierBins <- cut(d2$replierFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 10^3", "< 10^4", "< 10^5", "> 10^5"))
-ggplot(d2,aes(x=paste(speakerBins),y=alignment)) + geom_violin() + labs(font=10, title="Speaker/Replier Follower Count (Absolute values)",x="Replier Follower Count",y="Alignment") + facet_wrap(~ replierBins) + geom_boxplot(width=.1) 
+ggplot(d2,aes(x=paste(speakerBins),y=alignment)) + geom_violin() + labs(font=10, title="Speaker/Replier Follower Count (Absolute values)",x="Speaker Follower Count",y="Alignment") + facet_wrap(~ replierBins) + geom_boxplot(width=.1) 
 
 
 ```
@@ -96,3 +101,59 @@ levels(d2$alignmentType)=c("alignment","noLogAlign","logdnmalignment","dnmalignm
 ggplot(d2,aes(x=followerBins,y=alignmentValue)) + geom_violin() + labs(title="Speaker/Replier Follower Count Percent Difference",x="Percent Difference between Speaker Follower Count and Replier Follower Count",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + geom_boxplot(width=.1) 
 ```
 
+This is also interesting. It appears like alignment could follow a parabolic curve insteaed of a linear one. Let's also look at alignment by marker
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=5,(bna+nbna)>=5) %>%
+  group_by(vspeak,category) %>%
+  summarize(convs=n(),Ours=mean(lo1),DNM=mean(sd0)) %>%
+  gather(alignment,mean,Ours,DNM)
+
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + labs(title="Non-verified repliers' alignments\naggregated by marker (Cutoff=5)",x="Speaker verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~ alignment,scales="free") + theme_grey()
+
+```
+
+Hmm, from the given plot, it seems the DNM formula is prone to outliers among individual markers. Why might this be the case? First we pot alignment values against number of conversations to make sure our intuition is correct
+
+```{r}
+ggplot(d2,aes(x=category,y=mean,size=convs,color=convs,label=category)) + geom_point() + facet_wrap(~alignment, scales="free")
+
+```
+
+Ok, this seems to indicate that alignment correlates to number of conversations. How might number of conversations affect alignment? If speakers don't use the marker in many conversations, the marker probably isn't very commonly spoken. Therefore a given person will have a low base probability of using the marker. 
+
+This seems to suggest that the DNM formula may be more strongly affected by a person's base rate, than their alignment. 
+
+We see a similar effect in the proposed alignment formula. However base rate doesn't appear to affect alignment as strongly, suggesting the proposed formula may be more accurate in calulating alignment.
+
+Let's check t-tests
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(mean=mean(lo1)) %>%
+  spread(vspeak,mean,fill=NA) %>%
+  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+
+ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in our marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+
+t.test(d2$tvalue,d2$fvalue)
+```
+
+```{r}
+cutoff <- 5
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(mean=mean(sd0)) %>%
+  spread(vspeak,mean,fill=NA) %>%
+  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+
+ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in DNM marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+
+t.test(d2$tvalue,d2$fvalue)
+
+```

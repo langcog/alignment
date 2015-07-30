@@ -15,9 +15,10 @@ outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 100
+numMarkers = 50
 smoothing = 1
 shouldWriteHeader = True
+
 
 
 # Reads in info about users
@@ -53,8 +54,7 @@ def processTweetCSVRow(row):
 	toAppend["replyMarkers"] = []
 	toAppend["msgTokens"] = toAppend["msg"].split(" ")
 	toAppend["replyTokens"] = toAppend["reply"].split(" ")
-	toAppend["msgChars"] = list(toAppend["msg"])
-	toAppend["replyChars"] = list(toAppend["reply"])
+	
 	return toAppend
 
 def remove_values_from_list(the_list, val):
@@ -75,14 +75,17 @@ def readCSV(inputFile, users, numOfMarkers):
 			logger1.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
+
 		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
 		realMessage = remove_values_from_list(realMessage, "[url]")
 		if(len(realMessage) == 0):
 			continue
+
 		realReply = remove_values_from_list(row["replyTokens"], "[mention]")
 		realReply = remove_values_from_list(realReply, "[url]")
 		if(len(realReply) == 0):
 			continue
+
 		if("”" in row["reply"] and row["msg"] in row["reply"]):
 			continue
 		if("[mention] :" in row["reply"] and row["msg"] in row["reply"]):
@@ -119,6 +122,8 @@ def readCSV(inputFile, users, numOfMarkers):
 	logger1.log(markers)
 	return {"rows": toReturn, "markers": markers}
 
+
+
 def getCommonMarkers(utterances, numOfMarkers):
 	freqs = {}
 	for utterance in utterances:
@@ -135,16 +140,16 @@ def getCommonMarkers(utterances, numOfMarkers):
 	return toReturn
 
 def makeDict(toConvert, key):
-	toReturn = {}
-	for element in toConvert:
-		toReturn[element[key]] = element
-	return toReturn
+    toReturn = {}
+    for element in toConvert:
+		    toReturn[element[key]] = element
+    return toReturn
 
 def findUser(udict,uid):
 	return udict.get(uid, False)
 
-# Code to take in the user dictionary & a user ID and return if that user is verified
-# Note: users with missing data are considered unverified
+#Code to take in the user dictionary & a user ID and return if that user is verified
+#	Note: users with missing data are considered unverified
 def verifySpeaker(udict,uid):
 	msgUser = findUser(udict,uid)
 	if(msgUser != False):
@@ -152,8 +157,8 @@ def verifySpeaker(udict,uid):
 	else:
 		return False
 
-# Code to take in the user dictionary & a user ID and return if that user is verified
-# Note: users with missing data are considered unverified
+#Code to take in the user dictionary & a user ID and return if that user is verified
+#	Note: users with missing data are considered unverified
 def numFollowers(udict,uid):
 	msgUser = findUser(udict,uid)
 	if(msgUser != False):
@@ -177,9 +182,11 @@ def transformCSVnonP(markers, users, rows):
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
 			row["speakerFollowers"] = numFollowers(udict, row["msgUserId"])
 			row["replierFollowers"] = numFollowers(udict, row["replyUserId"])
+
 			tests[str(row["verifiedSpeaker"]) + str(row["verifiedReplier"])] += 1
 		row["msgMarkers"] = countMarkers(row["msgTokens"],mdict)
 		row["replyMarkers"] = countMarkers(row["replyTokens"],mdict)
+
 		utterances.append(row)
 	logger1.log(tests)
 	return utterances
