@@ -2,7 +2,7 @@
 title: "Short Twitter Alignment Tests"
 author: "Gabe Doyle"
 date: "Monday, July 20, 2015"
-output: pdf_document
+output: html_document
 ---
 
 Loading the most recent results.
@@ -14,7 +14,7 @@ suppressPackageStartupMessages(library(bit64))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(ggplot2))
-suppressPackageStartupMessages(library(corrgram))
+# suppressPackageStartupMeÇssages(library(corrgram))
 
 if (getwd()=="C:/stuff/stanford") {
   setwd("C:/stuff/stanford/alignment")

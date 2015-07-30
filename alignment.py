@@ -60,11 +60,16 @@ def metaDataExtractor(groupedUtterances, markers):
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		convoUtterances = []
-		loveMsg = 0
+		msgChars = 0
+		replyChars = 0
+		msgTokens = 0
+		replyTokens = 0
 		for utterance in convo:
-			if("love" in utterance["msgMarkers"]):
-				loveMsg += 1
-			maxNgram = 1
+			msgChars += len(utterance["msgChars"])
+			replyChars += len(utterance["replyChars"])
+			msgTokens += len(utterance["msgTokens"])
+			replyTokens += len(utterance["replyTokens"])
+ 			#maxNgram = 1
 			ngramLengths = [2,3,4,5]
 			ngramPercent = 0
 			for ngramLength in ngramLengths:
@@ -117,14 +122,21 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
 		
-		toAppend["lovePercent"] = loveMsg/float(numUtterances)
+		
+
 
 		if("verifiedSpeaker" in convo[0]):
+			toAppend["msgComplexity"] = 5.88*msgChars/msgTokens-29.5*(numUtterances/msgTokens) - 15.8
+			toAppend["replyComplexity"] = 5.88*replyChars/replyTokens-29.5*(numUtterances/replyTokens) - 15.8
 			toAppend["reciprocity"] = convo[0]["reciprocity"]
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
 			toAppend["replierFollowers"] = convo[0]["replierFollowers"]
+			toAppend["msgChars"] = msgChars
+			toAppend["replyChars"] = replyChars
+			toAppend["msgTokens"] = utterance["msgTokens"]
+			toAppend["replyTokens"] = utterance["replyTokens"]
 			if((convo[0]["replierFollowers"] + convo[0]["speakerFollowers"] > 0) and (convo[0]["speakerFollowers"] != 0) and (convo[0]["replierFollowers"] > 0)):
 				toAppend["percentDiff"] = convo[0]["speakerFollowers"]/(convo[0]["replierFollowers"] + convo[0]["speakerFollowers"])
 			
@@ -161,7 +173,8 @@ def runFormula(results, markers, sparsities, smoothing):
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
-			
+			toAppend["msgComplexity"] = result["msgComplexity"]
+			toAppend["replyComplexity"] = result["replyComplexity"]
 
 			
 			if("verifiedSpeaker" in result):
@@ -170,6 +183,7 @@ def runFormula(results, markers, sparsities, smoothing):
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
 				toAppend["speakerFollowers"] = result["speakerFollowers"]
 				toAppend["replierFollowers"] = result["replierFollowers"]
+				#toAppend["ngramPercent"] = result["ngramPercent"]
 				if("percentDiff" in result):
 					toAppend["percentDiff"] = result["percentDiff"]
 				else:
@@ -184,31 +198,23 @@ def runFormula(results, markers, sparsities, smoothing):
 			powerDenom = (toAppend["ba"]+toAppend["nba"])
 			baseNum = (toAppend["ba"]+toAppend["bna"])
 			baseDenom = toAppend["numUtterances"]
-			if(baseDenom == 0 or powerDenom == 0):
-				continue
-			toAppend["bMarkerPercent"] = (toAppend["ba"] + toAppend["bna"])/(toAppend["ba"] + toAppend["bna"] + toAppend["nba"]+ toAppend["nbna"])
-			toAppend["aMarkerPercent"] = powerDenom/(baseDenom+powerDenom)
-			alignment = powerNum/powerDenom - baseNum/baseDenom
 
-			toAppend["alignment"] = alignment
-			toAppend["baseDenom"] = baseDenom
-			toAppend["powerDenom"] = powerDenom
+			if(powerDenom != 0 and baseDenom != 0):
+				dnmalignment = powerNum/powerDenom - baseNum/baseDenom
+				toAppend["dnmalignment"] = dnmalignment
+			else:
+				toAppend["dnmalignment"] = False
+
 			if(powerNum != 0 and baseNum != 0):
 				toAppend["logdnmalignment"] = math.log(float(powerNum)/float(powerDenom)) - math.log(float(baseNum)/float(baseDenom))
 			else:
 				toAppend["logdnmalignment"] = False
-			toAppend["dnmalignment"] = alignment
+			
 
 			powerNum = toAppend["ba"]
 			powerDenom = float(result["userMarkers"][result["a"]+category])
-			if(powerDenom == 0):
-				continue
 			baseDenom = toAppend["numUtterances"]-float(result["userMarkers"][result["a"]+category])
 			baseNum = toAppend["bna"]
-			if(baseDenom == 0):
-				continue
-			if(baseNum == 0 or powerNum == 0):
-				continue
 			powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
 			baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
 			alignment = powerProb - baseProb

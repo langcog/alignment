@@ -66,19 +66,20 @@ levels(d2$alignmentType)=c("alignment","noLogAlign","logdnmalignment","dnmalignm
 ggplot(d2,aes(x=paste(verifiedSpeaker,vreply),y=alignmentValue)) + geom_violin() + labs(title="Log-Comparison of Different Alignment Formulas",x="Speaker verified?",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + stat_summary(geom="point",fun.y="mean")
 
 ```
-
 Follower Bins:
 
 The Echoes Of Power paper used follower count as a power proxy. If follower count isn't a good power proxy it could explain why alignment wasn't found. We bin follower counts for speaker and repliers and plot the results.
 
 ```{r}
 d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
-d2$speakerBins <- cut(d2$speakerFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 1000", "< 10000", "< 100000", "> 100000"))
-d2$replierBins <- cut(d2$replierFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 1000", "< 10000", "< 100000", "> 100000"))
-ggplot(d2,aes(x=paste(speakerBins,replierBins),y=alignment)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title="Speaker/Replier Follower Count (Absolute values)",x="Speaker Follower Count, Replier Follower Count",y="Alignment")
+d2$speakerBins <- cut(d2$speakerFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("Speaker Count < 10^3", "Speaker Count < 10^4", "Speaker Count < 10^5", "Speaker Count > 10^5"))
+d2$replierBins <- cut(d2$replierFollowers, breaks=c(0,1000, 10000, 100000, 100000000), labels=c("< 10^3", "< 10^4", "< 10^5", "> 10^5"))
+ggplot(d2,aes(x=paste(speakerBins),y=alignment)) + geom_violin() + labs(font=10, title="Speaker/Replier Follower Count (Absolute values)",x="Replier Follower Count",y="Alignment") + facet_wrap(~ replierBins) + geom_boxplot(width=.1) 
+
+
 ```
 
-This is an interesting plot. It appears that follower count does have a strong effect on alignment. Let's also try plotting the percent difference between speaker follower count and replier follower count.
+This is an interesting plot. It appears that follower count does have an effect on alignment. Let's also try plotting the percent difference between speaker follower count and replier follower count.
 
 ```{r}
 d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
@@ -88,18 +89,10 @@ d2 <- subsetted %>%
   summarize(convs=n(), alignment=alignment, vreply=verifiedReplier, dnmalignment=dnmalignment, noLogAlign=noLogAlign, logdnmalignment=logdnmalignment, percentDiff=percentDiff) %>%
   gather(alignmentType,alignmentValue,c(alignment, dnmalignment, logdnmalignment, noLogAlign))
 
-d2$followerBins <- cut(d2$percentDiff, breaks=c(0,0.1,0.5,0.9, 0.99, 0.999, 1), labels=c("0-0.1","0.1-0.5", "0.5-0.9", "0.9-0.99", "0.99-0.999", "0.999-1"))
-
+d2$followerBins <- cut(d2$percentDiff, breaks=c(0,0.1,0.5,0.9, 0.99, 0.999, 1), labels=c("<0.1","<0.5", "<0.9", "<0.99", "<0.999", "<1"))
+ 
 levels(d2$alignmentType)=c("alignment","noLogAlign","logdnmalignment","dnmalignment")
 
-ggplot(d2,aes(x=followerBins,y=alignmentValue)) + geom_violin() + labs(title="Speaker/Replier Follower Count Percent Difference",x="Percent Difference between Speaker Follower Count and Replier Follower Count",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + stat_summary(geom="point",fun.y="mean")
+ggplot(d2,aes(x=followerBins,y=alignmentValue)) + geom_violin() + labs(title="Speaker/Replier Follower Count Percent Difference",x="Percent Difference between Speaker Follower Count and Replier Follower Count",y="Alignment") + facet_wrap(~ alignmentType, scales = "free") + geom_boxplot(width=.1) 
 ```
 
-This is unexpected. It appears that we only see power alignment when the speaker/replier follower percent difference >0.99. Could this be because of sparsity?
-
-```{r}
-barplot(height=table(d2$followerBins))
-
-```
-
-It seems that there is some sparsity but 0.1-0.5 and 0.5-0.9 have more than 5000 values each, so it may be another problem
