@@ -40,7 +40,6 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers):
 	results = []
-	percentages = []
 	for i, convo in enumerate(groupedUtterances):
 		if(i % 1000 is 0):
 			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
@@ -60,16 +59,8 @@ def metaDataExtractor(groupedUtterances, markers):
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		convoUtterances = []
-		msgChars = 0
-		replyChars = 0
-		msgTokens = 0
-		replyTokens = 0
 		for utterance in convo:
-			msgChars += len(utterance["msgChars"])
-			replyChars += len(utterance["replyChars"])
-			msgTokens += len(utterance["msgTokens"])
-			replyTokens += len(utterance["replyTokens"])
- 			#maxNgram = 1
+			maxNgram = 1
 			ngramLengths = [2,3,4,5]
 			ngramPercent = 0
 			for ngramLength in ngramLengths:
@@ -108,6 +99,7 @@ def metaDataExtractor(groupedUtterances, markers):
 				else:
 					nbna[category] += 1
 				completedCategories[category] = True
+			
 		toAppend = {}
 		toAppend["ngramPercent"] = ngramPercent
 		toAppend["maxNgram"] = maxNgram
@@ -121,22 +113,13 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["a"] = a
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
-		
-		
-
+		toAppend["reciprocity"] = convo[0]["reciprocity"]
 
 		if("verifiedSpeaker" in convo[0]):
-			toAppend["msgComplexity"] = 5.88*msgChars/msgTokens-29.5*(numUtterances/msgTokens) - 15.8
-			toAppend["replyComplexity"] = 5.88*replyChars/replyTokens-29.5*(numUtterances/replyTokens) - 15.8
-			toAppend["reciprocity"] = convo[0]["reciprocity"]
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
 			toAppend["replierFollowers"] = convo[0]["replierFollowers"]
-			toAppend["msgChars"] = msgChars
-			toAppend["replyChars"] = replyChars
-			toAppend["msgTokens"] = utterance["msgTokens"]
-			toAppend["replyTokens"] = utterance["replyTokens"]
 			if((convo[0]["replierFollowers"] + convo[0]["speakerFollowers"] > 0) and (convo[0]["speakerFollowers"] != 0) and (convo[0]["replierFollowers"] > 0)):
 				toAppend["percentDiff"] = convo[0]["speakerFollowers"]/(convo[0]["replierFollowers"] + convo[0]["speakerFollowers"])
 			
@@ -173,18 +156,18 @@ def runFormula(results, markers, sparsities, smoothing):
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
-			toAppend["msgComplexity"] = result["msgComplexity"]
-			toAppend["replyComplexity"] = result["replyComplexity"]
-
+			toAppend["reciprocity"] = result["reciprocity"]
 			
 			if("verifiedSpeaker" in result):
-				toAppend["reciprocity"] = result["reciprocity"]
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
+				toAppend["maxNgram"] = result["maxNgram"]
+				toAppend["ngramPercent"] = result["ngramPercent"]
 				toAppend["speakerFollowers"] = result["speakerFollowers"]
 				toAppend["replierFollowers"] = result["replierFollowers"]
-				#toAppend["ngramPercent"] = result["ngramPercent"]
 				if("percentDiff" in result):
+					if(result["percentDiff"] == 0):
+						logger1.log(result["percentDiff"])
 					toAppend["percentDiff"] = result["percentDiff"]
 				else:
 					continue
@@ -209,7 +192,8 @@ def runFormula(results, markers, sparsities, smoothing):
 				toAppend["logdnmalignment"] = math.log(float(powerNum)/float(powerDenom)) - math.log(float(baseNum)/float(baseDenom))
 			else:
 				toAppend["logdnmalignment"] = False
-			
+
+
 
 			powerNum = toAppend["ba"]
 			powerDenom = float(result["userMarkers"][result["a"]+category])
@@ -220,11 +204,12 @@ def runFormula(results, markers, sparsities, smoothing):
 			alignment = powerProb - baseProb
 			toAppend["alignment"] = alignment
 
+			
+			
 			powerProb = ((powerNum+smoothing)/(powerDenom+2*smoothing))
 			baseProb = ((baseNum+smoothing)/(baseDenom+2*smoothing))
 			alignment = powerProb - baseProb
 			toAppend["noLogAlign"] = alignment
-
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
