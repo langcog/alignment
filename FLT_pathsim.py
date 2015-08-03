@@ -90,7 +90,7 @@ def read_Freq_File(file_name):
 		for line in in_file:
 			split_line = line.split()
 			if split_line[3] == 'n':
-				fdist[split_line[2]] = split_line[0]
+				fdist[split_line[2]] = int(split_line[1])
 	return(fdist)					
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
@@ -224,12 +224,12 @@ def get_similarity_full_range(conversation_dictionary):
 		speaker2 = conversation_dictionary[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
 			try:	
-				if key in perm_dict.keys:
+				if key in perm_dict.keys():
 					master_dict[(speaker1, speaker2)][0][key][0] = perm_dict[key][1]
 					master_dict[(speaker1, speaker2)][0][key][2] = perm_dict[key][0]
 				else:	
 					temp_list = []
-					perm_dict[key] = [0, 0]
+					perm_dict[key] = ['NA', 'NA']
 					biggest_amount = 0
 					biggest_word = '$$$'
 					checked_item = wn.synset(key + '.n.01')
@@ -263,6 +263,7 @@ def get_similarity_full_range(conversation_dictionary):
 				else:	
 					temp_list = []
 					biggest_amount = 0
+					perm_dict[key] = ['NA', 'NA']
 					biggest_word = '$$$'
 					checked_item = wn.synset(key + '.n.01')
 					temp_list.append(key)
@@ -286,7 +287,7 @@ def get_similarity_full_range(conversation_dictionary):
 						perm_dict[key][1] = perm_dict[key][1] * -1			
 			except:
 				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
-	return(master_dict)		
+	return(master_dict, perm_dict)		
 
 def get_similarity(conversation_dictionary):
 	global master_dict
@@ -347,6 +348,7 @@ def get_similarity(conversation_dictionary):
 def get_similarity_full_local(conversation_dictionary):
 	global master_dict
 	global fdist
+	global perm_dict
 	temp_list = []
 	hyper = lambda s: s.hypernyms()
 	hypo = lambda s: s.hyponyms()
@@ -354,79 +356,96 @@ def get_similarity_full_local(conversation_dictionary):
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
-			try:	
-				temp_list = []
-				biggest_amount = 0
-				biggest_word = '$$$'
-				checked_item = wn.synset(key + '.n.01')
-				temp_list.append(key)
-				for item in list(checked_item.hypernyms()):
-					temp_list.append(item.lemmas()[0].name())
-					for word in list(item.hypernyms()):
-						if word.lemmas()[0].name() not in temp_list:
-							temp_list.append(word.lemmas()[0].name())
-						for sub_word in list(word.hypernyms()):
-							if sub_word.lemmas()[0].name() not in temp_list:
-								temp_list.append(sub_word.lemmas()[0].name())
-				for item in list(checked_item.hyponyms()):
-					temp_list.append(item.lemmas()[0].name())
-					for word in list(item.hyponyms()):
-						if word.lemmas()[0].name() not in temp_list:
-							temp_list.append(word.lemmas()[0].name())
-						for sub_word in list(word.hyponyms()):
-							if sub_word.lemmas()[0].name() not in temp_list:
-								temp_list.append(sub_word.lemmas()[0].name())
-				for word in temp_list:
-					try:
-						if int(fdist[word]) > biggest_amount:
-							biggest_amount = int(fdist[word])
-							biggest_word = word
-					except:
-						continue		
-				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
-				master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
-				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
-					master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
-			except:
-				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+			if key in perm_dict.keys():
+				master_dict[(speaker1, speaker2)][0][key][0] = perm_dict[key][1]
+				master_dict[(speaker1, speaker2)][0][key][2] = perm_dict[key][0]
+			else:		
+				try:	
+					temp_list = []
+					biggest_amount = 0
+					biggest_word = '$$$'
+					perm_dict[key] = ['NA', 'NA']
+					checked_item = wn.synset(key + '.n.01')
+					temp_list.append(key)
+					for item in list(checked_item.hypernyms()):
+						temp_list.append(item.lemmas()[0].name())
+						for word in list(item.hypernyms()):
+							if word.lemmas()[0].name() not in temp_list:
+								temp_list.append(word.lemmas()[0].name())
+							for sub_word in list(word.hypernyms()):
+								if sub_word.lemmas()[0].name() not in temp_list:
+									temp_list.append(sub_word.lemmas()[0].name())
+					for item in list(checked_item.hyponyms()):
+						temp_list.append(item.lemmas()[0].name())
+						for word in list(item.hyponyms()):
+							if word.lemmas()[0].name() not in temp_list:
+								temp_list.append(word.lemmas()[0].name())
+							for sub_word in list(word.hyponyms()):
+								if sub_word.lemmas()[0].name() not in temp_list:
+									temp_list.append(sub_word.lemmas()[0].name())
+					for word in temp_list:
+						try:
+							if fdist[word] > biggest_amount:
+								biggest_amount = fdist[word]
+								biggest_word = word
+						except:
+							continue		
+					master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+					master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
+					perm_dict[key][0] = biggest_word
+					perm_dict[key][1] = master_dict[(speaker1, speaker2)][0][key][0]
+					if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+						master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
+						perm_dict[key][1] = perm_dict[key][1] * -1
+				except:
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
 			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
-			try:	
-				temp_list = []
-				biggest_amount = 0
-				biggest_word = '$$$'
-				checked_item = wn.synset(key + '.n.01')
-				temp_list.append(key)
-				for item in list(checked_item.hypernyms()):
-					temp_list.append(item.lemmas()[0].name())
-					for word in list(item.hypernyms()):
-						if word.lemmas()[0].name() not in temp_list:
-							temp_list.append(word.lemmas()[0].name())
-						for sub_word in list(word.hypernyms()):
-							if sub_word.lemmas()[0].name() not in temp_list:
-								temp_list.append(sub_word.lemmas()[0].name())
-				for item in list(checked_item.hyponyms()):
-					temp_list.append(item.lemmas()[0].name())
-					for word in list(item.hyponyms()):
-						if word.lemmas()[0].name() not in temp_list:
-							temp_list.append(word.lemmas()[0].name())
-						for sub_word in list(word.hyponyms()):
-							if sub_word.lemmas()[0].name() not in temp_list:
-								temp_list.append(sub_word.lemmas()[0].name())
-				for word in temp_list:
-					try:	
-						if int(fdist[word]) > biggest_amount:
-							biggest_amount = int(fdist[word])
-							biggest_word = word
-					except:
-						continue		
-				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
-				master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
-				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
-					master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1			
-			except:
-				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
-	return(master_dict)			
+			if key in perm_dict.keys():
+				master_dict[(speaker1, speaker2)][1][key][0] = perm_dict[key][1]
+				master_dict[(speaker1, speaker2)][1][key][2] = perm_dict[key][0]
+		
+			else:		
+				try:	
+					temp_list = []
+					biggest_amount = 0
+					biggest_word = '$$$'
+					perm_dict[key] = ['NA', 'NA']
+					checked_item = wn.synset(key + '.n.01')
+					temp_list.append(key)
+					for item in list(checked_item.hypernyms()):
+						temp_list.append(item.lemmas()[0].name())
+						for word in list(item.hypernyms()):
+							if word.lemmas()[0].name() not in temp_list:
+								temp_list.append(word.lemmas()[0].name())
+							for sub_word in list(word.hypernyms()):
+								if sub_word.lemmas()[0].name() not in temp_list:
+									temp_list.append(sub_word.lemmas()[0].name())
+					for item in list(checked_item.hyponyms()):
+						temp_list.append(item.lemmas()[0].name())
+						for word in list(item.hyponyms()):
+							if word.lemmas()[0].name() not in temp_list:
+								temp_list.append(word.lemmas()[0].name())
+							for sub_word in list(word.hyponyms()):
+								if sub_word.lemmas()[0].name() not in temp_list:
+									temp_list.append(sub_word.lemmas()[0].name())
+					for word in temp_list:
+						try:	
+							if fdist[word] > biggest_amount:
+								biggest_amount = fdist[word]
+								biggest_word = word
+						except:
+							continue		
+					master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+					master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
+					perm_dict[key][0] = biggest_word
+					perm_dict[key][1] = master_dict[(speaker1, speaker2)][1][key][0]
+					if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+						master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1
+						perm_dict[key][1] = perm_dict[key][1] * -1			
+				except:
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
+	return(master_dict, perm_dict)			
 
 def get_hyp_avg(conversation_dictionary):
 	global master_dict
@@ -469,6 +488,7 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	global master_dict
 	global fdist
 	global pathsim_avg
+	global perm_dict
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -478,7 +498,7 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	calculate_sparsity(speaker_list, convo_dict)
 	dict_initialize(speaker_list)
 	noun_counter(convo_dict)
-	get_similarity_full_range(convo_dict)
+	get_similarity_full_local(convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
@@ -527,3 +547,5 @@ if Subdirs == False:
 			if fname.endswith(".xml"):
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
+
+				
