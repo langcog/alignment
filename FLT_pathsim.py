@@ -81,7 +81,16 @@ def read_BNC_baby(root_local):
 	wordlists = PlaintextCorpusReader(root_local, '.*', encoding='latin-1')
 	BNC_baby = wordlists.words()
 	fdist = FreqDist(word.lower() for word in BNC_baby)
-	return(fdist)	
+	return(fdist)
+
+def read_Freq_File(file_name):
+	global fdist
+	with open(file_name, 'r') as in_file:
+		for line in in_file:
+			split_line = line.split()
+			if split_line[3] == 'n':
+				fdist[split_line[2]] = split_line[0]
+	return(fdist)					
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -318,6 +327,90 @@ def get_similarity(conversation_dictionary):
 				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
 	return(master_dict)
 
+def get_similarity_full_local(conversation_dictionary):
+	global master_dict
+	global fdist
+	temp_list = []
+	hyper = lambda s: s.hypernyms()
+	hypo = lambda s: s.hyponyms()
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0]
+		for key in master_dict[(speaker1, speaker2)][0].keys():
+			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = '$$$'
+				checked_item = wn.synset(key + '.n.01')
+				temp_list.append(key)
+				for item in list(checked_item.hypernyms()):
+					temp_list.append(item.lemmas()[0].name())
+					for word in list(item.hypernyms()):
+						if word.lemmas()[0].name() not in temp_list:
+							temp_list.append(word.lemmas()[0].name())
+						for sub_word in list(word.hypernyms()):
+							if sub_word.lemmas()[0].name() not in temp_list:
+								temp_list.append(sub_word.lemmas()[0].name())
+				for item in list(checked_item.hyponyms()):
+					temp_list.append(item.lemmas()[0].name())
+					for word in list(item.hyponyms()):
+						if word.lemmas()[0].name() not in temp_list:
+							temp_list.append(word.lemmas()[0].name())
+						for sub_word in list(word.hyponyms()):
+							if sub_word.lemmas()[0].name() not in temp_list:
+								temp_list.append(sub_word.lemmas()[0].name())
+				for word in temp_list:
+					try:
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						continue		
+				master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][0][key][2] = biggest_word
+				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+					master_dict[(speaker1, speaker2)][0][key][0] = master_dict[(speaker1, speaker2)][0][key][0] * -1
+			except:
+				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+			temp_list = []	
+		for key in master_dict[(speaker1, speaker2)][1].keys():
+			try:	
+				temp_list = []
+				biggest_amount = 0
+				biggest_word = '$$$'
+				checked_item = wn.synset(key + '.n.01')
+				temp_list.append(key)
+				for item in list(checked_item.hypernyms()):
+					temp_list.append(item.lemmas()[0].name())
+					for word in list(item.hypernyms()):
+						if word.lemmas()[0].name() not in temp_list:
+							temp_list.append(word.lemmas()[0].name())
+						for sub_word in list(word.hypernyms()):
+							if sub_word.lemmas()[0].name() not in temp_list:
+								temp_list.append(sub_word.lemmas()[0].name())
+				for item in list(checked_item.hyponyms()):
+					temp_list.append(item.lemmas()[0].name())
+					for word in list(item.hyponyms()):
+						if word.lemmas()[0].name() not in temp_list:
+							temp_list.append(word.lemmas()[0].name())
+						for sub_word in list(word.hyponyms()):
+							if sub_word.lemmas()[0].name() not in temp_list:
+								temp_list.append(sub_word.lemmas()[0].name())
+				for word in temp_list:
+					try:	
+						if fdist[word] > biggest_amount:
+							biggest_amount = fdist[word]
+							biggest_word = word
+					except:
+						continue		
+				master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
+				master_dict[(speaker1, speaker2)][1][key][2] = biggest_word
+				if wn.synset(biggest_word + '.n.01') in list(checked_item.closure(hyper)):
+					master_dict[(speaker1, speaker2)][1][key][0] = master_dict[(speaker1, speaker2)][1][key][0] * -1			
+			except:
+				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'	
+	return(master_dict)			
+
 def get_hyp_avg(conversation_dictionary):
 	global master_dict
 	global convo_dict
@@ -373,10 +466,10 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
-			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[speaker1, speaker2][0][key][2], master_dict[speaker1, speaker2][0][key][0], master_dict[speaker1, speaker2][0][key][1], 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[speaker1, speaker2][0][key][2], master_dict[speaker1, speaker2][0][key][0], master_dict[speaker1, speaker2][0][key][1], 'NA', 'NA', 'NA', 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
 			final_counter += 1
 		for key in master_dict[(speaker1, speaker2)][1].keys():
-			output_almost[final_counter] = [input_file_name, speaker1, speaker2, key, master_dict[speaker1, speaker2][1][key][2], master_dict[speaker1, speaker2][1][key][0], 'NA', master_dict[speaker1, speaker2][1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
+			output_almost[final_counter] = [input_file_name, speaker1, speaker2, 'NA', 'NA', 'NA', 'NA', key, master_dict[speaker1, speaker2][1][key][2], master_dict[speaker1, speaker2][1][key][0], master_dict[speaker1, speaker2][1][key][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]]	
 			final_counter += 1	
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
@@ -392,7 +485,7 @@ corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["DocId", "Speaker", "Replier", 'Word', 'BLC', 'Path Similarity', 'S Frequency', 'R Frequency', "Sparsity S-R", "Sparsity R-S"])
+	header.insert(0, ["DocId", "Speaker", "Replier", 'S Word', 'S BLC', 'S Path Similarity', 'S Frequency', 'R word', 'R BLC', 'R Path Similarity', 'R Frequency', "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
@@ -400,8 +493,10 @@ def writeHeader(outputFile, writeType):
 
 outfile = 'ProvidenceFLTPathsimNew.csv'
 
-get_Freq_Brown()
+read_Freq_File(freq_list_location)
 writeHeader(outfile, 'a')
+
+freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
 
 if Subdirs == True:
 	for dirName, subdirList, fileList in os.walk(corpus_dir):
@@ -415,3 +510,5 @@ if Subdirs == False:
 			if fname.endswith(".xml"):
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
+
+				
