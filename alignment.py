@@ -137,10 +137,11 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 
 
 		if("verifiedSpeaker" in convo[0]):
-			toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
-			toAppend["replySentiment"] = averageReplySentiment/numUtterances
-			toAppend["ngramPercent"] = ngramPercent
-			toAppend["reciprocity"] = convo[0]["reciprocity"]
+			if("positives" in extras):
+				toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
+				toAppend["replySentiment"] = averageReplySentiment/numUtterances
+				toAppend["ngramPercent"] = ngramPercent
+				toAppend["reciprocity"] = convo[0]["reciprocity"]
 
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
@@ -182,15 +183,18 @@ def runFormula(results, markers, sparsities, smoothing):
 			toAppend["replierId"] = result["b"]
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
-			toAppend["reciprocity"] = result["reciprocity"]
-			toAppend["msgSentiment"] = result["msgSentiment"]
-			toAppend['replySentiment'] = result["replySentiment"]
+			
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
-				toAppend["ngramPercent"] = result["ngramPercent"]
+				
 				toAppend["speakerFollowers"] = result["speakerFollowers"]
 				toAppend["replierFollowers"] = result["replierFollowers"]
+				if("reciprocity" in result):
+					toAppend["reciprocity"] = result["reciprocity"]
+					toAppend["msgSentiment"] = result["msgSentiment"]
+					toAppend['replySentiment'] = result["replySentiment"]
+					toAppend["ngramPercent"] = result["ngramPercent"]
 			else:
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]

@@ -4,10 +4,11 @@ from ast import literal_eval
 import cProfile
 import logger1
 import string
+from random import shuffle
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
-testOutputFile = "debug/test_results.csv"
+testOutputFile = "debug/test_results2.csv"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
@@ -199,6 +200,25 @@ def read(inputFile):
 		toReturn.append(row[0])
 	return toReturn
 
+def shuffleUtterances(utterances):
+	allReplies = []
+	for i, utterance in enumerate(utterances):
+		if(i % 10000 is 0):
+			logger1.log(len(allReplies))
+			logger1.log("Adding to allReplies " + str(i) + " of " + str(len(utterances)))
+		toAppend = {}
+		toAppend["reply"] = utterance["reply"]
+		toAppend["replyUserId"] = utterance["replyUserId"]
+		toAppend["replyTokens"] = utterance["replyTokens"]
+		allReplies.append(toAppend)
+	shuffle(allReplies)
+	for i, utterance in enumerate(allReplies):
+		if(i % 10000 is 0):
+			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
+		utterances[i]["reply"] = utterance["reply"]
+		utterances[i]["replyTokens"] = utterance["replyTokens"]
+		utterances[i]["replyUserId"] = utterance["replyUserId"]
+	return utterances
 start = logger1.initialize()
 
 positives = read("data/positive.txt")
@@ -210,6 +230,7 @@ rows = result["rows"]
 markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
-results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {"positives": positives, "negatives": negatives})
+utterances = shuffleUtterances(utterances)
+results = alignment.calculateAlignments(utterances, markers, smoothing, testOutputFile, shouldWriteHeader, {})
 
 logger1.finish(start)

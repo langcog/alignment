@@ -225,35 +225,3 @@ d2 <- d %>%
   summarize(markerFreq=(2*ba+nba + bna)/(2*utterances), category=category, alignment=Ours)
 ggplot(d2, aes(x=markerFreq,y=alignment)) + geom_point() + geom_smooth(method=lm)
 ```
-
-***Reciprocity***
-
-```{r}
-library(dplyr)
-library(ggplot2)
-
-theme_set(theme_grey())
-
-d2 <- d %>%
-  filter((ba+nba)>5&(bna+nbna)>5) %>%
-  group_by(vspeak,category, vreply) %>%
-  summarize(convs=n(),mean=mean(lo1), reciprocity=reciprocity)
-
-ggplot(d2,aes(x=vspeak,y=mean)) + geom_violin() + facet_wrap(~reciprocity)
-```
-
-***Sentiment***
-
-```{r}
-library(dplyr)
-library(ggplot2)
-
-theme_set(theme_grey())
-
-d2 <- d %>%
-  filter((ba+nba)>5&(bna+nbna)>5) %>%
-  group_by(vspeak, vreply, category) %>%
-  summarize(convs=n(),mean=mean(lo1), msgSentiment=(mean(msgSentiment)>0), replySentiment=(mean(replySentiment)>0))
-
-ggplot(d2,aes(x=msgSentiment,y=mean)) + geom_violin() + facet_wrap(~replySentiment)
-```
