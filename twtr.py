@@ -210,6 +210,7 @@ def shuffleUtterances(utterances):
 		toAppend["reply"] = utterance["reply"]
 		toAppend["replyUserId"] = utterance["replyUserId"]
 		toAppend["replyTokens"] = utterance["replyTokens"]
+		toAppend["replyMarkers"] = utterance["replyMarkers"]
 		allReplies.append(toAppend)
 	shuffle(allReplies)
 	for i, utterance in enumerate(allReplies):
@@ -218,6 +219,7 @@ def shuffleUtterances(utterances):
 		utterances[i]["reply"] = utterance["reply"]
 		utterances[i]["replyTokens"] = utterance["replyTokens"]
 		utterances[i]["replyUserId"] = utterance["replyUserId"]
+		utterances[i]["replyMarkers"] = utterance["replyMarkers"]
 	return utterances
 start = logger1.initialize()
 
@@ -230,7 +232,9 @@ rows = result["rows"]
 markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
+logger1.log(utterances[0])
 utterances = shuffleUtterances(utterances)
+logger1.log(utterances[0])
 results = alignment.calculateAlignments(utterances, markers, smoothing, testOutputFile, shouldWriteHeader, {})
 
 logger1.finish(start)
