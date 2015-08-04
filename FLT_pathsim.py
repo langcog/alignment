@@ -29,6 +29,7 @@ fdist = {}
 pathsim_avg = {}
 Subdirs = True
 perm_dict = {}
+ref_dict = {}
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -86,12 +87,14 @@ def read_BNC_baby(root_local):
 
 def read_Freq_File(file_name):
 	global fdist
+	global ref_dict
 	with open(file_name, 'r') as in_file:
 		for line in in_file:
 			split_line = line.split()
+			ref_dict[(split_line[2], split_line[3])] = int(split_line[1])
 			if split_line[3] == 'n':
 				fdist[split_line[2]] = int(split_line[1])
-	return(fdist)					
+	return(fdist, ref_dict)					
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -216,6 +219,7 @@ def get_similarity_full_range(conversation_dictionary):
 	global master_dict
 	global fdist
 	global perm_dict
+	global ref_dict
 	temp_list = []
 	hyper = lambda s: s.hypernyms()
 	hypo = lambda s: s.hyponyms()
@@ -223,6 +227,26 @@ def get_similarity_full_range(conversation_dictionary):
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
+			if (key, 'n') not in ref_dict.keys():
+				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+				master_dict[(speaker1, speaker2)][0][key][2] = 'NA'	
+				continue
+			elif (key, 'v') in ref_dict.keys():
+				if (ref_dict[(key, 'v')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue
+			elif (key, 'a') in ref_dict.keys():
+				if (ref_dict[(key, 'a')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue
+			elif (key, 'adv') in ref_dict.keys():
+				if (ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue		
+							
 			try:	
 				if key in perm_dict.keys():
 					master_dict[(speaker1, speaker2)][0][key][0] = perm_dict[key][1]
@@ -233,6 +257,12 @@ def get_similarity_full_range(conversation_dictionary):
 					biggest_amount = 0
 					biggest_word = '$$$'
 					checked_item = wn.synset(key + '.n.01')
+					ho = list(checked_item.closure(hypo))
+					totes = len(list(ho[-1].closure(hyper)))
+					if totes < 7:
+						master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+						master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+						continue
 					temp_list.append(key)
 					for item in list(checked_item.closure(hyper)):
 						temp_list.append(item.lemmas()[0].name())
@@ -256,6 +286,25 @@ def get_similarity_full_range(conversation_dictionary):
 				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
 			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
+			if (key, 'n') not in ref_dict.keys():
+				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+				master_dict[(speaker1, speaker2)][1][key][2] = 'NA'	
+				continue
+			elif (key, 'v') in ref_dict.keys():
+				if (ref_dict[(key, 'v')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue
+			elif (key, 'a') in ref_dict.keys():
+				if (ref_dict[(key, 'a')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue
+			elif (key, 'adv') in ref_dict.keys():
+				if (ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue	
 			try:
 				if key in perm_dict.keys():
 					master_dict[(speaker1, speaker2)][1][key][0] = perm_dict[key][1]
@@ -266,6 +315,12 @@ def get_similarity_full_range(conversation_dictionary):
 					perm_dict[key] = ['NA', 'NA']
 					biggest_word = '$$$'
 					checked_item = wn.synset(key + '.n.01')
+					ho = list(checked_item.closure(hypo))
+					totes = len(list(ho[-1].closure(hyper)))
+					if totes < 7:
+						master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+						master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+						continue
 					temp_list.append(key)
 					for item in list(checked_item.closure(hyper)):
 						temp_list.append(item.lemmas()[0].name())
@@ -349,6 +404,7 @@ def get_similarity_full_local(conversation_dictionary):
 	global master_dict
 	global fdist
 	global perm_dict
+	global ref_dict
 	temp_list = []
 	hyper = lambda s: s.hypernyms()
 	hypo = lambda s: s.hyponyms()
@@ -356,6 +412,25 @@ def get_similarity_full_local(conversation_dictionary):
 		speaker1 = conversation_dictionary[x][0][0]
 		speaker2 = conversation_dictionary[x][1][0]
 		for key in master_dict[(speaker1, speaker2)][0].keys():
+			if (key, 'n') not in ref_dict.keys():
+				master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+				master_dict[(speaker1, speaker2)][0][key][2] = 'NA'	
+				continue
+			elif (key, 'v') in ref_dict.keys():
+				if (ref_dict[(key, 'v')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue
+			elif (key, 'a') in ref_dict.keys():
+				if (ref_dict[(key, 'a')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue
+			elif (key, 'adv') in ref_dict.keys():
+				if (ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+					continue	
 			if key in perm_dict.keys():
 				master_dict[(speaker1, speaker2)][0][key][0] = perm_dict[key][1]
 				master_dict[(speaker1, speaker2)][0][key][2] = perm_dict[key][0]
@@ -366,6 +441,12 @@ def get_similarity_full_local(conversation_dictionary):
 					biggest_word = '$$$'
 					perm_dict[key] = ['NA', 'NA']
 					checked_item = wn.synset(key + '.n.01')
+					ho = list(checked_item.closure(hypo))
+					totes = len(list(ho[-1].closure(hyper)))
+					if totes < 7:
+						master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
+						master_dict[(speaker1, speaker2)][0][key][2] = 'NA'
+						continue
 					temp_list.append(key)
 					for item in list(checked_item.hypernyms()):
 						temp_list.append(item.lemmas()[0].name())
@@ -401,6 +482,26 @@ def get_similarity_full_local(conversation_dictionary):
 					master_dict[(speaker1, speaker2)][0][key][0] = 'NA'
 			temp_list = []	
 		for key in master_dict[(speaker1, speaker2)][1].keys():
+			if (key, 'n') not in ref_dict.keys():
+				master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+				master_dict[(speaker1, speaker2)][1][key][2] = 'NA'	
+				continue
+			if (key, 'v') in ref_dict.keys():
+				if (ref_dict[(key, 'v')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue
+			elif (key, 'a') in ref_dict.keys():
+				if (ref_dict[(key, 'a')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue
+			elif (key, 'adv') in ref_dict.keys():
+				if (ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]):
+					master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+					master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+					continue	
+			
 			if key in perm_dict.keys():
 				master_dict[(speaker1, speaker2)][1][key][0] = perm_dict[key][1]
 				master_dict[(speaker1, speaker2)][1][key][2] = perm_dict[key][0]
@@ -412,6 +513,12 @@ def get_similarity_full_local(conversation_dictionary):
 					biggest_word = '$$$'
 					perm_dict[key] = ['NA', 'NA']
 					checked_item = wn.synset(key + '.n.01')
+					ho = list(checked_item.closure(hypo))
+					totes = len(list(ho[-1].closure(hyper)))
+					if totes < 7:
+						master_dict[(speaker1, speaker2)][1][key][0] = 'NA'
+						master_dict[(speaker1, speaker2)][1][key][2] = 'NA'
+						continue
 					temp_list.append(key)
 					for item in list(checked_item.hypernyms()):
 						temp_list.append(item.lemmas()[0].name())
@@ -489,6 +596,7 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	global fdist
 	global pathsim_avg
 	global perm_dict
+	global ref_dict
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -528,7 +636,7 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
-outfile = 'ProvidenceFLTPathsimFreqFull.csv'
+outfile = 'ProvidenceFLTPathsimLocalFilter.csv'
 
 freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
 
