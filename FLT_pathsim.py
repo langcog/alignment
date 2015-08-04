@@ -449,21 +449,29 @@ def get_similarity_full_local(conversation_dictionary):
 						continue
 					temp_list.append(key)
 					for item in list(checked_item.hypernyms()):
-						temp_list.append(item.lemmas()[0].name())
+						if len(re.findall('.n.01', str(item))) == 1:
+							temp_list.append(item.lemmas()[0].name())	
 						for word in list(item.hypernyms()):
 							if word.lemmas()[0].name() not in temp_list:
-								temp_list.append(word.lemmas()[0].name())
+								if len(re.findall('.n.01', str(word))) == 1:
+									temp_list.append(word.lemmas()[0].name())
 							for sub_word in list(word.hypernyms()):
 								if sub_word.lemmas()[0].name() not in temp_list:
-									temp_list.append(sub_word.lemmas()[0].name())
+									if len(re.findall('.n.01', str(sub_word))) == 1:
+										temp_list.append(sub_word.lemmas()[0].name())
+							
 					for item in list(checked_item.hyponyms()):
-						temp_list.append(item.lemmas()[0].name())
+						if len(re.findall('.n.01', str(item))) == 1:
+							temp_list.append(item.lemmas()[0].name())	
 						for word in list(item.hyponyms()):
 							if word.lemmas()[0].name() not in temp_list:
-								temp_list.append(word.lemmas()[0].name())
+								if len(re.findall('.n.01', str(word))) == 1:
+									temp_list.append(word.lemmas()[0].name())
 							for sub_word in list(word.hyponyms()):
 								if sub_word.lemmas()[0].name() not in temp_list:
-									temp_list.append(sub_word.lemmas()[0].name())
+									if len(re.findall('.n.01', str(sub_word))) == 1:
+										temp_list.append(sub_word.lemmas()[0].name())
+			
 					for word in temp_list:
 						try:
 							if fdist[word] > biggest_amount:
@@ -521,21 +529,28 @@ def get_similarity_full_local(conversation_dictionary):
 						continue
 					temp_list.append(key)
 					for item in list(checked_item.hypernyms()):
-						temp_list.append(item.lemmas()[0].name())
+						if len(re.findall('.n.01', str(item))) == 1:
+							temp_list.append(item.lemmas()[0].name())	
 						for word in list(item.hypernyms()):
 							if word.lemmas()[0].name() not in temp_list:
-								temp_list.append(word.lemmas()[0].name())
+								if len(re.findall('.n.01', str(word))) == 1:
+									temp_list.append(word.lemmas()[0].name())
 							for sub_word in list(word.hypernyms()):
 								if sub_word.lemmas()[0].name() not in temp_list:
-									temp_list.append(sub_word.lemmas()[0].name())
+									if len(re.findall('.n.01', str(sub_word))) == 1:
+										temp_list.append(sub_word.lemmas()[0].name())
+							
 					for item in list(checked_item.hyponyms()):
-						temp_list.append(item.lemmas()[0].name())
+						if len(re.findall('.n.01', str(item))) == 1:
+							temp_list.append(item.lemmas()[0].name())	
 						for word in list(item.hyponyms()):
 							if word.lemmas()[0].name() not in temp_list:
-								temp_list.append(word.lemmas()[0].name())
+								if len(re.findall('.n.01', str(word))) == 1:
+									temp_list.append(word.lemmas()[0].name())
 							for sub_word in list(word.hyponyms()):
 								if sub_word.lemmas()[0].name() not in temp_list:
-									temp_list.append(sub_word.lemmas()[0].name())
+									if len(re.findall('.n.01', str(sub_word))) == 1:
+										temp_list.append(sub_word.lemmas()[0].name())
 					for word in temp_list:
 						try:	
 							if fdist[word] > biggest_amount:
@@ -636,7 +651,7 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
-outfile = 'ProvidenceFLTPathsimLocalFilter.csv'
+outfile = 'ProvidenceFLTPathsimLocalNew.csv'
 
 freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
 
