@@ -96,6 +96,7 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 						break
 				if(maxNgram == 1):
 					ngramPercent = 0
+
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
 			completedCategories = {}
@@ -122,9 +123,7 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 				else:
 					nbna[category] += 1
 				completedCategories[category] = True
-		
 		toAppend = {}
-		
 		toAppend["nbna"] = nbna
 		toAppend["nba"] = nba
 		toAppend["bna"] = bna
@@ -135,16 +134,14 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 		toAppend["a"] = a
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
-		
-
 
 
 		if("verifiedSpeaker" in convo[0]):
 			toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
 			toAppend["replySentiment"] = averageReplySentiment/numUtterances
 			toAppend["ngramPercent"] = ngramPercent
-			toAppend["maxNgram"] = maxNgram
 			toAppend["reciprocity"] = convo[0]["reciprocity"]
+
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]

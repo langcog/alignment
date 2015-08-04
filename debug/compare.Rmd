@@ -2,7 +2,7 @@
 title: "DNM vs Alignment Comparison"
 author: "Jake Prasad"
 date: "Tuesday, July 28, 2015"
-output: html_document
+output: pdf_document
 ---
 
 
@@ -25,7 +25,7 @@ df <- fread('results.csv', header=T)
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
               vspeak=verifiedSpeaker,vreply=verifiedReplier,
               sid=speakerId,rid=replierId,category=category,
-              pyalign=alignment,percentDiff=percentDiff,reciprocity=reciprocity,numUtterances=numUtterances, msgSentiment=msgSentiment, replySentiment=replySentiment),]
+              pyalign=alignment,reciprocity=reciprocity,numUtterances=numUtterances, msgSentiment=msgSentiment, replySentiment=replySentiment),]
 
 ```
 

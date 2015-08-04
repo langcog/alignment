@@ -15,7 +15,7 @@ outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 300
+numMarkers = 50
 smoothing = 1
 shouldWriteHeader = True
 
@@ -41,7 +41,8 @@ def readUserInfo():
 	return users
 
 #Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
-def processTweetCSVRow(row, positives, negatives):
+
+def processTweetCSVRow(row):
 	toAppend = {}
 	toAppend["docId"] = "TWITTER"
 	toAppend["corpus"] = "TWITTER"
@@ -61,7 +62,7 @@ def remove_values_from_list(the_list, val):
    return [value for value in the_list if value != val]
 
 # Reads in tweets
-def readCSV(inputFile, users, numOfMarkers, positives, negatives):
+def readCSV(inputFile, users, numOfMarkers):
 	functionWords = "of, at, in, without, between, he, they, anybody, it, one, the, a, that, my, more, much, either, neither, and, that, when, while, although, or, be, is, am, are, were, was, have, has, had, got, do, did, doing, no, not, nor, as"
 	functionWords = functionWords.split(" ")
 	reciprocities = {}
@@ -73,7 +74,7 @@ def readCSV(inputFile, users, numOfMarkers, positives, negatives):
 	for i, row in enumerate(reader):
 		if(i % 10000 is 0):
 			logger1.log("On line " + str(i) + " of 230000")
-		row = processTweetCSVRow(row, positives, negatives)
+		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
 
 		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
@@ -204,10 +205,11 @@ positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
 
 users = readUserInfo()
-result = readCSV(inputFile, users, numMarkers, positives, negatives)
+result = readCSV(inputFile, users, numMarkers)
 rows = result["rows"]
 markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {"positives": positives, "negatives": negatives})
+
 logger1.finish(start)
