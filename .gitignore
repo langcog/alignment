@@ -4,6 +4,7 @@ data/pairedtweets1000.txt
 data/pairedtweets1000.txt.userinfo
 data/pairedtweets2.txt
 
+debug/results.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
