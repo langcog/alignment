@@ -45,7 +45,7 @@ Calculating alignments in R to check against the python alignments; stop if the 
 ```{r}
 smoothalign <- function(df,sm,align="logodds") {
   if (align=="logodds") {
-    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+    return(log((df$ba+sm)/(df$ba+df$nba+2*sm))-log((df$bna+sm)/(df$bna+df$nbna+2*sm)))
   } else if (align=="subodds") {
     return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+sm)/(df$bna+df$nbna+2*sm))
   } else if (align=="logdnm") {

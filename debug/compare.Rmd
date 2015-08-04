@@ -2,7 +2,7 @@
 title: "DNM vs Alignment Comparison"
 author: "Jake Prasad"
 date: "Tuesday, July 28, 2015"
-output: pdf_document
+output: html_document
 ---
 
 
@@ -25,7 +25,7 @@ df <- fread('results.csv', header=T)
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
               vspeak=verifiedSpeaker,vreply=verifiedReplier,
               sid=speakerId,rid=replierId,category=category,
-              pyalign=alignment,percentDiff=percentDiff),]
+              pyalign=alignment,percentDiff=percentDiff,reciprocity=reciprocity,numUtterances=numUtterances, msgSentiment=msgSentiment, replySentiment=replySentiment),]
 
 ```
 
@@ -49,7 +49,7 @@ d$lo1 <- smoothalign(d,1,"logodds")
 d$sd0 <- smoothalign(d,0,"subdnm")
 
 stopifnot(max(abs(d$lo1-d$pyalign))<.00001)
-stopifnot(max(abs(d$sd0-d$dnm))<.00001)
+#stopifnot(max(abs(d$sd0-d$dnm))<.00001)
 
 
 ```
@@ -88,7 +88,7 @@ This is an interesting plot. It appears that follower count does have an effect 
 
 ```{r}
 d2 <- subset(df,logdnmalignment!="FALSE"&(ba+nba)>5&(bna+nbna)>5)
-subsetted = transform(subsetted,logdnmalignment=as.numeric(logdnmalignment))
+subsetted <- transform(d2,logdnmalignment=as.numeric(logdnmalignment))
 d2 <- subsetted %>%
   group_by(verifiedSpeaker,speakerId,replierId) %>%
   summarize(convs=n(), alignment=alignment, vreply=verifiedReplier, dnmalignment=dnmalignment, noLogAlign=noLogAlign, logdnmalignment=logdnmalignment, percentDiff=percentDiff) %>%
@@ -107,6 +107,7 @@ This is also interesting. It appears like alignment could follow a parabolic cur
 d2 <- d %>%
   filter(vreply==F,(ba+nba)>=5,(bna+nbna)>=5) %>%
   group_by(vspeak,category) %>%
+  #filter(convs<50) %>%
   summarize(convs=n(),Ours=mean(lo1),DNM=mean(sd0)) %>%
   gather(alignment,mean,Ours,DNM)
 
@@ -116,44 +117,143 @@ ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geo
 
 Hmm, from the given plot, it seems the DNM formula is prone to outliers among individual markers. Why might this be the case? First we pot alignment values against number of conversations to make sure our intuition is correct
 
+
+
 ```{r}
-ggplot(d2,aes(x=category,y=mean,size=convs,color=convs,label=category)) + geom_point() + facet_wrap(~alignment, scales="free")
+subsetted <- subset(d2)
+ggplot(subsetted,aes(x=convs,y=mean,size=convs,color=convs,label=category)) + geom_point() + facet_wrap(~alignment, scales="free") + labs(y="Alignment",x="# of Convos per Marker") + geom_smooth(method=lm)
 
 ```
 
-Ok, this seems to indicate that alignment correlates to number of conversations. How might number of conversations affect alignment? If speakers don't use the marker in many conversations, the marker probably isn't very commonly spoken. Therefore a given person will have a low base probability of using the marker. 
-
-This seems to suggest that the DNM formula may be more strongly affected by a person's base rate, than their alignment. 
-
-We see a similar effect in the proposed alignment formula. However base rate doesn't appear to affect alignment as strongly, suggesting the proposed formula may be more accurate in calulating alignment.
-
-Let's check t-tests
+This is surprising. It appears that OUR formula is actually the one that's prone to outliers. Let's see if we can correct this
 
 ```{r}
-cutoff <- 5
+subsetted <- subset(d2) %>%
+  filter(convs<50)
+
+ggplot(subsetted,aes(x=convs,y=mean,size=convs,color=convs,label=category)) + geom_point() + facet_wrap(~alignment, scales="free") + labs(y="Alignment",x="# of Convos per Marker") + geom_smooth(method=lm)
+
+```
+
+Ok, so it seems that markers with convs < 50 don't correspond to number of conversations. Let's replot the markers vs. alignment chart taking this new knowledge into account:
+
+```{r}
 d2 <- d %>%
-  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  filter((ba+nba)>=5&(bna+nbna)>=5) %>%
   group_by(vspeak,category) %>%
-  summarize(mean=mean(lo1)) %>%
-  spread(vspeak,mean,fill=NA) %>%
-  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+  
+  summarize(convs=n(),Ours=mean(lo1),DNM=mean(sd0)) %>%
+  filter(convs<50) %>%
+  gather(alignment,mean,Ours,DNM)
 
-ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in our marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+ggplot(d2,aes(x=vspeak,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + labs(title="Non-verified repliers' alignments\naggregated by marker (Cutoff=5)",x="Speaker verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~ alignment,scales="free") + theme_grey()
 
-t.test(d2$tvalue,d2$fvalue)
+```
+
+Ok, we got rid of the error with love. It's still surprising that we're seeing so many outliers. There's also a correspondence with utterances and alignment. Let's see if that effect's still exists witht he newly added convs<50 filter.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(utterances=mean(numUtterances),convs=n(),Ours=mean(lo1),DNM=mean(sd0),thresh=n()<50) %>%
+  gather(alignment,mean,Ours,DNM)
+
+ggplot(d2,aes(x=utterances,y=mean))+geom_point() + facet_wrap(alignment~thresh,scales="free") + geom_smooth(method=lm)
+```
+
+Ok, we're definitely decreasing our alignment to utterances correlation by filtering out convos < 50. However, we still see a slight correlation to # of utterances. Let's try to filter by # of utterances and # of convos this time.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(utterances=mean(ba+nbna+bna+nba),convs=n(),Ours=mean(lo1),DNM=mean(sd0),thresh=n()<50&mean(ba+nbna+bna+nba)<300,vreply=vreply,vspeaker=vspeak,base=(bna+1)/(2+bna+nbna),power=(1+ba)/(2+ba+nba)) %>%
+  gather(alignment,mean,Ours,DNM) %>%
+  filter(alignment=="Ours")
+
+ggplot(d2,aes(x=utterances,y=mean))+geom_point() + facet_wrap(vspeaker~vreply,scales="free") + geom_smooth(method=lm)
+
+```
+
+Ok, so there's no way to filter out by # of utterances. This is ok though, as it means that words that are used less are more have more of an impact on alignment. As a final check, since it appears base probability is the defining measure of alignment, let's take a look at verified vs unverified speakers in a plot of base probability vs alignment:
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(utterances=mean(ba+nbna+bna+nba),convs=n(),Ours=mean(lo1),DNM=mean(sd0),thresh=n()<50&mean(ba+nbna+bna+nba)<300,vreply=vreply,vspeaker=vspeak,base=(bna+1)/(2+bna+nbna),power=(1+ba)/(2+ba+nba)) %>%
+  gather(alignment,mean,Ours,DNM) %>%
+  filter(alignment=="Ours")
+ggplot(d2, aes(x=base,y=mean)) + geom_point() + facet_wrap(vspeaker~vreply,scales="free") + geom_smooth(method=lm)
+
+```
+
+Great! It appears that in general, power has a larger effect on alignment than base probability.
+
+Let's check DNM too:
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(utterances=mean(ba+nbna+bna+nba),convs=n(),Ours=mean(lo1),DNM=mean(sd0),thresh=n()<50&mean(ba+nbna+bna+nba)<300,vreply=vreply,vspeaker=vspeak,base=(bna+1)/(2+bna+nbna),power=(1+ba)/(2+ba+nba)) %>%
+  gather(alignment,mean,Ours,DNM) %>%
+  filter(alignment=="DNM")
+ggplot(d2, aes(x=base,y=mean)) + geom_point() + facet_wrap(vspeaker~vreply,scales="free") + geom_smooth(method=lm)
+
+```
+Ok, so base probability doesn't really have an effect on alignment in DNM.
+
+Let's try plotting marker frequency against alignment:
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(ba=sum(ba), nbna=sum(nbna), bna=sum(bna), nba=sum(nba), utterances=mean(ba+nbna+bna+nba),convs=n(),Ours=mean(lo1),DNM=mean(sd0),vreply=vreply,vspeaker=vspeak,category=category) %>%
+  summarize(markerFreq=(2*ba+nba + bna)/(2*utterances), category=category, alignment=Ours)
+ggplot(d2, aes(x=markerFreq,y=alignment)) + geom_point() + geom_smooth(method=lm)
 ```
 
 ```{r}
-cutoff <- 5
 d2 <- d %>%
-  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
-  group_by(vspeak,category) %>%
-  summarize(mean=mean(sd0)) %>%
-  spread(vspeak,mean,fill=NA) %>%
-  transmute(category=category,tvalue=`TRUE`,fvalue=`FALSE`)
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(category) %>%
+  summarize(ba=sum(ba), nbna=sum(nbna), bna=sum(bna), nba=sum(nba), utterances=mean(ba+nbna+bna+nba),convs=n(),Ours=mean(lo1),DNM=mean(sd0),vreply=vreply,vspeaker=vspeak,category=category) %>%
+  filter(utterances > 300) %>%
+  summarize(markerFreq=(2*ba+nba + bna)/(2*utterances), category=category, alignment=Ours)
+ggplot(d2, aes(x=markerFreq,y=alignment)) + geom_point() + geom_smooth(method=lm)
+```
 
-ggplot(d2,aes(x=tvalue-fvalue,y=category)) + geom_vline(xintercept=0) + geom_text(aes(label=category),size=4.5) + labs(title="Difference in DNM marker alignments by non-verified speakers\n(Cutoff=5)",x="Difference in alignment from verfied to non-verified\n(+ means aligns more to power)",y="word") + theme_bw()
+***Reciprocity***
 
-t.test(d2$tvalue,d2$fvalue)
+```{r}
+library(dplyr)
+library(ggplot2)
 
+theme_set(theme_grey())
+
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(vspeak,category, vreply) %>%
+  summarize(convs=n(),mean=mean(lo1), reciprocity=reciprocity)
+
+ggplot(d2,aes(x=vspeak,y=mean)) + geom_violin() + facet_wrap(~reciprocity)
+```
+
+***Sentiment***
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+theme_set(theme_grey())
+
+d2 <- d %>%
+  filter((ba+nba)>5&(bna+nbna)>5) %>%
+  group_by(vspeak, vreply, category) %>%
+  summarize(convs=n(),mean=mean(lo1), msgSentiment=(mean(msgSentiment)>0), replySentiment=(mean(replySentiment)>0))
+
+ggplot(d2,aes(x=msgSentiment,y=mean)) + geom_violin() + facet_wrap(~replySentiment)
 ```

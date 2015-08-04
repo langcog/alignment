@@ -22,11 +22,11 @@ Cleaning down the data table:
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
               vspeak=verifiedSpeaker,vreply=verifiedReplier,
               sid=speakerId,rid=replierId,category=category,
-              pyalign=alignment,percentDiff=percentDiff),]
+              pyalign=alignment,percentDiff=percentDiff,reciprocity=reciprocity),]
 
 ```
 
-Calculating alignments in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
+Calculating alignmnts in R to check against the python alignments; stop if the summary has a max absolute difference greater than 1e-05
 
 ```{r}
 smoothalign <- function(df,sm) {
@@ -55,6 +55,7 @@ theme_set(theme_grey())
 
 d2 <- d %>%
   filter(vreply==F) %>%
+  filter(rec)
   group_by(vspeak,category) %>%
   summarize(convs=n(),mean=mean(sm1))
 

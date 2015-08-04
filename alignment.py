@@ -10,11 +10,11 @@ def ngrams(input, n):
     output.append(tuple(input[i:i+n]))
   return output
 
-def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader):
+def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, extras):
 	markers = checkMarkers(markers)
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
-	metaData = metaDataExtractor(groupedUtterances, markers)
+	metaData = metaDataExtractor(groupedUtterances, markers, extras)
 	results = runFormula(metaData, markers, sparsities, smoothing)
 	writeFile(results, outputFile, shouldWriteHeader)
 	return results
@@ -38,8 +38,11 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 	return sparsity_measure
 
 # Computers the power probabilities
-def metaDataExtractor(groupedUtterances, markers):
+def metaDataExtractor(groupedUtterances, markers, extras):
 	results = []
+	if("positives" in extras):
+		positives = extras["positives"]
+		negatives = extras["negatives"]
 	for i, convo in enumerate(groupedUtterances):
 		if(i % 1000 is 0):
 			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
@@ -59,20 +62,40 @@ def metaDataExtractor(groupedUtterances, markers):
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		convoUtterances = []
+		averageReplySentiment = 0
+		averageMessageSeniment = 0
 		for utterance in convo:
-			maxNgram = 1
-			ngramLengths = [2,3,4,5]
-			ngramPercent = 0
-			for ngramLength in ngramLengths:
-				msgTrigrams = set(ngrams(utterance["msgTokens"], ngramLength))
-				replyTrigrams = set(ngrams(utterance["replyTokens"], ngramLength))
-				quoted = set(msgTrigrams).intersection(set(replyTrigrams))
-				if len(quoted) == 0:
-					maxNgram = ngramLength - 1
-					ngramPercent = maxNgram/len(utterance["msgTokens"])
-					break
-			if(maxNgram == 1):
+			if("positives" in extras):
+				msgSentiment = 0
+				for token in utterance["msgTokens"]:
+					if(token in positives):
+						msgSentiment += 1
+					elif token in negatives:
+						msgSentiment -= 1
+
+				replySentiment = 0
+				for token in utterance["replyTokens"]:
+					if(token in positives):
+						replySentiment += 1
+					elif token in negatives:
+						replySentiment -= 1
+
+
+				averageMessageSeniment += msgSentiment
+				averageReplySentiment += replySentiment
+				maxNgram = 1
+				ngramLengths = [2,3,4,5]
 				ngramPercent = 0
+				for ngramLength in ngramLengths:
+					msgTrigrams = set(ngrams(utterance["msgTokens"], ngramLength))
+					replyTrigrams = set(ngrams(utterance["replyTokens"], ngramLength))
+					quoted = set(msgTrigrams).intersection(set(replyTrigrams))
+					if len(quoted) == 0:
+						maxNgram = ngramLength - 1
+						ngramPercent = maxNgram/len(utterance["msgTokens"])
+						break
+				if(maxNgram == 1):
+					ngramPercent = 0
 			convoUtterances.append(utterance["msg"])
 			convoUtterances.append(utterance["reply"])
 			completedCategories = {}
@@ -99,10 +122,9 @@ def metaDataExtractor(groupedUtterances, markers):
 				else:
 					nbna[category] += 1
 				completedCategories[category] = True
-			
+		
 		toAppend = {}
-		toAppend["ngramPercent"] = ngramPercent
-		toAppend["maxNgram"] = maxNgram
+		
 		toAppend["nbna"] = nbna
 		toAppend["nba"] = nba
 		toAppend["bna"] = bna
@@ -113,9 +135,16 @@ def metaDataExtractor(groupedUtterances, markers):
 		toAppend["a"] = a
 		toAppend["b"] = b
 		toAppend["conv"] =convo[0]["convId"]
-		toAppend["reciprocity"] = convo[0]["reciprocity"]
+		
+
+
 
 		if("verifiedSpeaker" in convo[0]):
+			toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
+			toAppend["replySentiment"] = averageReplySentiment/numUtterances
+			toAppend["ngramPercent"] = ngramPercent
+			toAppend["maxNgram"] = maxNgram
+			toAppend["reciprocity"] = convo[0]["reciprocity"]
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
 			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
@@ -157,7 +186,8 @@ def runFormula(results, markers, sparsities, smoothing):
 			toAppend["category"] = category
 			toAppend["numUtterances"] = result["numUtterances"]
 			toAppend["reciprocity"] = result["reciprocity"]
-			
+			toAppend["msgSentiment"] = result["msgSentiment"]
+			toAppend['replySentiment'] = result["replySentiment"]
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
@@ -196,8 +226,8 @@ def runFormula(results, markers, sparsities, smoothing):
 
 
 			powerNum = toAppend["ba"]
-			powerDenom = float(result["userMarkers"][result["a"]+category])
-			baseDenom = toAppend["numUtterances"]-float(result["userMarkers"][result["a"]+category])
+			powerDenom = toAppend["ba"]+toAppend["nba"]
+			baseDenom = toAppend["bna"]+toAppend["nbna"]
 			baseNum = toAppend["bna"]
 			powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
 			baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
