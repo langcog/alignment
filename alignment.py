@@ -191,16 +191,9 @@ def runFormula(results, markers, sparsities, smoothing):
 			if("verifiedSpeaker" in result):
 				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
 				toAppend["verifiedReplier"] = result["verifiedReplier"]
-				toAppend["maxNgram"] = result["maxNgram"]
 				toAppend["ngramPercent"] = result["ngramPercent"]
 				toAppend["speakerFollowers"] = result["speakerFollowers"]
 				toAppend["replierFollowers"] = result["replierFollowers"]
-				if("percentDiff" in result):
-					if(result["percentDiff"] == 0):
-						logger1.log(result["percentDiff"])
-					toAppend["percentDiff"] = result["percentDiff"]
-				else:
-					continue
 			else:
 				toAppend["corpus"] = result["corpus"]
 				toAppend["docId"] = result["docId"]
@@ -218,10 +211,6 @@ def runFormula(results, markers, sparsities, smoothing):
 			else:
 				toAppend["dnmalignment"] = False
 
-			if(powerNum != 0 and baseNum != 0):
-				toAppend["logdnmalignment"] = math.log(float(powerNum)/float(powerDenom)) - math.log(float(baseNum)/float(baseDenom))
-			else:
-				toAppend["logdnmalignment"] = False
 
 
 
@@ -234,12 +223,6 @@ def runFormula(results, markers, sparsities, smoothing):
 			alignment = powerProb - baseProb
 			toAppend["alignment"] = alignment
 
-			
-			
-			powerProb = ((powerNum+smoothing)/(powerDenom+2*smoothing))
-			baseProb = ((baseNum+smoothing)/(baseDenom+2*smoothing))
-			alignment = powerProb - baseProb
-			toAppend["noLogAlign"] = alignment
 			toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
