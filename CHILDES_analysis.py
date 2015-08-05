@@ -3,19 +3,19 @@ import csv
 import nltk
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-import alignment
+import shared_code
 import logger1
 from nltk.stem import *
 from nltk.stem.snowball import SnowballStemmer
 
 logger1.initialize()
 
-corpus = 'Providence'
+corpus = 'Kuczaj'
 smoothing_values = [0, 1]
-outputFile = "Providence300Results.csv"
-markersFile = "ProvidenceMarker300.csv"
-corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
-corpus_name = 'Providence'
+outputFile = "Kuczaj300Results.csv"
+markersFile = "KuczajMarker300.csv"
+corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Kuczaj'
+corpus_name = 'Kuczaj'
 marker_list = shared_code.readMarkers(markersFile)
 speaker_list = []
 utterance_dict = {}
@@ -39,8 +39,9 @@ for_output_list = []
 possible_conversation_list = []
 project_x = []
 super_var = True
+empty_dict = {}
 Stemmed = False
-Subdirs = True
+Subdirs = False
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -201,7 +202,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 	calculate_sparsity(speaker_list, convo_dict)
 	
 	utterances = convo_converter(corpus, input_file_name, convo_dict, marker_list)
-	results = alignment.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x)	
+	results = shared_code.calculateAlignments(utterances, marker_list, 0, output_file_name, var_x, empty_dict)	
 
 if Subdirs == True:
 	for dirName, subdirList, fileList in os.walk(corpus_dir):
