@@ -15,7 +15,7 @@ def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteH
 	groupedUtterances = group(utterances)
 	sparsities = calculateSparsity(groupedUtterances)
 	metaData = metaDataExtractor(groupedUtterances, markers, extras)
-	results = runFormula(metaData, markers, sparsities, smoothing)
+	results = runFormula(metaData, markers, sparsities, smoothing, extras)
 	writeFile(results, outputFile, shouldWriteHeader)
 	return results
 
@@ -143,6 +143,8 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 
 		if("verifiedSpeaker" in convo[0]):
 			if("positives" in extras):
+				if(i%1000 == 0):
+					logger1.log("Adding sentiment")
 				toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
 				toAppend["replySentiment"] = averageReplySentiment/numUtterances
 				toAppend["ngramPercent"] = ngramPercent
@@ -169,7 +171,7 @@ def allMarkers(markers):
 	return list(set(categories))
 
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
-def runFormula(results, markers, sparsities, smoothing):
+def runFormula(results, markers, sparsities, smoothing, extras):
 	toReturn = []
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
