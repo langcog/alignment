@@ -11,7 +11,7 @@ testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/shuffled/results.csv"
+outputFile = "debug/reply.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
@@ -268,7 +268,7 @@ def shuffleReplyMarkers(utterances):
 		utterances[i]["replyTokens"] = utterance["replyTokens"]
 		utterances[i]["replyUserId"] = allReplies["replyUserId"]
 		utterances[i]["replyMarkers"] = 0
-		for(i in range(0, utterance["replyMarkersLen"])):
+		for i in range(0, utterance["replyMarkersLen"]):
 			utterances[i]["replyMarkers"].append(allMarkers[count])
 			count += 1
 	return utterances
