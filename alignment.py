@@ -80,9 +80,14 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 					elif token in negatives:
 						replySentiment -= 1
 
+				if(utterance["msgUserId"] == a):
+					averageMessageSeniment += msgSentiment
+					averageReplySentiment += replySentiment
+				else:
+					averageReplySentiment += msgSentiment
+					averageMsgSentiment += replySentiment
 
-				averageMessageSeniment += msgSentiment
-				averageReplySentiment += replySentiment
+				
 				maxNgram = 1
 				ngramLengths = [2,3,4,5]
 				ngramPercent = 0

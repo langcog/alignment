@@ -63,14 +63,14 @@ theme_set(theme_grey())
 
 d2 <- d %>%
   filter((ba+nba)>5&(bna+nbna)>5) %>%
-  group_by(vspeak,category, vreply) %>%
+  group_by(vspeak,category, vreply, reciprocity) %>%
   summarize(convs=n(),alignment=mean(lo1), reciprocity=reciprocity)
 
 ggplot(d2,aes(x=reciprocity,y=alignment)) + geom_violin()
 
 
 ```
-Hmm, from the looks of the plot, it doesn't seem like reciprocity has any very much of an impact on alignment
+Hmm, from the looks of the plot, it like reciprocity does have impact on alignment
 
 Let's do a t-test
 
@@ -80,7 +80,7 @@ t.test(d2$alignment~d2$reciprocity)
 
 ```
 
-Interesting..., so there is a huge impact of reciprocity on alignment. .
+Interesting..., The t-test gives us a p-value of 0.6, so there isn't much of an impact.
 
 
 ***Sentiment***
@@ -96,7 +96,7 @@ d2 <- d %>%
   group_by(vspeak, vreply, category) %>%
   summarize(convs=n(),mean=mean(lo1), msgSentiment=(mean(msgSentiment)>0), replySentiment=(mean(replySentiment)>0))
 
-ggplot(d2,aes(x=msgSentiment,y=mean)) + geom_violin() + facet_wrap(~replySentiment)
+ggplot(d2,aes(x=msgSentiment,y=mean)) + geom_violin() + facet_wrap(~replySentiment) + labs(title="msgSentiment vs replySentiment")
 ```
 
 Clearly, there's an impact of sentiment on alignment. Let's do a t-test
@@ -112,21 +112,32 @@ t.test(d2$mean~d2$msgSentiment)
 
 t.test(d2$mean~d2$replySentiment)
 
+```
+
+Let's also do some manual checking of means and sparsity:
+
+```{r}
 mean(filter(d2, msgSentiment==TRUE&replySentiment==TRUE)$mean)
+nrow(filter(d2, msgSentiment==TRUE&replySentiment==TRUE))
 
 mean(filter(d2, msgSentiment==TRUE&replySentiment==FALSE)$mean)
+nrow(filter(d2, msgSentiment==TRUE&replySentiment==FALSE))
 
 mean(filter(d2, msgSentiment==FALSE&replySentiment==TRUE)$mean)
+nrow(filter(d2, msgSentiment==FALSE&replySentiment==TRUE))
 
 mean(filter(d2, msgSentiment==FALSE&replySentiment==FALSE)$mean)
+nrow(filter(d2, msgSentiment==FALSE&replySentiment==FALSE))
 
 ```
+
+Ok, so maybe it's an aggregation issue?
 
 *** Shuffling ***
 
 ```{r}
 
-df <- fread('test_results1.csv', header=T)
+df <- fread('results.csv', header=T)
 
 # Cleaning down the data table:
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
@@ -156,6 +167,18 @@ d2 <- d %>%
   summarize(convs=n(),alignment=mean(lo1))
 
 ggplot(d2, aes(x=vreply, y=alignment)) + geom_violin() + facet_wrap(~vspeak)
+
+```
+
+
+*** Discourse Categories ***
+
+```{r}
+df <- fread('discourse_results.csv', header=T)
+d <- df %>%
+  filter(alignment > 0)
+
+ggplot(d, aes(x=msgType, y=alignment)) + geom_violin() + facet_wrap(verifiedSpeaker~verifiedReplier)
 
 ```
 

@@ -8,7 +8,7 @@ from random import shuffle
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
-testOutputFile = "debug/test_results2.csv"
+testOutputFile = "debug/shuffled/replies.csv"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
@@ -200,26 +200,39 @@ def read(inputFile):
 		toReturn.append(row[0])
 	return toReturn
 
-def shuffleUtterances(utterances):
+def shuffleReplies(utterances):
 	allReplies = []
+	allReplyUserIds = []
+	allMarkers = []
 	for i, utterance in enumerate(utterances):
 		if(i % 10000 is 0):
 			logger1.log(len(allReplies))
 			logger1.log("Adding to allReplies " + str(i) + " of " + str(len(utterances)))
 		toAppend = {}
+		toAppendMarkers = {}
 		toAppend["reply"] = utterance["reply"]
 		toAppend["replyUserId"] = utterance["replyUserId"]
 		toAppend["replyTokens"] = utterance["replyTokens"]
 		toAppend["replyMarkers"] = utterance["replyMarkers"]
+		for marker in toAppend["replyMarkers"]:
+			allMarkers.append(marker)
+		toAppend["replyMarkersLen"] = len(utterance["replyMarkers"])
 		allReplies.append(toAppend)
+		allReplyUserIds.append(toAppend)
 	shuffle(allReplies)
+	shuffle(allReplyUserIds)
+	shuffle(allMarkers)
+	count = 0
 	for i, utterance in enumerate(allReplies):
 		if(i % 10000 is 0):
 			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
 		utterances[i]["reply"] = utterance["reply"]
 		utterances[i]["replyTokens"] = utterance["replyTokens"]
-		utterances[i]["replyUserId"] = utterance["replyUserId"]
-		utterances[i]["replyMarkers"] = utterance["replyMarkers"]
+		utterances[i]["replyUserId"] = allReplyUserIds[i]["replyUserId"]
+		utterances[i]["replyMarkers"] = []
+		for j in range(0, utterance["replyMarkersLen"]):
+			utterances[i]["replyMarkers"].append(allMarkers[count])
+			count += 1
 	return utterances
 start = logger1.initialize()
 
@@ -233,8 +246,8 @@ markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
 logger1.log(utterances[0])
-utterances = shuffleUtterances(utterances)
+utterances = shuffleUtterances(utterances, testOutputFile)
 logger1.log(utterances[0])
-results = alignment.calculateAlignments(utterances, markers, smoothing, testOutputFile, shouldWriteHeader, {})
+results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
 
 logger1.finish(start)
