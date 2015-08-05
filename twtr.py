@@ -292,7 +292,7 @@ if(outputFile == "debug/shuffled/replies.csv"):
 	logger1.log(utterances[0])
 elif(outputFile == "shuffleRepliesAndReplyUserIds"):
 	utterances = shuffleRepliesAndReplyUserIds(utterances)
-elif(outputFile == "shuffled")
+
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
 
