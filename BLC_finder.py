@@ -11,7 +11,7 @@ branch_list = []
 branch_dict = {}
 
 freq_file_name = r'C:\Users\Aaron\alignment\lemma.num'
-outfilename = 'BLCListViaBNC.csv'
+outfilename = r'C:\Users\Aaron\alignment\BLCListViaBNC.csv'
 
 def read_Freq_File(file_name):
 	global fdist
@@ -150,7 +150,7 @@ def get_branch_values():
 def writeHeader(outputFile):
 	header = []
 	header.insert(0, ["Bottom Level Word", "Approx Branch Length", "Total Branch Frequency", "BLC 1", "BLC 1 Frequency", "BLC 1 Branch Freq Proportion", 'BLC 1 Location', "BLC 2", "BLC 2 Frequency", "BLC 2 Branch Freq Proportion", 'BLC 2 Location', "BLC 3", "BLC 3 Frequency", "BLC 3 Branch Freq Proportion", 'BLC 3 Location'])
-	with open(outputFile, newline='a') as f:
+	with open(outputFile, newline='w') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
@@ -170,4 +170,5 @@ branch_finder()
 get_branch_values()
 writeHeader(outfilename)
 write_file(outfilename)
+
 
