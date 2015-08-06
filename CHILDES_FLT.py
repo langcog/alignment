@@ -1,10 +1,10 @@
 import nltk
 from nltk.corpus import wordnet as wn
-import re
 import csv
 import os
 from mychildes import CHILDESCorpusReaderX #modified nltk
-from nltk.corpus.reader import NOUN
+import re
+import enchant
 
 speaker_list = []
 utterance_dict = {}
@@ -16,15 +16,18 @@ word_count_dict = {}
 ordered_utterance_list = []
 sparsity_measure = {}
 output_list = []
-output_almost = {}
+output_almost = []
 final_counter = 0
 for_output_list = []
 possible_conversation_list = []
 hypernym_dict = {}
-hypernym_count = {}
+path_count = {}
 magic_counter = {}
-child_age = 'NA'
-child_gender = 'NA'
+hyp_avg = {}
+fdist = {}
+ref_dict = {}
+perm_dict = {}
+Subdirs = True
 
 def initialize(): # clean slates the variables
 	global speaker_list
@@ -42,10 +45,9 @@ def initialize(): # clean slates the variables
 	global for_output_list
 	global possible_conversation_list
 	global hypernym_dict
-	global hypernym_count
+	global path_count
 	global magic_counter
-	global child_age
-	global child_gender
+	global hyp_avg
 	speaker_list = []
 	utterance_dict = {}
 	squished_dict = {}
@@ -56,36 +58,32 @@ def initialize(): # clean slates the variables
 	ordered_utterance_list = []
 	sparsity_measure = {}
 	output_list = []
-	output_almost = {}
+	output_almost = []
 	final_counter = 0
 	for_output_list = []
 	possible_conversation_list = []
-	hypernym_count = {}
+	path_count = {}
 	hypernym_dict = {}
 	magic_counter = {}
-	child_age = 'NA'
-	child_gender = 'NA'
+	hyp_avg = {}
 
-def get_child_age(setup_file):
-	global child_age
-	global child_gender
-	corpus_participants = setup_file.participants(setup_file.fileids())
-	for this_corpus_participants in corpus_participants[:2]:
-    	for key in sorted(this_corpus_participants.keys()):
-        	dct = this_corpus_participants[key]
-			if key == 'CHI':
-				child_age = dct['age']
-				child_gender = dct['sex']
-	return(child_age, child_gender)
+def read_Freq_File(file_name):
+	global fdist
+	global ref_dict
+	with open(file_name, 'r') as in_file:
+		for line in in_file:
+			split_line = line.split()
+			ref_dict[(split_line[2], split_line[3])] = int(split_line[1])
+			if split_line[3] == 'n':
+				fdist[split_line[2]] = int(split_line[1])
+	return(fdist, ref_dict)				
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
-	global child_age
 	corpus_root = nltk.data.find(root_location) 
 	file_setup = CHILDESCorpusReaderX(corpus_root, file_name) 
 	ordered_utterance_list = file_setup.sents()
-	get_child_age(file_setup)
-	return(ordered_utterance_list, child_age)
+	return(ordered_utterance_list)
 
 def determine_speakers(word_list): # gives a list of all speakers in the file
 	global speaker_list
@@ -133,67 +131,169 @@ def convo_grouper(some_dict): # groups utterances into speaker/replier "conversa
 def hypernym_initialize(list_of_speakers): # initializes hypernym counters
 	for a in list_of_speakers:
 		for b in list_of_speakers:
-			hypernym_count[(a, b)] = [0, 0]
-			magic_counter[(a, b)] = [0 , 0]
-	return(hypernym_count, magic_counter)
+			path_count[(a, b)] = [{},{}]
+			hyp_avg[(a, b)] = []
+	return(path_count)
 
 def hypernym_calculator(conversation_dictionary): # calculates number of nouns and total hypernyms those nouns have 
-	global hypernym_dict
-	global magic_counter	
-	for a in speaker_list:
-		for b in speaker_list:
-			hypernym_dict[(a, b)] = [0, 0]
-	for x in range(0, (len(convo_dict) - 1)):
-		speaker1 = convo_dict[x][0][0]
-		speaker2 = convo_dict[x][1][0] 
-		y_tokenized = nltk.pos_tag(convo_dict[x][0])
-		for i in range(1, len(y_tokenized) - 1):
+	global path_count
+	global magic_counter
+	global ref_dict
+	global fdist
+	global perm_dict
+	d = enchant.Dict("en_US")
+	hyper = lambda s: s.hypernyms()
+	hypo = lambda s: s.hyponyms()	
+	for x in range(0, (len(conversation_dictionary) - 1)):
+		speaker1 = conversation_dictionary[x][0][0]
+		speaker2 = conversation_dictionary[x][1][0] 
+		y_tokenized = nltk.pos_tag(conversation_dictionary[x][0])
+		for i in range(1, len(y_tokenized) - 1):	
 			try:
 				if len(wn.synsets(y_tokenized[i][0], pos=wn.NOUN)) > 0:
-					checked_item = wn.synset(y_tokenized[i][0] + '.n.01')
-					hypernym_count[(speaker1, speaker2)] = [hypernym_count[(speaker1, speaker2)][0] + len(checked_item.hypernyms()), hypernym_count[(speaker1, speaker2)][1]]
-					magic_counter[(speaker1, speaker2)][0] += 1
+					if len(y_tokenized[i][0]) > 1:
+						if d.check(y_tokenized[i][0]) == True:
+							if (y_tokenized[i][0], 'n') not in ref_dict.keys():
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']	
+								continue
+							elif (y_tokenized[i][0], 'v') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'v')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (y_tokenized[i][0], 'a') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'a')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (y_tokenized[i][0], 'adv') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'adv')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue		
+											
+							if y_tokenized[i][0] in perm_dict.keys():
+								if y_tokenized[i][0] not in path_count[(speaker1, speaker2)][0].keys():
+									magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
+								elif y_tokenized[i][0] in path_count[(speaker1, speaker2)][0].keys():
+									magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]][0] = int(perm_dict[y_tokenized[i][0]][0]) 
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]][1] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]
+								continue
+							
+							checked_item = wn.synset(y_tokenized[i][0] + '.n.01')
+							if y_tokenized[i][0] not in path_count[(speaker1, speaker2)][0]:
+								perm_dict[y_tokenized[i][0]] = ['NA', 'NA', 'NA']
+								magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
+								ho = list(checked_item.closure(hypo))
+								hr = len(list(checked_item.closure(hyper)))
+								totes = len(list(ho[-1].closure(hyper)))
+								path_ratio = float(hr / totes)
+								tru_totes = float(totes / 4)
+								dist_from_center = float(tru_totes - hr)
+								dist_measure = float(dist_from_center / totes) 
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [dist_measure, 1]
+								perm_dict[y_tokenized[i][0]][0] = dist_measure
+								perm_dict[y_tokenized[i][0]][1] = totes
+								perm_dict[y_tokenized[i][0]][2] = path_ratio
+
 			except:
-				continue		
-		z_tokenized = nltk.pos_tag(convo_dict[x][1])
+				continue	
+		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
 			try:
 				if len(wn.synsets(z_tokenized[i][0], pos=wn.NOUN)) > 0:
-					checked_item = wn.synset(z_tokenized[i][0] + '.n.01')
-					hypernym_count[(speaker1, speaker2)] = [hypernym_count[(speaker1, speaker2)][0], len(checked_item.hypernyms()) + hypernym_count[(speaker1, speaker2)][1]]
-					magic_counter[(speaker1, speaker2)][1] += 1
-			except:
-				continue						
-	return(hypernym_count, magic_counter)		
+					if len(z_tokenized[i][0]) > 1:
+						if d.check(z_tokenized[i][0]) == True:
+							if (z_tokenized[i][0], 'n') not in ref_dict.keys():
+								path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']	
+								continue
+							elif (z_tokenized[i][0], 'v') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'v')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (z_tokenized[i][0], 'a') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'a')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (z_tokenized[i][0], 'adv') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'adv')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = ['NA', 'NA']
+									continue		
+											
+							if z_tokenized[i][0] in perm_dict.keys():
+								if z_tokenized[i][0] not in path_count[(speaker1, speaker2)][1].keys():
+									magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] = 1
+								elif z_tokenized[i][0] in path_count[(speaker1, speaker2)][1].keys():	
+									magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] + 1
+								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]][0] = int(perm_dict[z_tokenized[i][0]][0])
+								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]][1] = magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)]
+								continue
 
-def hypernym_average_calculator(total_hypernym_count, total_hypernym_counter): # calculates average number of hypernyms per noun for each speaker/replier
-	global speaker_list
-	global hypernym_dict
-	global magic_counter	
-	for a in speaker_list:
-		for b in speaker_list:
-			if magic_counter[(a, b)][0] == 0:
-				if magic_counter[(a, b)][1] == 0:
-					hypernym_dict[(a, b)] = ['NA', 'NA']
-				else:
-					hypernym_dict[(a, b)] = ['NA', hypernym_count[(a, b)][1] / magic_counter[(a, b)][1]]	
-			elif magic_counter[(a, b)][1] == 0:
-				hypernym_dict[(a, b)] = [hypernym_count[(a, b)][0] / magic_counter[(a, b)][0], 'NA']	
-			else:
-				hypernym_dict[(a, b)] = [hypernym_count[(a, b)][0] / magic_counter[(a, b)][0], hypernym_count[(a, b)][1] / magic_counter[(a, b)][1]]
-	return(hypernym_dict)
+							checked_item = wn.synset(z_tokenized[i][0] + '.n.01')
+							if z_tokenized[i][0] not in path_count[(speaker1, speaker2)][1]:
+								perm_dict[z_tokenized[i][0]] = ['NA', 'NA', 'NA']
+								magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
+								ho = list(checked_item.closure(hypo))
+								hr = len(list(checked_item.closure(hyper)))
+								totes = len(list(ho[-1].closure(hyper)))
+								path_ratio = float(hr / totes)
+								tru_totes = float(totes / 4)
+								dist_from_center = float(tru_totes - hr)
+								dist_measure = float(dist_from_center / totes)  
+								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [dist_measure, 1]
+								perm_dict[z_tokenized[i][0]][0] = dist_measure
+								perm_dict[z_tokenized[i][0]][1] = totes
+								perm_dict[z_tokenized[i][0]][2] = path_ratio
+								
+			except:
+				continue			
+	return(path_count, perm_dict)	
 
 def calculate_sparsity(list_of_speakers, a_dictionary):
 	global sparsity_measure
 	for a in list_of_speakers:
 		for b in list_of_speakers:
 			sparsity_measure[(a, b)] = [0, 0]
-	for x in range(0, (len(convo_dict) - 1)):
+	for x in range(0, (len(a_dictionary) - 1)):
 		speaker1 = a_dictionary[x][0][0]
 		speaker2 = a_dictionary[x][1][0] 
 		sparsity_measure[(speaker1, speaker2)] = [sparsity_measure[(speaker1, speaker2)][0] + len(a_dictionary[x][0]) - len(re.findall(speaker1, str(a_dictionary[x][0]))), sparsity_measure[(speaker1, speaker2)][1] + len(a_dictionary[x][1]) - len(re.findall(speaker2, str(a_dictionary[x][1])))]
+	return sparsity_measure	
 
-def document_stuff(directory_location, input_file_name, output_file_name, corpus): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
+
+def get_hyp_avg():
+	global path_count
+	global hyp_avg
+	global convo_dict
+	for x in range(0, (len(convo_dict) - 1)):
+		speaker1 = convo_dict[x][0][0]
+		speaker2 = convo_dict[x][1][0]
+		hyp_ct_s = 0
+		hyp_num_s = 0
+		hyp_ct_r = 0
+		hyp_num_r = 0
+		for key in path_count[(speaker1, speaker2)][0]:
+			if path_count[(speaker1, speaker2)][0][key][0] != 'NA':
+				hyp_ct_s += path_count[(speaker1, speaker2)][0][key][0]
+				hyp_num_s += 1
+		for key in path_count[(speaker1, speaker2)][1]:
+			if path_count[(speaker1, speaker2)][1][key][0] != 'NA':	
+				hyp_ct_r += path_count[(speaker1, speaker2)][1][key][0] 
+				hyp_num_r += 1
+		if hyp_num_s == 0 and hyp_num_r == 0:
+			hyp1 = 'NA'
+			hyp2 = 'NA'
+		elif hyp_num_s == 0:
+			hyp1 = 'NA'
+			hyp2 = hyp_ct_r / hyp_num_r	
+		elif hyp_num_r == 0:
+			hyp1 = hyp_ct_s / hyp_num_s
+			hyp2 = 'NA'
+		else:
+			hyp1 = hyp_ct_s / hyp_num_s
+			hyp2 = hyp_ct_r / hyp_num_r				
+		hyp_avg[(speaker1, speaker2)] = [hyp1, hyp2]
+	return(hyp_avg)	
+
+def document_stuff(directory_location, input_file_name, output_file_name): # writes the final info to a csv file in this order: [DOC ID, speaker, replier, speaker words to replier total, replier words to speaker total, marker, conditional number, speaker marker number, reply marker number, replier utterance number
 	global ordered_utterance_list
 	global convo_dict
 	global sparsity_measure
@@ -202,11 +302,12 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	global alignment_dict
 	global possible_conversation_list
 	global speaker_list
-	global hypernym_count
+	global path_count
 	global magic_counter
-	global hypernym_dict
-	global child_age
-	global child_gender
+	global hyp_avg
+	global for_output_list
+	global perm_dict
+	global ref_dict
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -215,38 +316,54 @@ def document_stuff(directory_location, input_file_name, output_file_name, corpus
 	convo_grouper(squished_dict)
 	hypernym_initialize(speaker_list)
 	hypernym_calculator(convo_dict)
-	hypernym_average_calculator(hypernym_count, magic_counter)
 	calculate_sparsity(speaker_list, convo_dict)
 	for x in range(0, (len(convo_dict) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		output_almost[final_counter] = [corpus, input_file_name, speaker1, speaker2, hypernym_dict[(speaker1, speaker2)][0], hypernym_dict[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1], child_age, child_gender]	
-		final_counter += 1
+		for key in path_count[(speaker1, speaker2)][0].keys():
+			try:
+				output_almost.append([input_file_name, speaker1, speaker2, key, path_count[(speaker1, speaker2)][0][key][1], path_count[(speaker1, speaker2)][0][key][0], perm_dict[key][1], perm_dict[key][2], 'NA', 'NA', 'NA', 'NA', 'NA', sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			except:
+				continue
+		for key in path_count[(speaker1, speaker2)][1].keys():
+			try:
+				output_almost.append([input_file_name, speaker1, speaker2, 'NA', 'NA', 'NA', 'NA', 'NA', key, path_count[(speaker1, speaker2)][1][key][1], path_count[(speaker1, speaker2)][1][key][0], perm_dict[key][1], perm_dict[key][2], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			except:
+				continue	
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
-			for_output_list.append(output_almost[y])
-		alignment_dict = {}		
+			for_output_list.append(output_almost[y])	
 	with open(output_file_name, "a", newline='') as f:
 		magic_writer = csv.writer(f)
 		magic_writer.writerows(for_output_list)
 		f.close()		
 
 corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Providence'
-corpus_name = 'Providence'
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["Corpus", "DocId", "SpeakerA", "SpeakerB", 'FLT A->B', "FLT B->A", "Sparsity A->B", "Sparsity B->A", "Child Age", "Child Gender"])
+	header.insert(0, ["DocId", "Speaker", "Replier", "S Word", "S Frequency", "S Dist From Basic Level", 'S Word Branch Length', 'S Word Path Ratio', "R Word", 'R Frequency', 'R Dist From Basic Level', 'R Word Branch Length', 'R Word Path Ratio', "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
-writeHeader('Providence_FLT_results.csv', 'a')
+outfile = 'Providence_FLT_PathRatio.csv'
+freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
+read_Freq_File(freq_list_location)
+writeHeader(outfile, 'a')
 
-for dirName, subdirList, fileList in os.walk(corpus_dir):
-	for x in subdirList:
-		for fname in os.listdir(dirName + '\\' + x):
+if Subdirs == True:
+	for dirName, subdirList, fileList in os.walk(corpus_dir):
+		for x in subdirList:
+			for fname in os.listdir(dirName + '\\' + x):
+				if fname.endswith(".xml"):
+					os.path.join(dirName + '\\' + x, fname)
+					document_stuff(dirName + '\\' + x, fname, outfile)
+if Subdirs == False:
+	for fname in os.listdir(corpus_dir):
 			if fname.endswith(".xml"):
-				os.path.join(dirName + '\\' + x, fname)
-				document_stuff(dirName + '\\' + x, fname, 'Providence_FLT_results.csv', corpus_name)
+				os.path.join(corpus_dir, fname)
+				document_stuff(corpus_dir, fname, outfile)
+
+				
