@@ -24,27 +24,182 @@ library(tidyr)
 library(stringr)
 library(magrittr)
 library(directlabels)
-library(langcog)
-source('../helper/multiboot.R')
+library(lubridate)
+library(lme4)
+```
+
+```{r useful_functions}
+convert.age <- function(childes.age) {
+  age <- as.numeric(unlist(strsplit(childes.age, "[PYMD]"))[2:4])
+  age[2] <- ifelse(is.na(age[2]), 0, age[2])
+  age[3] <- ifelse(is.na(age[3]), 0, age[3])
+ 
+  return((age[1]*365+age[2]*30.5+age[3])/30.5)
+}
+
+na.mean <- function(x){mean(x, na.rm = TRUE)}
+
+read.data.file <- function(file) {
+  read_csv(paste0('../Childes_Results/', file)) %>%
+    mutate(type = ifelse(str_count(file,"Stem") > 0, "Stemmed", "Unstemmed"))
+}
+
 ```
 
 ```{r load_data}
+userinfo.files <- list.files(path = "../Childes_userinfo", 
+                            pattern = '*.csv', all.files = FALSE)
+
+result.files <- list.files(path = "../Childes_results", 
+                            pattern = '*.csv', all.files = FALSE)
+
+
+
+childes.userinfo <- bind_rows(lapply(userinfo.files, function(file) {
+                                       read_csv(paste0('../Childes_userinfo/',
+                                                       file))})) %>%
+  rename(Child = role) %>%
+  rowwise() %>%
+  mutate(Age = convert.age(Age))
+
+childes.results <- bind_rows(lapply(result.files, read.data.file)) %>%
+  rename(DocId = docId)
+```
+
+```{r munge_data}
+childes.data <- left_join(childes.results,childes.userinfo) %>%
+  rename(Speaker = speakerId, Replier = replierId) %>%
+  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  group_by(type,Child,Age,Replier)
+
+
+childes.alignment <- multi_boot_standard(childes.data, column = "alignment", na.rm = FALSE,
+                                         nboot = 10)
+
+childes.alignment <- multi_boot(childes.data, column="alignment", 
+                                 summary_function = "na.mean",
+             statistics_functions = c("ci_lower","ci_upper")) %>%
+  left_join(summarise(childes.data,alignment = na.mean(alignment)))
+
+childes.dnmalignment <- multi_boot(childes.data, column="dnmalignment", 
+                                 summary_function = "na.mean",
+             statistics_functions = c("ci_lower","ci_upper")) %>%
+  left_join(summarise(childes.data,alignment = na.mean(dnmalignment)))
+```
+
+```{r plot}
+#Stemmed
+ggplot(aes(x = Age,y = alignment, color = Replier), 
+       data = filter(childes.alignment,type == "Stemmed")) +
+  facet_wrap(~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+
+#Unstemmed
+ggplot(aes(x = Age,y = alignment, color = Replier), 
+       data = filter(childes.alignment,type == "Unstemmed")) +
+  facet_wrap( ~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+```
+
+```{r dnm_plot}
+#Stemmed
+ggplot(aes(x = Age,y = alignment, color = Replier), 
+       data = filter(childes.dnmalignment,type == "Stemmed")) +
+  facet_wrap(~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+
+#Unstemmed
+ggplot(aes(x = Age,y = alignment, color = Replier), 
+       data = filter(childes.dnmalignment,type == "Unstemmed")) +
+  facet_wrap( ~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+```
+
+```{r models}
+
+lm1 <- lmer(alignment ~ Age * Replier + type + (Replier|Child),
+            data = childes.data)
+
+lm2 <- lmer(dnmalignment ~ Age * Replier + type + (Replier|Child),
+            data = childes.data)
+```
+
+
+```{r}
 # twitter.data <- fread('results.csv') 
 
-childes.wl.data <- read_csv('../results/CHILDES_clean_results.csv') %>%
-  filter(!Corpus == "Corpus") %>%
-  select(-ConvId) %>%
-  mutate(Alignment = as.numeric(Alignment)) %>%
-  mutate(MarkerSet = "WL")
+# childes.wl.data <- read_csv('../results/CHILDES_clean_results.csv') %>%
+#   select(-ConvId) %>%
+#   mutate(Alignment = as.numeric(Alignment)) %>%
+#   mutate(MarkerSet = "WL")
+# 
+# childes.recursive.data <- read_csv('../results/CHILDES_recursive.csv') %>%
+#   select(-ConvId) %>% 
+#   mutate(Alignment = as.numeric(Alignment)) %>%
+#   mutate(MarkerSet = "Recursive")
 
-childes.recursive.data <- read_csv('../results/CHILDES_recursive.csv') %>%
-  filter(!Corpus == "Corpus") %>%
-  select(-ConvId) %>% 
-  mutate(Alignment = as.numeric(Alignment)) %>%
-  mutate(MarkerSet = "Recursive")
+childes.stemmed.data <- read_csv('../results/ProvFreq300StemmedResults.csv') %>%
+  mutate(MarkerSet = "Stemmed") %>%
+  rename(DocId = docId,
+         Speaker = speakerId,
+         Replier = replierId)
 
-childes.data <- bind_rows(childes.wl.data,childes.recursive.data)
+childes.unstemmed.data <- read_csv('../results/ProvFreq300Results.csv') %>%
+  mutate(MarkerSet = "UnStemmed") %>%
+  rename(DocId = docId,
+         Speaker = speakerId,
+         Replier = replierId)
 
+
+childes.dnm.data <- read_csv('../results/PF300oldnew.csv') %>%
+  mutate(MarkerSet = "DNM") %>%
+  filter(alignment != 0) %>%
+  rename(DocId = docId,
+         Speaker = speakerId,
+         Replier = replierId)
+
+childes.hypernyms.data <- read_csv('../results/Providence_FLT_hypclose.csv') %>%
+  left_join(childes.userinfo)
+
+childes.pathsims.data <- read_csv('../results/Providence_FLT_pathsimNEW.csv') %>%
+  left_join(childes.userinfo)
+
+childes.dists.data <- read_csv('../results/Providence_FLT_pathcount.csv')%>%
+  left_join(childes.userinfo)
+
+childes.pathsims.data <- fread('../results/ProvidenceFLTPathsimLocalFilter2.csv', 
+                          colClasses = 'character') %>%
+  as.tbl %>%
+  left_join(childes.userinfo, copy = TRUE)
+
+# childes.data <- left_join(bind_rows(childes.stemmed.data,childes.unstemmed.data,
+#                                     childes.dnm.data),
+#                           childes.userinfo) %>%
+#   filter((BNotA + NotBNotA >= 5) & (BA + NotBA >= 5)) 
 
 # # User info for twitter data
 # userinfo <- read_delim('pairedtweets1000.txt.userinfo',delim='\t') %>%
@@ -54,36 +209,153 @@ childes.data <- bind_rows(childes.wl.data,childes.recursive.data)
 ```
 
 ```{r munge_data}
-childes.alignment <- childes.data %>%
+childes.alignment.frame <- childes.data %>%
   mutate(Child = substr(DocId,1,3),
          File = as.numeric(substr(DocId,4,5))) %>%
-  rename(Speaker = SpeakerA, Replier = SpeakerB) %>%
-  filter(Speaker%in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
-  group_by(MarkerSet,Child,File,Speaker,Replier,Marker) %>%
-  summarise(Alignment = mean(Alignment)) 
+  #rename(Speaker = speakerId, Replier = replierId) %>%
+  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  group_by(MarkerSet,Child,Age,Speaker,Replier,category) %>%
+  summarise(alignment = mean(alignment)) %>%
+  group_by(MarkerSet,Child,Age,Speaker,Replier)
 
 
-childes.alignment <- multi_boot(childes.alignment, column="Alignment",
-                                summary_groups = c("MarkerSet","Child", "File", 
-                                                   "Speaker", "Replier"),
-             statistics_functions = c("ci_lower","ci_upper")) %>%
-  left_join(summarise(childes.alignment,Alignment = mean(Alignment)))
+childes.alignment <- multi_boot(childes.alignment.frame,column="alignment",
+             statistics_functions = c("ci_lower","ci_upper"),nboot=1000) %>%
+  left_join(summarise(childes.alignment.frame,Alignment = mean(alignment)))
 
-  
+
+childes.hypernyms <- childes.hypernyms.data %>%
+  mutate(Child = substr(DocId,1,3),
+         File = as.numeric(substr(DocId,4,5))) %>%
+  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  gather(Role, Hypernyms ,c(`Hyp Avg S`,`Hyp Avg R`)) %>%
+  mutate(Role = factor(Role, labels = c("Speaker", "Replier"))) %>%
+  group_by(Child,Age,Role, Speaker) %>%
+  summarise(Hypernyms = mean(Hypernyms,na.rm=TRUE))
+  #multi_boot(childes.flt,column="S-Distance",
+          #   statistics_functions = c("ci_lower","ci_upper"),nboot=1000) %>%
+# left_join(summarise(childes.flt,mean = mean(`S-Distance`,na.rm=TRUE)))
+
+ggplot(aes(x = Age,y = Hypernyms, color = Role), data = childes.hypernyms) +
+  facet_grid(Speaker ~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_point() +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+ # scale_x_continuous(limits = c(0,95))+
+   scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Role),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+
+childes.pathsims <- childes.pathsims.data %>%
+  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  mutate(`S Path Similarity` = as.numeric(`S Path Similarity`),
+         `R Path Similarity` = as.numeric(`R Path Similarity`)) %>%
+  ungroup() %>% 
+  mutate(child.pathsim = ifelse(Speaker == "CHI", 
+         `S Path Similarity`, `R Path Similarity`),
+         mom.pathsim = ifelse(Speaker == "MOT", 
+         `S Path Similarity`, `R Path Similarity`)) %>%
+  gather(Person,path.sim,c(child.pathsim,mom.pathsim)) %>%
+  mutate(path.sim = (1-abs(path.sim))/abs(path.sim)) %>%
+  group_by(Child,Age,Person) %>%
+  summarise(path.sim = na.mean(path.sim),
+            path.sem = sem(path.sim,na.rm = TRUE))
+
+childes.pathlengths <- multi_boot(childes.pathsims, column="path.sim", 
+                                 summary_function = "na.mean",
+             statistics_functions = c("ci_lower","ci_upper"), nboot = 10) %>%
+  left_join(summarise(childes.pathsims,path.sim = na.mean(path.sim)))
+
+  gather(Child, Person, Pathsim ,mom.pathsim,chi.pathsim) %>%
+  mutate(Person = factor(Person, labels = c("MOT", "CHI"))) %>%
+  filter(Child != "nai") %>%
+  mutate(dist = (1-Pathsim)/Pathsim)
+
+#  group_by(Child,Age,Role, Speaker) %>%
+  summarise(Pathsims = mean(Pathsims,na.rm=TRUE))
+
+ggplot(aes(x = Age,y = path.sim, color = Person), data = childes.pathsims) +
+  facet_wrap( ~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+   geom_pointrange(aes(ymax = path.sim+path.sem, ymin = path.sim-path.sem)) +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+ # scale_x_continuous(limits = c(0,95))+
+   scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
+  geom_dl(aes(label=Person),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+
+
+childes.pathdists <- childes.dists.data %>%
+  mutate(Child = substr(DocId,1,3),
+         File = as.numeric(substr(DocId,4,5))) %>%
+  filter(Speaker %in% c("CHI", "MOT"), Replier %in% c("CHI", "MOT")) %>%
+  rename(dist.speaker = `Dist From Center Avg S`,
+         dist.replier = `Dist From Center Avg R`) %>%
+  mutate_each(funs(abs), c(dist.speaker, dist.replier)) %>%
+  group_by(Child, Age, Speaker) %>%
+  summarise_each(funs(na.mean), c(dist.speaker,dist.replier)) %>%
+  mutate(dist.child = ifelse(Speaker == "CHI", dist.speaker,dist.replier),
+         dist.mom = ifelse(Speaker == "MOT", dist.speaker, dist.replier)) %>%
+  gather(Role, value, dist.child, dist.mom) %>%
+  group_by(Child,Age,Role) %>%
+  summarise(dist = na.mean(value)) %>%
+  mutate(Role = factor(Role,labels = c("CHI", "MOT")))
+
+childes.dists <-  multi_boot(childes.pathdists,column="dist",
+             statistics_functions = c("ci_lower","ci_upper"),nboot=1000) %>%
+  left_join(summarise(childes.pathdists,dist = mean(dist)))
+                                    
+
+ggplot(aes(x = Age,y = dist, color = Role), data = childes.pathdists) +
+  facet_wrap(~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_point() +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+ # scale_x_continuous(limits = c(0,95))+
+  geom_dl(aes(label=Role),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+```
+
+
+
 ```
 
 WL Markers
-```{r childes_plot_wl, fig.width = 7, fig.height= 5}
-ggplot(aes(x = File,y = Alignment, color = Replier), 
-       data = filter(childes.alignment, MarkerSet == "WL")) +
+```{r childes_plot_ft, fig.width = 7, fig.height= 5}
+ggplot(aes(x = Age,y = hypernyms, color = Speaker), data = childes.flt) +
   facet_wrap(~ Child) +
+  geom_smooth(method = "loess")+
+  geom_hline(yintercept=0,lty=2) +
+  geom_point() +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+ # scale_x_continuous(limits = c(0,95))+
+  geom_dl(aes(label=Speaker),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+```
+
+
+WL Markers
+```{r childes_plot_wl, fig.width = 7, fig.height= 5}
+ggplot(aes(x = Age,y = Alignment, color = Replier), 
+       data = childes.alignment) +
+  facet_grid(MarkerSet ~ Child, scales = "free_y") +
   geom_smooth(method = "loess")+
   geom_hline(yintercept=0,lty=2) +
   geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
   scale_color_brewer(palette = "Set1") +
   theme(legend.position = "none") +
-  scale_x_continuous(limits = c(0,95))+
+  scale_x_continuous(limits=c(10,60),breaks=seq(10,50,10))+
   geom_dl(aes(label=Replier),method=list("last.points",cex=.8,dl.trans(x=x +.2)))
+
+
+ggplot(aes(x = BA/(BA+NotBA), fill= Speaker), 
+       data = filter(childes.data, Speaker %in% c("CHI", "MOT"))) +
+  geom_histogram()
+  
+
 ```
 
 Recursive Markers

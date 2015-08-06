@@ -24,6 +24,9 @@ hypernym_dict = {}
 path_count = {}
 magic_counter = {}
 hyp_avg = {}
+fdist = {}
+ref_dict = {}
+perm_dict = {}
 Subdirs = True
 
 def initialize(): # clean slates the variables
@@ -63,6 +66,17 @@ def initialize(): # clean slates the variables
 	hypernym_dict = {}
 	magic_counter = {}
 	hyp_avg = {}
+
+def read_Freq_File(file_name):
+	global fdist
+	global ref_dict
+	with open(file_name, 'r') as in_file:
+		for line in in_file:
+			split_line = line.split()
+			ref_dict[(split_line[2], split_line[3])] = int(split_line[1])
+			if split_line[3] == 'n':
+				fdist[split_line[2]] = int(split_line[1])
+	return(fdist, ref_dict)				
 
 def get_childes_files(root_location, file_name): # fetches the childes file in xml and parses it into utterances with speaker in [0] position
 	global ordered_utterance_list
@@ -124,6 +138,9 @@ def hypernym_initialize(list_of_speakers): # initializes hypernym counters
 def hypernym_calculator(conversation_dictionary): # calculates number of nouns and total hypernyms those nouns have 
 	global path_count
 	global magic_counter
+	global ref_dict
+	global fdist
+	global perm_dict
 	d = enchant.Dict("en_US")
 	hyper = lambda s: s.hypernyms()
 	hypo = lambda s: s.hyponyms()	
@@ -136,19 +153,45 @@ def hypernym_calculator(conversation_dictionary): # calculates number of nouns a
 				if len(wn.synsets(y_tokenized[i][0], pos=wn.NOUN)) > 0:
 					if len(y_tokenized[i][0]) > 1:
 						if d.check(y_tokenized[i][0]) == True:
+							if (y_tokenized[i][0], 'n') not in ref_dict.keys():
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']	
+								continue
+							elif (y_tokenized[i][0], 'v') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'v')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (y_tokenized[i][0], 'a') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'a')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (y_tokenized[i][0], 'adv') in ref_dict.keys():
+								if (ref_dict[(y_tokenized[i][0], 'adv')] > ref_dict[(y_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = ['NA', 'NA']
+									continue		
+											
+							if y_tokenized[i][0] in perm_dict.keys():
+								if y_tokenized[i][0] not in path_count[(speaker1, speaker2)][0].keys():
+									magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
+								elif y_tokenized[i][0] in path_count[(speaker1, speaker2)][0].keys():
+									magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]][0][0] = int(perm_dict[y_tokenized[i][0]][0]) 
+								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]][0][1] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]
+								continue
+							
 							checked_item = wn.synset(y_tokenized[i][0] + '.n.01')
 							if y_tokenized[i][0] not in path_count[(speaker1, speaker2)][0]:
+								perm_dict[y_tokenized[i][0]] = ['NA', 'NA']
 								magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
 								ho = list(checked_item.closure(hypo))
 								hr = len(list(checked_item.closure(hyper)))
 								totes = len(list(ho[-1].closure(hyper)))
-								tru_totes = float(totes / 2)
+								tru_totes = float(totes / 4)
 								dist_from_center = float(tru_totes - hr)
 								dist_measure = float(dist_from_center / totes) 
 								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [dist_measure, 1]
-							else:
-								magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-								path_count[(speaker1, speaker2)][0][y_tokenized[i][0]] = [dist_measure, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)]]	
+								perm_dict[y_tokenized[i][0]][0] = dist_measure
+								perm_dict[y_tokenized[i][0]][1] = totes
+
 			except:
 				continue	
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
@@ -157,22 +200,48 @@ def hypernym_calculator(conversation_dictionary): # calculates number of nouns a
 				if len(wn.synsets(z_tokenized[i][0], pos=wn.NOUN)) > 0:
 					if len(z_tokenized[i][0]) > 1:
 						if d.check(z_tokenized[i][0]) == True:
+							if (z_tokenized[i][0], 'n') not in ref_dict.keys():
+								path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']	
+								continue
+							elif (z_tokenized[i][0], 'v') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'v')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (z_tokenized[i][0], 'a') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'a')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][y_tokenized[i][0]] = ['NA', 'NA']
+									continue
+							elif (z_tokenized[i][0], 'adv') in ref_dict.keys():
+								if (ref_dict[(z_tokenized[i][0], 'adv')] > ref_dict[(z_tokenized[i][0], 'n')]):
+									path_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = ['NA', 'NA']
+									continue		
+											
+							if z_tokenized[i][0] in perm_dict.keys():
+								if z_tokenized[i][0] not in path_count[(speaker1, speaker2)][1].keys():
+									magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] = 1
+								elif z_tokenized[i][0] in path_count[(speaker1, speaker2)][1].keys():	
+									magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)] + 1
+								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]][0] = int(perm_dict[z_tokenized[i][0]][0])
+								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]][1] = magic_counter[(speaker1, speaker2, z_tokenized[i][0], 0)]
+								continue
+
 							checked_item = wn.synset(z_tokenized[i][0] + '.n.01')
 							if z_tokenized[i][0] not in path_count[(speaker1, speaker2)][1]:
+								perm_dict[z_tokenized[i][0]] = ['NA', 'NA']
 								magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
 								ho = list(checked_item.closure(hypo))
 								hr = len(list(checked_item.closure(hyper)))
 								totes = len(list(ho[-1].closure(hyper)))
-								tru_totes = float(totes / 2)
+								tru_totes = float(totes / 4)
 								dist_from_center = float(tru_totes - hr)
 								dist_measure = float(dist_from_center / totes)  
 								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]] = [dist_measure, 1]
-							else:
-								magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1
-								path_count[(speaker1, speaker2)][1][z_tokenized[i][0]] =[dist_measure, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])]]			
+								perm_dict[z_tokenized[i][0]][0] = dist_measure
+								perm_dict[z_tokenized[i][0]][1] = totes
+								
 			except:
 				continue			
-	return(path_count)	
+	return(path_count, perm_dict)	
 
 def calculate_sparsity(list_of_speakers, a_dictionary):
 	global sparsity_measure
@@ -198,11 +267,13 @@ def get_hyp_avg():
 		hyp_ct_r = 0
 		hyp_num_r = 0
 		for key in path_count[(speaker1, speaker2)][0]:
-			hyp_ct_s += path_count[(speaker1, speaker2)][0][key][0]
-			hyp_num_s += 1
+			if path_count[(speaker1, speaker2)][0][key][0] != 'NA':
+				hyp_ct_s += path_count[(speaker1, speaker2)][0][key][0]
+				hyp_num_s += 1
 		for key in path_count[(speaker1, speaker2)][1]:
-			hyp_ct_r += path_count[(speaker1, speaker2)][1][key][0] 
-			hyp_num_r += 1
+			if path_count[(speaker1, speaker2)][1][key][0] != 'NA':	
+				hyp_ct_r += path_count[(speaker1, speaker2)][1][key][0] 
+				hyp_num_r += 1
 		if hyp_num_s == 0 and hyp_num_r == 0:
 			hyp1 = 'NA'
 			hyp2 = 'NA'
@@ -231,6 +302,8 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 	global magic_counter
 	global hyp_avg
 	global for_output_list
+	global perm_dict
+	global ref_dict
 	initialize()
 	get_childes_files(directory_location, input_file_name)
 	determine_speakers(ordered_utterance_list)
@@ -245,9 +318,15 @@ def document_stuff(directory_location, input_file_name, output_file_name): # wri
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
 		for key in path_count[(speaker1, speaker2)][0].keys():
-			output_almost.append([input_file_name, speaker1, speaker2, key, path_count[(speaker1, speaker2)][0][key][1], path_count[(speaker1, speaker2)][0][key][0], hyp_avg[(speaker1, speaker2)][0], hyp_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			try:
+				output_almost.append([input_file_name, speaker1, speaker2, key, path_count[(speaker1, speaker2)][0][key][1], path_count[(speaker1, speaker2)][0][key][0], perm_dict[key][1], 'NA', 'NA', 'NA', 'NA', hyp_avg[(speaker1, speaker2)][0], hyp_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			except:
+				continue
 		for key in path_count[(speaker1, speaker2)][1].keys():
-			output_almost.append([input_file_name, speaker1, speaker2, key, path_count[(speaker1, speaker2)][1][key][1], path_count[(speaker1, speaker2)][1][key][0], hyp_avg[(speaker1, speaker2)][0], hyp_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			try:
+				output_almost.append([input_file_name, speaker1, speaker2, 'NA', 'NA', 'NA', 'NA', key, path_count[(speaker1, speaker2)][1][key][1], path_count[(speaker1, speaker2)][1][key][0], perm_dict[key][1], hyp_avg[(speaker1, speaker2)][0], hyp_avg[(speaker1, speaker2)][1], sparsity_measure[(speaker1, speaker2)][0], sparsity_measure[(speaker1, speaker2)][1]])
+			except:
+				continue	
 	for y in range(0, (len(output_almost) - 1)):	
 		if output_almost[y] not in for_output_list:
 			for_output_list.append(output_almost[y])	
@@ -260,14 +339,15 @@ corpus_dir =  r'C:\Users\Aaron\AppData\Roaming\nltk_data\corpora\childes\Provide
 
 def writeHeader(outputFile, writeType):
 	header = []
-	header.insert(0, ["DocId", "Speaker", "Replier", "Word", "Frequency", "Dist From Center", "Dist From Center Avg S", "Dist From Center Avg R", "Sparsity S-R", "Sparsity R-S"])
+	header.insert(0, ["DocId", "Speaker", "Replier", "S Word", "S Frequency", "S Dist From Basic Level", 'S Word Branch Length', "R Word", 'R Frequency', 'R Dist From Basic Level', 'R Word Branch Length', "Dist From Center Avg S", "Dist From Center Avg R", "Sparsity S-R", "Sparsity R-S"])
 	with open(outputFile, writeType, newline='') as f:
 		writer = csv.writer(f)
 		writer.writerows(header)
 	f.close()
 
-outfile = 'Providence_FLT_pathcount.csv'
-
+outfile = 'Providence_FLT_pathcountFilter.csv'
+freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
+read_Freq_File(freq_list_location)
 writeHeader(outfile, 'a')
 
 if Subdirs == True:
