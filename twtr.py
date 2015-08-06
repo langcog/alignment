@@ -11,7 +11,7 @@ testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/reply.csv"
+outputFile = "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
@@ -72,8 +72,6 @@ def readCSV(inputFile, users, numOfMarkers):
 	toReturn = []
 	freqs = {}
 	for i, row in enumerate(reader):
-		if(i % 10000 is 0):
-			logger1.log("On line " + str(i) + " of 230000")
 		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
 
@@ -115,12 +113,10 @@ def readCSV(inputFile, users, numOfMarkers):
 	subset = freqs[0:numOfMarkers]
 	
 	for subsetTuple in subset:
-		logger1.log(subsetTuple)
 		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
 			continue
 		else:
 			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
-	logger1.log(markers)
 	return {"rows": toReturn, "markers": markers}
 
 
@@ -176,8 +172,6 @@ def transformCSVnonP(markers, users, rows):
 	mdict = makeDict(markers, "marker")
 	tests = {"TrueTrue": 0, "TrueFalse": 0, "FalseTrue": 0, "FalseFalse": 0}
 	for i, row in enumerate(rows):
-		if(i % 10000 is 0):
-			logger1.log("On " + str(i) + " of " + str(len(rows)))
 		if(users is not False):
 			row["verifiedSpeaker"] = verifySpeaker(udict,row["msgUserId"])
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
@@ -189,7 +183,6 @@ def transformCSVnonP(markers, users, rows):
 		row["replyMarkers"] = countMarkers(row["replyTokens"],mdict)
 
 		utterances.append(row)
-	logger1.log(tests)
 	return utterances
 
 def read(inputFile):
@@ -202,8 +195,6 @@ def read(inputFile):
 def shuffleReplies(utterances):
 	allReplies = []
 	for i, utterance in enumerate(utterances):
-		if(i % 10000 is 0):
-			logger1.log("Adding to allReplies " + str(i) + " of " + str(len(utterances)))
 		toAppend = {}
 		toAppend["reply"] = utterance["reply"]
 		toAppend["replyUserId"] = utterance["replyUserId"]
@@ -224,57 +215,113 @@ def shuffleRepliesAndReplyUserIds(utterances):
 	allReplies = []
 	replyUserIds = []
 	for i, utterance in enumerate(utterances):
-		if(i % 10000 is 0):
-			logger1.log("Adding to allReplies " + str(i) + " of " + str(len(utterances)))
 		toAppend = {}
 		toAppend["reply"] = utterance["reply"]
 		toAppend["replyUserId"] = utterance["replyUserId"]
 		toAppend["replyTokens"] = utterance["replyTokens"]
 		toAppend["replyMarkers"] = utterance["replyMarkers"]
 		allReplies.append(toAppend)
+		replyUserIds.append(utterance["replyUserId"])
 	shuffle(allReplies)
+	shuffle(replyUserIds)
 	for i, utterance in enumerate(allReplies):
 		if(i % 10000 is 0):
 			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
 		utterances[i]["reply"] = utterance["reply"]
 		utterances[i]["replyTokens"] = utterance["replyTokens"]
-		utterances[i]["replyUserId"] = allReplies["replyUserId"]
+		utterances[i]["replyUserId"] = replyUserIds[i]
 		utterances[i]["replyMarkers"] = utterance["replyMarkers"]
 	return utterances
 
 def shuffleReplyMarkers(utterances):
-	allReplies = []
-	replyUserIds = []
 	allMarkers = []
+	allReplies = []
 	for i, utterance in enumerate(utterances):
-		if(i % 10000 is 0):
-			logger1.log("Adding to allReplies " + str(i) + " of " + str(len(utterances)))
 		toAppend = {}
 		toAppend["reply"] = utterance["reply"]
 		toAppend["replyUserId"] = utterance["replyUserId"]
 		toAppend["replyTokens"] = utterance["replyTokens"]
 		toAppend["replyMarkers"] = utterance["replyMarkers"]
-		toAppend["replyMarkersLen"] = len(utterances["replyMarkers"])
+		utterances[i]["replyMarkersLen"] = len(utterance["replyMarkers"])
 		for marker in toAppend["replyMarkers"]:
 			allMarkers.append(marker)
-		allReplies.append(toAppend)
-	shuffle(allReplies)
 	shuffle(allMarkers)
 	count = 0
-	for i, utterance in enumerate(allReplies):
-		if(i % 10000 is 0):
-			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
-		utterances[i]["reply"] = utterance["reply"]
-		utterances[i]["replyTokens"] = utterance["replyTokens"]
-		utterances[i]["replyUserId"] = allReplies["replyUserId"]
-		utterances[i]["replyMarkers"] = 0
-		for i in range(0, utterance["replyMarkersLen"]):
+	for i, utterance in enumerate(utterances):
+		if(i %10000 == 0):
+			logger1.log("Readding " + str(i) + " of " + str(len(utterances)))
+		utterances[i]["replyMarkers"] = []
+		for j in range(0, utterance["replyMarkersLen"]):
 			utterances[i]["replyMarkers"].append(allMarkers[count])
 			count += 1
+
 	return utterances
 
 
+def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
+	newUtterances = []
+	allReplyMarkers = []
+	allMsgMarkers = []
+	verifiedReplies = []
+	verifiedSpeakers = []
+	for i, utterance in enumerate(utterances):
+		if(i % 10000 is 0):
+			logger1.log("Adding to newUtterances " + str(i) + " of " + str(len(utterances)))
+		toAppend = {}
+		toAppend["reply"] = utterance["reply"]
+		toAppend["replyUserId"] = utterance["replyUserId"]
+		toAppend["replyTokens"] = utterance["replyTokens"]
+		toAppend["replyMarkers"] = utterance["replyMarkers"]
+		toAppend["msgMarkers"] = utterance["msgMarkers"]
+		toAppend["replyMarkersLen"] = len(utterance["replyMarkers"])
+		toAppend["msgMarkersLen"] = len(utterance["msgMarkers"])
+		for marker in toAppend["replyMarkers"]:
+			allReplyMarkers.append(marker)
+		for marker in toAppend["msgMarkers"]:
+			allMsgMarkers.append(marker)
+		newUtterances.append(toAppend)
+		verifiedReplies.append(utterance["verifiedReplier"])
+		verifiedSpeakers.append(utterance["verifiedSpeaker"])
+	shuffle(newUtterances)
+	shuffle(allReplyMarkers)
+	shuffle(allMsgMarkers)
+	shuffle(verifiedReplies)
+	shuffle(verifiedSpeakers)
+	replyCount = 0
+	msgCount = 0
+	for i, utterance in enumerate(newUtterances):
+		if(i % 10000 is 0):
+			logger1.log("Readding " + str(i) + " of " + str(len(newUtterances)))
+		utterances[i]["reply"] = ""
+		utterances[i]["replyTokens"] = []
+		utterances[i]["replyUserId"] = utterance["replyUserId"]
+		
+		if(shouldShuffleVerifiedReplier):
+			utterances[i]["verifiedReplier"] = verifiedReplies[i]
+		if(shouldShuffleVerifiedSpeaker):
+			utterances[i]["verifiedSpeaker"] = verifiedSpeakers[i]
+
+		if(shouldShuffleReplyMarkers):
+			utterances[i]["replyMarkers"] = []
+			for j in range(0, utterance["replyMarkersLen"]):
+				utterances[i]["replyMarkers"].append(allReplyMarkers[replyCount])
+				replyCount += 1
+
+		if(shouldShuffleMsgMarkers):
+			utterances[i]["msgMarkers"] = []
+			for j in range(0, utterance["msgMarkersLen"]):
+				utterances[i]["msgMarkers"].append(allMsgMarkers[msgCount])
+				msgCount += 1
+	return utterances
+
+
+
 start = logger1.initialize()
+
+shouldShuffleVerifiedSpeaker = False
+shouldShuffleVerifiedReplier = True
+shouldShuffleMsgMarkers = True
+shouldShuffleReplyMarkers = True
 
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
@@ -290,8 +337,37 @@ if(outputFile == "debug/shuffled/replies.csv"):
 	logger1.log(utterances[0])
 	utterances = shuffleReplies(utterances)
 	logger1.log(utterances[0])
-elif(outputFile == "shuffleRepliesAndReplyUserIds"):
+elif(outputFile == "debug/shuffled/shuffleRepliesAndReplyUserIds.csv"):
+	logger1.log(utterances[0])
 	utterances = shuffleRepliesAndReplyUserIds(utterances)
+	logger1.log(utterances[0])
+elif(outputFile == "debug/shuffled/shuffleReplyMarkers.csv"):
+	logger1.log(utterances[0])
+	utterances = shuffleReplyMarkers(utterances)
+	logger1.log(utterances[0])
+elif(outputFile == "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"):
+	
+	if(shouldShuffleVerifiedSpeaker):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	if(shouldShuffleVerifiedReplier):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	if(shouldShuffleMsgMarkers):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	if(shouldShuffleReplyMarkers):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	logger1.log(utterances[0])
+	utterances = shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
+	logger1.log(utterances[0])
+
+
 
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
