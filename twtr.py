@@ -11,7 +11,7 @@ testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"
+outputFile = "debug/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
@@ -258,7 +258,7 @@ def shuffleReplyMarkers(utterances):
 	return utterances
 
 
-def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
+def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
 	newUtterances = []
 	allReplyMarkers = []
 	allMsgMarkers = []
@@ -294,7 +294,9 @@ def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, 
 			logger1.log("Readding " + str(i) + " of " + str(len(newUtterances)))
 		utterances[i]["reply"] = ""
 		utterances[i]["replyTokens"] = []
-		utterances[i]["replyUserId"] = utterance["replyUserId"]
+
+		if(shouldShuffleReplyUserIds):
+			utterances[i]["replyUserId"] = utterance["replyUserId"]
 		
 		if(shouldShuffleVerifiedReplier):
 			utterances[i]["verifiedReplier"] = verifiedReplies[i]
@@ -318,10 +320,12 @@ def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, 
 
 start = logger1.initialize()
 
-shouldShuffleVerifiedSpeaker = False
+shouldShuffleReplyUserIds = False
+shouldShuffleVerifiedSpeaker = True
 shouldShuffleVerifiedReplier = True
 shouldShuffleMsgMarkers = True
 shouldShuffleReplyMarkers = True
+
 
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
@@ -364,7 +368,7 @@ elif(outputFile == "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"):
 	else:
 		outputFile += "F"
 	logger1.log(utterances[0])
-	utterances = shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
+	utterances = shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
 
 

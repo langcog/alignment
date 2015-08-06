@@ -174,7 +174,7 @@ Let's shuffle replies and replyUserIds
 
 ```{r}
 
-df <- fread('shuffled/shuffleReplyMarkersAndReplyUserId.csvTFTT', header=T)
+df <- fread('results.csv', header=T)
 
 # Cleaning down the data table:
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
@@ -211,8 +211,8 @@ ggplot(d2,aes(x=vspeak,y=mean,color=base,label=category)) + geom_violin() + geom
 
 ggplot(d2[alignment=='Ours',],aes(x=base,y=mean,color=vspeak)) + geom_point()
 
-ggplot(d2[alignment=='Ours',],aes(x=vspeak,y=mean)) + geom_violin()
-t.test(filter(d2, alignment=="Ours")$mean~filter(d2, alignment=="Ours")$vspeak)
+ggplot(d2[alignment=='Ours',],aes(x=vreply,y=mean)) + geom_violin()
+t.test(filter(d2, alignment=="Ours")$mean~filter(d2, alignment=="Ours")$vreply)
 
 ```
 
