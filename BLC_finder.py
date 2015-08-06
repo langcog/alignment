@@ -35,25 +35,25 @@ def branch_finder():
 		if (key, 'n') not in ref_dict.keys():
 				continue
 		elif (key, 'v') in ref_dict.keys():
-			if (ref_dict[(key, 'v')] > ref_dict[(key, 'n')]):
+			if ref_dict[(key, 'v')] > ref_dict[(key, 'n')]:
 				continue
 		elif (key, 'a') in ref_dict.keys():
-			if (ref_dict[(key, 'a')] > ref_dict[(key, 'n')]):
+			if ref_dict[(key, 'a')] > ref_dict[(key, 'n')]:
 				continue
 		elif (key, 'adv') in ref_dict.keys():
-			if (ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]):
+			if ref_dict[(key, 'adv')] > ref_dict[(key, 'n')]:
 				continue
 		else:
 			try:
 				trill_homie = -1
 				sp_counter = True
-				checked_item = wn.synset(key + '.n.01')
+				checked_item = wn.synset(key + '.n.01')	
 				if len(list(checked_item.closure(hypo))) == 0:
 					hypo_list = [checked_item]
 				else:	
 					hypo_list = list(checked_item.closure(hypo))
 				while sp_counter == True:
-					if d.check(hypo_list[trill_homie]) == True:
+					if d.check(hypo_list[trill_homie].lemmas()[0].name()) == True:
 						sp_item = hypo_list[trill_homie]
 						sp_counter = False
 					else:
@@ -74,6 +74,8 @@ def get_branch_values():
 	global fdist			
 	global branch_list
 	global branch_dict
+	hypo = lambda s: s.hyponyms()
+	hyper = lambda s: s.hypernyms()
 	temp_dict = {}
 	for lst in branch_list:
 		if len(lst) > 3:
@@ -167,9 +169,9 @@ def write_file(output_file_name):
 
 read_Freq_File(freq_file_name)
 branch_finder()
+print(len(branch_list))
 get_branch_values()
 writeHeader(outfilename)
 write_file(outfilename)
-
 
 
