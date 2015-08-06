@@ -9,6 +9,7 @@ perm_dict = {}
 ref_dict = {}
 branch_list = []
 branch_dict = {}
+hit_list = ['entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part' ]
 
 freq_file_name = r'C:\Users\Aaron\alignment\lemma.num'
 outfilename = r'C:\Users\Aaron\alignment\BLCListViaBNC.csv'
@@ -28,6 +29,7 @@ def branch_finder():
 	global fdist
 	global branch_list
 	global ref_dict
+	global hit_list
 	d = enchant.Dict("en_US")
 	hypo = lambda s: s.hyponyms()
 	hyper = lambda s: s.hypernyms()
@@ -62,11 +64,12 @@ def branch_finder():
 				sp_branch = [sp_item.lemmas()[0].name()]
 				for item in list(sp_item.closure(hyper)):
 					if len(re.findall('.n.01', str(item))) == 1:
-						sp_branch.append(item.lemmas()[0].name())
+						if item.lemmas()[0].name() not in hit_list:
+							sp_branch.append(item.lemmas()[0].name())
 				if sp_branch not in branch_list:
 					branch_list.append(sp_branch)
 			except:
-				continue		
+				continue					
 	return(branch_list)
 	
 def get_branch_values():
@@ -119,10 +122,13 @@ def get_branch_values():
 		#5
 		branch_dict[key].append(max1a)
 		#6
-		branch_dict[key].append(float(max1a / total_count))
+		if total_count > 0:
+			branch_dict[key].append(float(max1a / total_count))
+		else:
+			branch_dict[key].append('NA')
 		#7
 		if max1 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max1 + '.n.01').closure(hyper))) / branch_dict[key][0]))
+			branch_dict[key].append((len(list(wn.synset(max1 + '.n.01').closure(hyper))) / branch_dict[key][1]))
 		else:
 			branch_dict[key].append('NA')	
 		#8
@@ -130,10 +136,13 @@ def get_branch_values():
 		#9
 		branch_dict[key].append(max2a)
 		#10
-		branch_dict[key].append(float(max2a / total_count))
+		if total_count > 0:
+			branch_dict[key].append(float(max2a / total_count))
+		else:
+			branch_dict[key].append('NA')
 		#11
 		if max2 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max2 + '.n.01').closure(hyper))) / branch_dict[key][0]))
+			branch_dict[key].append((len(list(wn.synset(max2 + '.n.01').closure(hyper))) / branch_dict[key][1]))
 		else:
 			branch_dict[key].append('NA')
 		#12
@@ -141,10 +150,13 @@ def get_branch_values():
 		#13
 		branch_dict[key].append(max3a)
 		#14
-		branch_dict[key].append(float(max3a / total_count))
+		if total_count > 0:
+			branch_dict[key].append(float(max3a / total_count))
+		else:
+			branch_dict[key].append('NA')	
 		#15
 		if max3 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max3 + '.n.01').closure(hyper))) / branch_dict[key][0]))
+			branch_dict[key].append((len(list(wn.synset(max3 + '.n.01').closure(hyper))) / branch_dict[key][1]))
 		else:
 			branch_dict[key].append('NA')	
 	return(branch_dict)			
@@ -173,5 +185,3 @@ print(len(branch_list))
 get_branch_values()
 writeHeader(outfilename)
 write_file(outfilename)
-
-
