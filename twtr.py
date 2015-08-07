@@ -11,7 +11,7 @@ testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/results.csv"
+outputFile = "debug/shuffled/shuffled"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
@@ -192,111 +192,48 @@ def read(inputFile):
 		toReturn.append(row[0])
 	return toReturn
 
-def shuffleReplies(utterances):
-	allReplies = []
-	for i, utterance in enumerate(utterances):
-		toAppend = {}
-		toAppend["reply"] = utterance["reply"]
-		toAppend["replyUserId"] = utterance["replyUserId"]
-		toAppend["replyTokens"] = utterance["replyTokens"]
-		toAppend["replyMarkers"] = utterance["replyMarkers"]
-		allReplies.append(toAppend)
-	shuffle(allReplies)
-	for i, utterance in enumerate(allReplies):
-		if(i % 10000 is 0):
-			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
-		utterances[i]["reply"] = utterance["reply"]
-		utterances[i]["replyTokens"] = utterance["replyTokens"]
-		utterances[i]["replyUserId"] = utterance["replyUserId"]
-		utterances[i]["replyMarkers"] = utterance["replyMarkers"]
-	return utterances
-
-def shuffleRepliesAndReplyUserIds(utterances):
-	allReplies = []
+def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
 	replyUserIds = []
-	for i, utterance in enumerate(utterances):
-		toAppend = {}
-		toAppend["reply"] = utterance["reply"]
-		toAppend["replyUserId"] = utterance["replyUserId"]
-		toAppend["replyTokens"] = utterance["replyTokens"]
-		toAppend["replyMarkers"] = utterance["replyMarkers"]
-		allReplies.append(toAppend)
-		replyUserIds.append(utterance["replyUserId"])
-	shuffle(allReplies)
-	shuffle(replyUserIds)
-	for i, utterance in enumerate(allReplies):
-		if(i % 10000 is 0):
-			logger1.log("Readding " + str(i) + " of " + str(len(allReplies)))
-		utterances[i]["reply"] = utterance["reply"]
-		utterances[i]["replyTokens"] = utterance["replyTokens"]
-		utterances[i]["replyUserId"] = replyUserIds[i]
-		utterances[i]["replyMarkers"] = utterance["replyMarkers"]
-	return utterances
-
-def shuffleReplyMarkers(utterances):
-	allMarkers = []
-	allReplies = []
-	for i, utterance in enumerate(utterances):
-		toAppend = {}
-		toAppend["reply"] = utterance["reply"]
-		toAppend["replyUserId"] = utterance["replyUserId"]
-		toAppend["replyTokens"] = utterance["replyTokens"]
-		toAppend["replyMarkers"] = utterance["replyMarkers"]
-		utterances[i]["replyMarkersLen"] = len(utterance["replyMarkers"])
-		for marker in toAppend["replyMarkers"]:
-			allMarkers.append(marker)
-	shuffle(allMarkers)
-	count = 0
-	for i, utterance in enumerate(utterances):
-		if(i %10000 == 0):
-			logger1.log("Readding " + str(i) + " of " + str(len(utterances)))
-		utterances[i]["replyMarkers"] = []
-		for j in range(0, utterance["replyMarkersLen"]):
-			utterances[i]["replyMarkers"].append(allMarkers[count])
-			count += 1
-
-	return utterances
-
-
-def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
-	newUtterances = []
+	msgUserIds = []
 	allReplyMarkers = []
 	allMsgMarkers = []
 	verifiedReplies = []
 	verifiedSpeakers = []
 	for i, utterance in enumerate(utterances):
 		if(i % 10000 is 0):
-			logger1.log("Adding to newUtterances " + str(i) + " of " + str(len(utterances)))
+			logger1.log("Adding to utterances " + str(i) + " of " + str(len(utterances)))
 		toAppend = {}
 		toAppend["reply"] = utterance["reply"]
-		toAppend["replyUserId"] = utterance["replyUserId"]
-		toAppend["replyTokens"] = utterance["replyTokens"]
-		toAppend["replyMarkers"] = utterance["replyMarkers"]
-		toAppend["msgMarkers"] = utterance["msgMarkers"]
-		toAppend["replyMarkersLen"] = len(utterance["replyMarkers"])
-		toAppend["msgMarkersLen"] = len(utterance["msgMarkers"])
-		for marker in toAppend["replyMarkers"]:
+		replyUserIds.append(utterance["msgUserId"])
+		msgUserIds.append(utterance["replyUserId"])
+		utterances[i]["replyMarkersLen"] = len(utterance["replyMarkers"])
+		utterances[i]["msgMarkersLen"] = len(utterance["msgMarkers"])
+		for marker in utterance["replyMarkers"]:
 			allReplyMarkers.append(marker)
-		for marker in toAppend["msgMarkers"]:
+		for marker in utterance["msgMarkers"]:
 			allMsgMarkers.append(marker)
-		newUtterances.append(toAppend)
 		verifiedReplies.append(utterance["verifiedReplier"])
 		verifiedSpeakers.append(utterance["verifiedSpeaker"])
-	shuffle(newUtterances)
-	shuffle(allReplyMarkers)
+	shuffle(replyUserIds)
+	shuffle(msgUserIds)
+
 	shuffle(allMsgMarkers)
+	shuffle(allReplyMarkers)
+
 	shuffle(verifiedReplies)
 	shuffle(verifiedSpeakers)
 	replyCount = 0
 	msgCount = 0
-	for i, utterance in enumerate(newUtterances):
+	for i, utterance in enumerate(utterances):
 		if(i % 10000 is 0):
-			logger1.log("Readding " + str(i) + " of " + str(len(newUtterances)))
+			logger1.log("Readding " + str(i) + " of " + str(len(utterances)))
 		utterances[i]["reply"] = ""
 		utterances[i]["replyTokens"] = []
 
 		if(shouldShuffleReplyUserIds):
-			utterances[i]["replyUserId"] = utterance["replyUserId"]
+			utterances[i]["replyUserId"] = replyUserIds[i]
+		if(shouldShuffleMsgUserIds):
+			utterances[i]["msgUserId"] = msgUserIds[i]
 		
 		if(shouldShuffleVerifiedReplier):
 			utterances[i]["verifiedReplier"] = verifiedReplies[i]
@@ -320,11 +257,12 @@ def shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleReplyUserIds, sho
 
 start = logger1.initialize()
 
+shouldShuffleMsgUserIds = False
 shouldShuffleReplyUserIds = False
-shouldShuffleVerifiedSpeaker = True
-shouldShuffleVerifiedReplier = True
-shouldShuffleMsgMarkers = True
-shouldShuffleReplyMarkers = True
+shouldShuffleVerifiedSpeaker = False
+shouldShuffleVerifiedReplier = False
+shouldShuffleMsgMarkers = False
+shouldShuffleReplyMarkers = False
 
 
 positives = read("data/positive.txt")
@@ -337,20 +275,15 @@ markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
 
-if(outputFile == "debug/shuffled/replies.csv"):
-	logger1.log(utterances[0])
-	utterances = shuffleReplies(utterances)
-	logger1.log(utterances[0])
-elif(outputFile == "debug/shuffled/shuffleRepliesAndReplyUserIds.csv"):
-	logger1.log(utterances[0])
-	utterances = shuffleRepliesAndReplyUserIds(utterances)
-	logger1.log(utterances[0])
-elif(outputFile == "debug/shuffled/shuffleReplyMarkers.csv"):
-	logger1.log(utterances[0])
-	utterances = shuffleReplyMarkers(utterances)
-	logger1.log(utterances[0])
-elif(outputFile == "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"):
-	
+if(outputFile == "debug/shuffled/shuffled"):
+	if(shouldShuffleMsgUserIds):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	if(shouldShuffleReplyUserIds):
+		outputFile += "T"
+	else:
+		outputFile += "F"
 	if(shouldShuffleVerifiedSpeaker):
 		outputFile += "T"
 	else:
@@ -368,11 +301,11 @@ elif(outputFile == "debug/shuffled/shuffleReplyMarkersAndReplyUserId.csv"):
 	else:
 		outputFile += "F"
 	logger1.log(utterances[0])
-	utterances = shuffleReplyMarkersAndReplyUserId(utterances, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
+	utterances = shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
 
 
-
+outputFile += ".csv"
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
 
