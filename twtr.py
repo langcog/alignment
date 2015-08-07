@@ -9,9 +9,10 @@ from random import shuffle
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 
+
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/shuffled/shuffled"
+outputFile = "debug/shuffled/"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
@@ -192,13 +193,15 @@ def read(inputFile):
 		toReturn.append(row[0])
 	return toReturn
 
-def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
+def shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleReplyMarkerFreqs, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
 	replyUserIds = []
 	msgUserIds = []
 	allReplyMarkers = []
 	allMsgMarkers = []
 	verifiedReplies = []
 	verifiedSpeakers = []
+	msgMarkerFreqs = []
+	replyMarkerFreqs = []
 	for i, utterance in enumerate(utterances):
 		if(i % 10000 is 0):
 			logger1.log("Adding to utterances " + str(i) + " of " + str(len(utterances)))
@@ -206,8 +209,8 @@ def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUse
 		toAppend["reply"] = utterance["reply"]
 		replyUserIds.append(utterance["msgUserId"])
 		msgUserIds.append(utterance["replyUserId"])
-		utterances[i]["replyMarkersLen"] = len(utterance["replyMarkers"])
-		utterances[i]["msgMarkersLen"] = len(utterance["msgMarkers"])
+		msgMarkerFreqs.append(len(utterance["msgMarkers"]))
+		replyMarkerFreqs.append(len(utterance["replyMarkers"]))
 		for marker in utterance["replyMarkers"]:
 			allReplyMarkers.append(marker)
 		for marker in utterance["msgMarkers"]:
@@ -220,15 +223,31 @@ def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUse
 	shuffle(allMsgMarkers)
 	shuffle(allReplyMarkers)
 
+	shuffle(msgMarkerFreqs)
+	shuffle(replyMarkerFreqs)
+
 	shuffle(verifiedReplies)
 	shuffle(verifiedSpeakers)
 	replyCount = 0
 	msgCount = 0
+	vspeakCount = 0
+	nvspeakCount = 0
+	vspeakutterances = 0
+	nvspeakutterances = 0
+	vspeakutteranceLength = 0
+	nvspeakutteranceLength = 0
+
+	vreplyCount = 0
+	nvreplyCount = 0
+	vreplyutterances = 0
+	nvreplyutterances = 0
+	vreplyutteranceLength = 0
+	nvreplyutteranceLength = 0
 	for i, utterance in enumerate(utterances):
 		if(i % 10000 is 0):
 			logger1.log("Readding " + str(i) + " of " + str(len(utterances)))
-		utterances[i]["reply"] = ""
-		utterances[i]["replyTokens"] = []
+
+	
 
 		if(shouldShuffleReplyUserIds):
 			utterances[i]["replyUserId"] = replyUserIds[i]
@@ -239,24 +258,70 @@ def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUse
 			utterances[i]["verifiedReplier"] = verifiedReplies[i]
 		if(shouldShuffleVerifiedSpeaker):
 			utterances[i]["verifiedSpeaker"] = verifiedSpeakers[i]
-
+		
 		if(shouldShuffleReplyMarkers):
 			utterances[i]["replyMarkers"] = []
-			for j in range(0, utterance["replyMarkersLen"]):
+			for j in range(0, replyMarkerFreqs[i]):
 				utterances[i]["replyMarkers"].append(allReplyMarkers[replyCount])
 				replyCount += 1
 
 		if(shouldShuffleMsgMarkers):
 			utterances[i]["msgMarkers"] = []
-			for j in range(0, utterance["msgMarkersLen"]):
+			for j in range(0, msgMarkerFreqs[i]):
 				utterances[i]["msgMarkers"].append(allMsgMarkers[msgCount])
 				msgCount += 1
+
+		if(utterances[i]["verifiedSpeaker"] == True):
+			vspeakCount += msgMarkerFreqs[i]
+			vspeakutterances += 1
+			vspeakutteranceLength += len(utterances[i]["msgTokens"])
+		else:
+			nvspeakCount += replyMarkerFreqs[i]
+			nvspeakutterances += 1
+			nvspeakutteranceLength += len(utterances[i]["msgTokens"])
+
+
+		if(utterances[i]["verifiedReplier"] == True):
+			vreplyCount += replyMarkerFreqs[i]
+			vreplyutterances += 1
+			vreplyutteranceLength += len(utterances[i]["replyTokens"])
+		else:
+			nvreplyCount += replyMarkerFreqs[i]
+			nvreplyutterances += 1
+			nvreplyutteranceLength += len(utterances[i]["replyTokens"])
+
+
+	print("Speakers")
+	print("Verified Utterances count: " + str(vspeakutterances))
+	print("Unverified Utterances count: " + str(nvspeakutterances))
+	print("Verified utterance length: " + str(vspeakutteranceLength))
+	print("Unverified utterance length: " + str(nvspeakutteranceLength))
+	print("Verified tokens per utterance %: " + str(float(vspeakutteranceLength)/vspeakutterances))
+	print("Unverified tokens per utterance %: " + str(float(nvspeakutteranceLength)/nvspeakutterances))
+	print("Verified marker count: " + str(vspeakCount))
+	print("Unverified marker count: " + str(nvspeakCount))
+	print("Verified markers per utterance %: " + str(float(vspeakCount)/vspeakutterances))
+	print("Unverified markers per utterance %: " + str(float(nvspeakCount)/nvspeakutterances))
+	print("-------------")
+	print("Repliers")
+	print("Verified Utterances count: " + str(vreplyutterances))
+	print("Unverified Utterances count: " + str(nvreplyutterances))
+	print("Verified utterance length: " + str(vreplyutteranceLength))
+	print("Unverified utterance length: " + str(nvreplyutteranceLength))
+	print("Verified tokens per utterance %: " + str(float(vreplyutteranceLength)/vreplyutterances))
+	print("Unverified tokens per utterance %: " + str(float(nvreplyutteranceLength)/nvreplyutterances))
+	print("Verified marker count: " + str(vreplyCount))
+	print("Unverified marker count: " + str(nvreplyCount))
+	print("Verified markers per utterance %: " + str(float(vreplyCount)/vreplyutterances))
+	print("Unverified markers per utterance %: " + str(float(nvreplyCount)/nvreplyutterances))
 	return utterances
 
 
 
 start = logger1.initialize()
 
+shouldShuffleMsgMarkerFreqs = False
+shouldShuffleReplyMarkerFreqs = False
 shouldShuffleMsgUserIds = False
 shouldShuffleReplyUserIds = False
 shouldShuffleVerifiedSpeaker = False
@@ -275,7 +340,16 @@ markers = result["markers"]
 
 utterances = transformCSVnonP(markers, users,rows)
 
-if(outputFile == "debug/shuffled/shuffled"):
+if(outputFile == "debug/shuffled/"):
+	if(shouldShuffleMsgMarkerFreqs):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+	if(shouldShuffleReplyMarkerFreqs):
+		outputFile += "T"
+	else:
+		outputFile += "F"
+
 	if(shouldShuffleMsgUserIds):
 		outputFile += "T"
 	else:
@@ -301,9 +375,8 @@ if(outputFile == "debug/shuffled/shuffled"):
 	else:
 		outputFile += "F"
 	logger1.log(utterances[0])
-	utterances = shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
+	utterances = shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleReplyMarkerFreqs, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
-
 
 outputFile += ".csv"
 

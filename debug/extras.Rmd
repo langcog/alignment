@@ -139,8 +139,9 @@ Let's shuffle replies and replyUserIds
 
 ```{r}
 
-df <- fread('shuffled/shuffledFFFFFF.csv', header=T)
-
+df <- fread('shuffled/TTTTTTTT.csv', header=T)
+df <- fread('shuffled/TTTTFTTT.csv', header=T) # Unshuffle verified speaker
+df <- fread('shuffled/FFFFFFFF.csv', header=T)
 # Cleaning down the data table:
 d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
               vspeak=verifiedSpeaker,vreply=verifiedReplier,
@@ -164,10 +165,10 @@ smoothalign <- function(df,sm,align="logodds") {
 d$lo1 <- smoothalign(d,1,"logodds")
 d$sd0 <- smoothalign(d,0,"subdnm")
 
-cutoff = 5
+cutoff = 10
 
 d2 <- d %>%
-  #filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
   group_by(vspeak,category,vreply) %>%
   summarize(base=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),Ours=mean(lo1),DNM=mean(sd0)) %>%
   gather(alignment,mean,Ours,DNM)

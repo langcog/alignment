@@ -295,21 +295,24 @@ word_counts = Counter(messages)
 top150 = word_counts.most_common(150)
 
 loopStart = 0
-loopEnd = 100
+loopEnd = 50
 categories = []
 for i in range(loopStart, loopEnd):
+	word1 = top150[i][0]
 	logger1.log("On " + str(i) + " of " + str(loopEnd))
 	for j in range(loopStart, loopEnd):
 		if(j <= i):
 			continue
-		word1 = top150[i][0]
+
+		
 		word2 = top150[j][0]
-		msgTokens = tweet["msgTokens"]
+		
 		ab = 0.0
 		anb = 0.0
 		nab = 0.0
 		nanb = 0.0
 		for tweet in tweets:
+			msgTokens = tweet["msgTokens"]
 			#pattern = re.compile(word1 + ".*" + word2)
 			if(word1 in msgTokens and word2 in msgTokens):
 				ab += 1
@@ -319,19 +322,19 @@ for i in range(loopStart, loopEnd):
 				nab += 1
 			else:
 				nanb += 1
+
 		if(ab == 0 or anb == 0 or (ab+anb == 0) or (anb+nanb == 0)):
 			continue
 		
 		collocationScore = math.log(ab/(ab + anb)) - math.log(anb/(anb+nanb))
-		if(collocationScore > 1):
+
+		if(collocationScore > 0):
 			print(word1)
 			print(word2)
 			print(collocationScore)
 			print("----------------------")
-			if(word1 == "."):
-				word1 = "\."
-			if(word2 == "."):
-				word2 = "\."
+			word1 = re.escape(word1)
+			word2 = re.escape(word2)
 			categories.append(word1 + ".*" + word2)
 			categories.append(word2 + ".*" + word1)
 
@@ -349,7 +352,6 @@ for i, category1 in enumerate(categories):
 	for j, category2 in enumerate(categories):
 		word1 = category1
 		word2 = category2
-
 		ab = 0.0
 		anb = 0.0
 		nab = 0.0
