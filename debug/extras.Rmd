@@ -168,14 +168,14 @@ d$sd0 <- smoothalign(d,0,"subdnm")
 cutoff = 10
 
 d2 <- d %>%
-  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
-  group_by(vspeak,category,vreply) %>%
-  summarize(base=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),Ours=mean(lo1),DNM=mean(sd0)) %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,category) %>%
+  summarize(base=mean(ba==0),base2=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),Ours=mean(lo1),DNM=mean(sd0)) %>%
   gather(alignment,mean,Ours,DNM)
 
 ggplot(d2,aes(x=vspeak,y=mean,color=base,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + labs(title=paste("Non-verified repliers' alignments\naggregated by marker (Cutoff=",cutoff,")",sep=''),x="Speaker verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~ alignment,scales="free") + theme_grey()
 
-ggplot(d2[alignment=='Ours',],aes(x=base,y=mean,color=vspeak)) + geom_point()
+ggplot(d2[alignment=='Ours',],aes(x=base,y=mean,color=vspeak)) + geom_point() + geom_smooth(method="loess")
 
 ggplot(d2[alignment=='Ours',],aes(x=vspeak,y=mean)) + geom_violin()
 t.test(filter(d2, alignment=="Ours")$mean~filter(d2, alignment=="Ours")$vspeak)
