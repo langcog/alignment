@@ -320,14 +320,14 @@ def shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleRepl
 
 start = logger1.initialize()
 
-shouldShuffleMsgMarkerFreqs = False
-shouldShuffleReplyMarkerFreqs = False
-shouldShuffleMsgUserIds = False
-shouldShuffleReplyUserIds = False
-shouldShuffleVerifiedSpeaker = False
-shouldShuffleVerifiedReplier = False
-shouldShuffleMsgMarkers = False
-shouldShuffleReplyMarkers = False
+shouldShuffleMsgMarkerFreqs = True
+shouldShuffleReplyMarkerFreqs = True
+shouldShuffleMsgUserIds = True
+shouldShuffleReplyUserIds = True
+shouldShuffleVerifiedSpeaker = True
+shouldShuffleVerifiedReplier = True
+shouldShuffleMsgMarkers = True
+shouldShuffleReplyMarkers = True
 
 
 positives = read("data/positive.txt")
@@ -378,7 +378,7 @@ if(outputFile == "debug/shuffled/"):
 	utterances = shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleReplyMarkerFreqs, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
 
-outputFile += ".csv"
+outputFile += "2.csv"
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
 
