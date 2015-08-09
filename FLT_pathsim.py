@@ -11,6 +11,8 @@ from nltk.corpus import brown
 import json
 from operator import itemgetter
 
+hit_list = ['artifact', 'entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
+
 
 speaker_list = []
 utterance_dict = {}
@@ -527,8 +529,9 @@ def get_similarity_full_local(conversation_dictionary):
 					for word in temp_list:
 						try:
 							if fdist[word] > biggest_amount:
-								biggest_amount = fdist[word]
-								biggest_word = word
+								if word not in hit_list:
+									biggest_amount = fdist[word]
+									biggest_word = word
 						except:
 							continue		
 					master_dict[(speaker1, speaker2)][0][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
@@ -606,8 +609,9 @@ def get_similarity_full_local(conversation_dictionary):
 					for word in temp_list:
 						try:	
 							if fdist[word] > biggest_amount:
-								biggest_amount = fdist[word]
-								biggest_word = word
+								if word not in hit_list:
+									biggest_amount = fdist[word]
+									biggest_word = word
 						except:
 							continue		
 					master_dict[(speaker1, speaker2)][1][key][0] = checked_item.path_similarity(wn.synset(biggest_word + '.n.01'))
@@ -723,5 +727,4 @@ if Subdirs == False:
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
 
-				
 				
