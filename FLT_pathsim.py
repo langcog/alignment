@@ -8,6 +8,9 @@ from nltk.corpus import PlaintextCorpusReader
 from nltk.probability import FreqDist
 import enchant
 from nltk.corpus import brown
+import json
+from operator import itemgetter
+
 
 speaker_list = []
 utterance_dict = {}
@@ -68,6 +71,47 @@ def initialize(): # clean slates the variables
 	pathsim_avg = {}
 
 BNC_root = r'C:\Users\Aaron\Desktop\BNCBaby\BNCBaby'
+
+COCA_root = r'C:\Users\Aaron\alignment\COCA-ngrams\coca-1grams.json'
+
+def get_Freq_COCA(root):
+	global fdist
+	global ref_dict
+	temp_listn = []
+	temp_listv = []
+	temp_lista = []
+	with open(root) as data_file:
+	        v = json.load(data_file)
+	        v = sorted(v.items(), key=itemgetter(1), reverse=True)
+	        v = [(tuple(word.rsplit('_', 2)), count) for word, count in v]	
+	for tp in v:
+		if tp[0][2].startswith('n') and tp[1] > 1:
+			temp_listn.append((tp[0][0], tp[0][1], tp[1]))
+		elif tp[0][2].startswith('v') and tp[1] > 1:
+			temp_listv.append((tp[0][0], tp[0][1], tp[1]))
+		elif tp[0][2].startswith('j') and tp[1] > 1:
+			temp_lista.append((tp[0][0], tp[0][1], tp[1]))	
+	for tpl in temp_listn:
+		if tpl[1] not in fdist.keys():
+			fdist[tpl[1]] = tpl[2]
+		elif tpl[1] in fdist.keys():
+			fdist[tpl[1]] += tpl[2]
+	for item in temp_listn:
+		if (item[1], 'n') not in ref_dict.keys():
+			ref_dict[(item[1], 'n')] = item[2]
+		elif (item[1], 'n') in ref_dict.keys():
+			ref_dict[(item[1], 'n')] += item[2]
+	for item in temp_listv:
+		if (item[1], 'v') not in ref_dict.keys():
+			ref_dict[(item[1], 'v')] = item[2]
+		elif (item[1], 'v') in ref_dict.keys():
+			ref_dict[(item[1], 'v')] += item[2]			
+	for item in temp_lista:
+		if (item[1], 'a') not in ref_dict.keys():
+			ref_dict[(item[1], 'a')] = item[2]
+		elif (item[1], 'a') in ref_dict.keys():
+			ref_dict[(item[1], 'a')] += item[2]		
+	return(ref_dict, fdist)		
 
 def get_Freq_Brown():
 	global fdist
@@ -193,26 +237,34 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 		speaker2 = conversation_dictionary[x][1][0] 
 		y_tokenized = nltk.pos_tag(conversation_dictionary[x][0])
 		for i in range(1, len(y_tokenized) - 1):
-			if len(y_tokenized[i][0]) > 1:	
-				if d.check(y_tokenized[i][0]) == True:
-					if y_tokenized[i][1] == 'NN':
-						if y_tokenized[i][0] not in master_dict[(speaker1, speaker2)][0]:
-							magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = 1
-							master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, 1, 'NA']
-						else:
-							magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] = magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)] + 1
-							master_dict[(speaker1, speaker2)][0][y_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, y_tokenized[i][0], 0)], 'NA']
+			try:
+				if len(y_tokenized[i][0]) > 1:	
+					if d.check(y_tokenized[i][0]) == True:
+						if y_tokenized[i][1] == 'NN':
+							trill_homie = wn.synset(y_tokenized[i][0] + '.n.01').lemmas()[0].name()
+							if trill_homie not in master_dict[(speaker1, speaker2)][0]:
+								magic_counter[(speaker1, speaker2, trill_homie, 0)] = 1
+								master_dict[(speaker1, speaker2)][0][trill_homie] = [0, 1, 'NA']
+							else:
+								magic_counter[(speaker1, speaker2, trill_homie, 0)] = magic_counter[(speaker1, speaker2, trill_homie, 0)] + 1
+								master_dict[(speaker1, speaker2)][0][trill_homie] = [0, magic_counter[(speaker1, speaker2, trill_homie, 0)], 'NA']
+			except:
+				continue					
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
 		for i in range(1, len(z_tokenized) - 1):
-			if len(z_tokenized[i][0]) > 1:
-				if d.check(z_tokenized[i][0]) == True:
-					if z_tokenized[i][1] == 'NN':
-						if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
-							magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = 1
-							master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, 1, 'NA']
-						else:
-							magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] = magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])] + 1						
-							master_dict[(speaker1, speaker2)][1][z_tokenized[i][0]] = [0, magic_counter[(speaker1, speaker2, 0, z_tokenized[i][0])], 'NA']
+			try:
+				if len(z_tokenized[i][0]) > 1:
+					if d.check(z_tokenized[i][0]) == True:
+						if z_tokenized[i][1] == 'NN':
+							trill_homie = wn.synset(z_tokenized[i][0] + '.n.01').lemmas()[0].name()
+							if z_tokenized[i][0] not in master_dict[(speaker1, speaker2)][1]:
+								magic_counter[(speaker1, speaker2, 0, trill_homie)] = 1
+								master_dict[(speaker1, speaker2)][1][trill_homie] = [0, 1, 'NA']
+							else:
+								magic_counter[(speaker1, speaker2, 0, trill_homie)] = magic_counter[(speaker1, speaker2, 0, trill_homie)] + 1						
+								master_dict[(speaker1, speaker2)][1][trill_homie] = [0, magic_counter[(speaker1, speaker2, 0, trill_homie)], 'NA']
+			except:
+				continue
 	return(master_dict)	
 
 def get_similarity_full_range(conversation_dictionary):
@@ -651,11 +703,11 @@ def writeHeader(outputFile, writeType):
 		writer.writerows(header)
 	f.close()
 
-outfile = 'ProvidenceFLTPathsimLocalNew.csv'
+outfile = 'ProvidenceFLTPathsimLocalCOCA.csv'
 
 freq_list_location = r'C:\Users\Aaron\alignment\lemma.num'
 
-read_Freq_File(freq_list_location)
+get_Freq_COCA(COCA_root)
 writeHeader(outfile, 'a')
 
 if Subdirs == True:
@@ -671,4 +723,5 @@ if Subdirs == False:
 				os.path.join(corpus_dir, fname)
 				document_stuff(corpus_dir, fname, outfile)
 
+				
 				
