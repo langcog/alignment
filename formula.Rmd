@@ -1,0 +1,433 @@
+---
+title: "formua"
+output: pdf_document
+---
+
+Table of Contents
+-----------------------
+Analysis of Old Formula
+New Formula
+Tests
+Plots
+
+
+Analysis of Old Formula
+-----------------------
+```{r}
+options(warn=-1)
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(bit64))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(ggplot2))
+
+if (getwd()=="C:/stuff/stanford") {
+  setwd("C:/stuff/stanford/alignment")
+}
+if(getwd()=="/Users/jakeprasad"){
+  setwd("/Users/jakeprasad/alignment")
+}
+```
+It seems our plots aren't giving us expected results. Let's try and figure out why that may be
+
+We know that smoothing is affecting our plots - especially because it affects one term more than another.  Maybe instead of subtracting logs, we should move everything inside of the log?
+
+Let's do some thinking math...
+
+For a completely shuffled dataset, we expect alignment to be equal to 0. Let's check if the formula gives us that result.
+
+(A bunch of work done on paper)
+
+This is interesting. It seems that whether alignment is positive or negative depends on if 
+
+(ba\*nbna) is less than (nba\*nba). Let's check what happens in our shuffled datas
+
+```{r}
+  df <- fread('debug/shuffled/TTTTTTTT.csv', header=T)
+
+  test <- ((df$ba*df$nbna)/(df$bna*df$nba))
+  test[is.infinite(test)] <- NA
+  mean(test, na.rm=T)
+  
+  df <- fread('debug/shuffled/TTTTTTTT1.csv', header=T)
+
+  test <- ((df$ba*df$nbna)/(df$bna*df$nba))
+  test[is.infinite(test)] <- NA
+  mean(test, na.rm=T)
+  
+  df <- fread('debug/shuffled/TTTTTTTT2.csv', header=T)
+
+  test <- ((df$ba*df$nbna)/(df$bna*df$nba))
+  test[is.infinite(test)] <- NA
+  mean(test, na.rm=T)
+```
+
+Hmm, we're consistently getting a <1 value, indicating a negative alignment. How do we fix this?
+
+Let's do some more thinkging about what we're trying to calculate. We want to check whether the probability of B saying a given marker is more immediately after A says a given marker. 
+
+We're getting a negative alignment on shuffled data because the base frequencies of markers is small.
+
+Let's take a look at the numbers
+
+df$ba ~= 0
+df$nbna ~= 1
+
+df$bna ~= >0, <1
+df$nba ~= >0, <1
+
+Since ba*nbna is always going to be approximately 0, we're getting the <1 result.
+
+More thinking...
+
+New Formula
+-------------------------------------------------
+
+Let's rethink the formula with examples
+
+If A influences B, and A says the marker a lot
+Before: Afreq = 1, Bfreq = 0
+After: Afreq = 0.9, Bfreq = 0.5
+
+If B influences A, and A says the marker a lot
+Before: Afreq = 1, Bfreq = 0
+After: Afreq = 0.5, Bfreq = 0.1
+
+If A influences B, and A doesn't say the marker a lot
+Before: Afreq = 0, Bfreq = 1
+After: Afreq = 0.1, Bfreq = 0.5
+
+If B influences A and A doesn't say the marker a lot
+Before: Afreq = 0, Bfreq = 1
+After: Afreq = 0.5, Bfreq = 0.9
+
+How do we mathematically compare the freqs?
+
+If A influences B, and A says the marker a lot
+P(A|nB utterance): Afreq = 1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.9
+P(B|A utterance): Bfreq = 0.5
+
+If B influences A, and A says the marker a lot
+P(A|nB utterance): Afreq = 1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.5
+P(B|A utterance): Bfreq = 0.1
+
+If A influences B, and A doesn't say the marker a lot
+P(A|nB utterance): Afreq = 0
+P(B|nA utterance): Bfreq = 1
+P(A|B utterance): Afreq = 0.1
+P(B|A utterance): Bfreq = 0.5
+
+If B influences A and A doesn't say the marker a lot
+P(A|nB utterance): Afreq = 0
+P(B|nA utterance): Bfreq = 1
+P(A|B utterance): Afreq = 0.5
+P(B|A utterance): Bfreq = 0.9
+
+
+And now we don't need to know relative base freqs
+
+If A influences B
+P(A|nB utterance): Afreq = 1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.9
+P(B|A utterance): Bfreq = 0.5
+
+If B influences A
+P(A|nB utterance): Afreq = 1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.5
+P(B|A utterance): Bfreq = 0.1
+
+If A influences B
+P(A|nB utterance): Afreq = 0
+P(B|nA utterance): Bfreq = 1
+P(A|B utterance): Afreq = 0.1
+P(B|A utterance): Bfreq = 0.5
+
+If B influences A
+P(A|nB utterance): Afreq = 0
+P(B|nA utterance): Bfreq = 1
+P(A|B utterance): Afreq = 0.5
+P(B|A utterance): Bfreq = 0.9
+
+
+
+
+And now the coup d'etat
+
+If A influences B
+P(A|B) - P(A|nB) -  = 0.9 - 1  = -0.1 = B's influence on A
+P(B|A) - P(B|nA) -  = 0.5 - 0 = 0.5 = A's infleunce on B
+
+If B influences A
+P(A|nB) - P(A|B) = 1 - 0.5 = 0.5 = B's influence on A
+P(B|nA) - P(B|A) = 0 - 0.1 = -0.1 = A's influence on B
+
+If A influences B
+P(A|nB) - P(A|B) = 0 - 0.1 = -0.1 = B's influence on A
+P(B|nA) - P(B|A) = 1 - 0.5 = 0.5 = A's influence on B
+
+If B influences A
+P(A|nB) - P(A|B) = 0 - 0.5 = -0.5 = B's influence on A
+P(B|nA) - P(B|A) = 1 - 0.9 = 0.1 = A's influence on B
+
+Therefore, if 
+abs(P(B|A) - P(B|nA)) > abs(P(A|B) - P(A|nB)), A influences B
+
+Let's see what the formula looks like:
+
+P(A|nB) = anb/(anb+nanb)
+
+P(A|B) = ab/(ab+nab)
+
+P(B|nA) = bna/(bna+nbna)
+
+P(B|A) = ba/(ba+nba)
+
+Therefore,
+
+abs(ba/(ba+nba) - bna/(bna+nbna)) - abs(ba/(ba+bna) - nba/(nba+nbna))
+
+And after log spacing
+
+log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna)))
+
+
+
+
+Tests
+-------------------------
+
+Let's think about how it'd work on shuffled data with example numbers:
+
+1) A says the marker the same number of time B says the marker
+=> P(a|nb) == P(b|na) == nba/(nba+nbna) - bna/(bna+nbna) == 0
+2) A does not influence B
+=> P(b|a) == P(b|na) == ba/(ba+nba) - bna/(bna+nbna) == 0
+3) We're using valid frequencies
+ba + nba + bna + nbna == 1
+
+```{r}
+  ba = 0.25
+  nba = 0.25
+  bna = 0.25
+  nbna = 0.25
+
+  nba/(nba+nbna) - bna/(bna+nbna) == 0
+  ba/(ba+nba) - bna/(bna+nbna) == 0
+  ba + nba + bna + nbna == 1
+  
+  log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna))) == 0
+  
+```
+
+Interesting...we're getting NA because all the frequencies equal to each other. Smoothing is discussed two sections later. Let's skip the shuffle case till then.
+
+
+How about for an expected positive alignment?
+
+Let's say that A influences B more than B influences A. And let's also suppose A says the marker a lot and B doesn't. There are two things to take into acount here:
+
+1) A says the marker more than B says the marker
+=> P(a|nb) > P(b|na) == nba/(nba+nbna) - bna/(bna+nbna) > 0
+2) A influences B
+=> P(b|a) > P(b|na) == ba/(ba+nba) - bna/(bna+nbna) > 0
+3) We're using valid frequencies
+ba + nba + bna + nbna == 1
+
+  
+```{r}
+  ba = 0.3
+  nba = 0.4
+  bna = 0.1
+  nbna = 0.2
+
+  nba/(nba+nbna) - bna/(bna+nbna) > 0
+  ba/(ba+nba) - bna/(bna+nbna) > 0
+  ba + nba + bna + nbna == 1
+  
+  log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna))) > 0
+  
+```
+
+Positive alignment =)
+
+
+
+Let's say that A influences B more than B influences A. And let's also suppose B says the marker more than A does:
+
+1) A says the marker less than B says the marker
+=> P(b|na) > P(a|nb)  ==  bna/(bna+nbna) - nba/(nba+nbna) > 0
+2) A influences B
+P(b|na) > P(b|a)  == bna/(bna+nbna) - ba/(ba+nba) > 0
+3) We're using valid frequencies
+ba + nba + bna + nbna == 1
+
+```{r}
+  ba = 0.05
+  nba = 0.1
+  bna = 0.70
+  nbna = 0.15
+
+  bna/(bna+nbna) - nba/(nba+nbna) > 0
+  bna/(bna+nbna) - ba/(ba+nba) > 0
+  ba + nba + bna + nbna == 1
+  
+  log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna))) > 0
+  
+```
+
+Positive alignment =)
+
+
+
+Let's say that B influences A more than A influences B. And let's also suppose B says the marker more than A does:
+
+1) B says the marker more than A says the marker
+=> P(b|na) > P(a|nb)  ==  bna/(bna+nbna) - nba/(nba+nbna) > 0
+2) B influences A
+P(a|b) > P(a|nb)  == ba/(ba+bna) - nba/(nba+nbna) > 0
+3) We're using valid frequencies
+ba + nba + bna + nbna == 1
+
+```{r}
+  ba = 0.3
+  nba = 0.1
+  bna = 0.3
+  nbna = 0.3
+
+  bna/(bna+nbna) - nba/(nba+nbna) > 0
+  ba/(ba+bna) - nba/(nba+nbna) > 0
+  ba + nba + bna + nbna == 1
+  
+  log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna))) < 0
+  
+```
+
+Negeative alignment =)
+
+
+
+Let's say that B influences A more than A influences B. And let's also suppose A says the marker more than B does:
+
+1) A says the marker more than B says the marker
+=> P(a|nb) > P(b|na) == nba/(nba+nbna) - bna/(bna+nbna) > 0
+2) B influences A
+P(a|nb) > P(a|b) == nba/(nba+nbna) - ba/(ba+bna) > 0
+3) We're using valid frequencies
+ba + nba + bna + nbna == 1
+
+```{r}
+  ba = 0.1
+  nba = 0.5
+  bna = 0.1
+  nbna = 0.3
+
+  nba/(nba+nbna) - bna/(bna+nbna) > 0
+  nba/(nba+nbna) - ba/(ba+bna) > 0
+  ba + nba + bna + nbna == 1
+  
+  log(abs(ba/(ba+nba) - bna/(bna+nbna))) - log(abs(ba/(ba+bna) - nba/(nba+nbna))) < 0
+  
+```
+
+Negeative alignment =)
+
+
+Smoothing
+--------------------
+Let's talk about smoothing. Ideally, we don't need it. Let's check whether that's the case
+abs(ba/(ba+nba) - bna/(bna+nbna)) - abs(ba/(ba+bna) - nba/(nba+nbna))
+
+Ok, we need smoothing if 
+
+(ba+nba) == 0
+(bna+nbna) == 0
+(ba+bna) == 0
+(nba+nbna) == 0
+
+nbna is always going to be > 0 if we're dealing with any real world dataset (it would be absurd if every utterance in the dataset used the same marker):
+
+(ba+nba) == 0
+(ba+bna) == 0
+
+are only true if a never says the marker. Since we're already filtering for that, we don't need smoothing for the regular probability subtraction.
+
+What about for the logs? We need to worry about when 
+ba == 0 and bna == 0
+ba == 0 and nba == 0
+
+and these are also being filtered.
+
+We also need to take care of the case where ba\*nbna == 0 and nba\*bna == 0 (the shuffle example)
+Since we know that nbna is also > 0.5 for our datasets we don't have to worry about this case.
+
+On the off chance that we do encounter a dataset in which nbna <= 0.5, there is a simple solution. Since we only encounter NA when this happens, and this only happens when alignment is 0, we can manually set alignment to 0 when ba\*nbna == 0 and nba\*bna == 0
+
+So we don't need smoothing!!!!!
+
+
+Plots
+---------------------
+
+First let's check the completely shuffled dataset
+
+```{r}
+  df <- fread('debug/shuffled/TTTTTTTT.csv', header=T)
+  
+  df$alignment <- log(abs(df$ba/(df$ba+df$nba) - df$bna/(df$bna+df$nbna))) - log(abs(df$ba/(df$ba+df$bna) - df$nba/(df$nba+df$nbna)))
+  
+  df$alignment[is.nan(df$alignment)] <- 0
+  
+  ggplot(d, aes(y=alignment, x=paste(verifiedSpeaker, verifiedReplier))) + geom_violin()
+  
+  t.test(df$alignment~df$verifiedSpeaker)
+```
+
+Great, we aren't getting a corellation between alignment and power on the shuffled dataset.
+
+Let's check with the unshuffled dataset:
+
+```{r}
+  df <- fread('debug/shuffled/FFFFFFFF_300.csv', header=T)
+  
+  df$alignment <- log(abs(df$ba/(df$ba+df$nba) - df$bna/(df$bna+df$nbna))) - log(abs(df$ba/(df$ba+df$bna) - df$nba/(df$nba+df$nbna)))
+  
+  df$alignment[is.nan(df$alignment)] <- 0
+  
+  ggplot(d, aes(y=alignment, x=paste(verifiedSpeaker, verifiedReplier))) + geom_violin()
+  
+  t.test(df$alignment~df$verifiedSpeaker)
+```
+
+This is disappointing...negative alignment. Let's check with a cutoff
+
+```{r}
+  cutoff = 5
+  
+  df <- fread('debug/shuffled/FFFFFFFF_300.csv', header=T)
+  
+  d <- df %>%
+    filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff,(ba+bna)>=cutoff,(nba+nbna)>=cutoff)
+  
+  d$alignment <- log(abs(d$ba/(d$ba+d$nba) - d$bna/(d$bna+d$nbna))) - log(abs(d$ba/(d$ba+d$bna) - d$nba/(d$nba+d$nbna)))
+  
+  d$alignment[is.nan(d$alignment)] <- 0
+  
+  ggplot(d, aes(y=alignment, x=paste(verifiedSpeaker, verifiedReplier))) + geom_violin()
+  
+  t.test(d$alignment~d$verifiedSpeaker)
+```
+
+Ok, it seems we're still not getting the expected results. 
+Let's check the conversations that are generating extreme alignment results
+
+Checking...
+
+Hmm, it seems like a lot of these conversations should be discarded because they're someone replying multiple times to one tweet. And it looks like it's pretty pervasive - even tweets with < -0.125 alignmenthave multiple replies to one msg.
+
+Could it be because of the cutoff?

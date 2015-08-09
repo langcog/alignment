@@ -163,5 +163,5 @@ d3 <- inner_join(d2[shuffled=='shuffled',],d2[shuffled=='unshuffled'],by=c('vspe
   mutate(mean=mean.y-mean.x)
 
 
-ggplot(d3,aes(x=paste(vspeak,vreply,sep="\n"),y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("Alignments over all\nspeaker-replier-marker triplets (Cutoff=",cutoff,")",sep=''),x="Speaker/replier verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_grid(~alignment,scales="free") + theme_grey()
+ggplot(d3,aes(x=paste(vspeak,vreply,sep="\n"),y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("Alignments over all\nspeaker-replier-marker triplets (Cutoff=",cutoff,")",sep=''),x="Speaker/replier verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_grid(alignment~shuffled,scales="free") + theme_grey()
 ```

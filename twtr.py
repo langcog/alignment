@@ -16,7 +16,7 @@ outputFile = "debug/shuffled/"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 50
+numMarkers = 300
 smoothing = 1
 shouldWriteHeader = True
 
@@ -320,14 +320,14 @@ def shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleRepl
 
 start = logger1.initialize()
 
-shouldShuffleMsgMarkerFreqs = True
-shouldShuffleReplyMarkerFreqs = True
-shouldShuffleMsgUserIds = True
-shouldShuffleReplyUserIds = True
-shouldShuffleVerifiedSpeaker = True
-shouldShuffleVerifiedReplier = True
-shouldShuffleMsgMarkers = True
-shouldShuffleReplyMarkers = True
+shouldShuffleMsgMarkerFreqs = False
+shouldShuffleReplyMarkerFreqs = False
+shouldShuffleMsgUserIds = False
+shouldShuffleReplyUserIds = False
+shouldShuffleVerifiedSpeaker = False
+shouldShuffleVerifiedReplier = False
+shouldShuffleMsgMarkers = False
+shouldShuffleReplyMarkers = False
 
 
 positives = read("data/positive.txt")
@@ -378,7 +378,7 @@ if(outputFile == "debug/shuffled/"):
 	utterances = shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleReplyMarkerFreqs, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
 
-outputFile += "2.csv"
+outputFile += "_" + str(numMarkers) + ".csv"
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
 
