@@ -11,7 +11,7 @@ from nltk.corpus import brown
 import json
 from operator import itemgetter
 
-hit_list = ['artifact', 'entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
+hit_list = ['organism', 'artifact', 'entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
 
 
 speaker_list = []
@@ -244,12 +244,13 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 					if d.check(y_tokenized[i][0]) == True:
 						if y_tokenized[i][1] == 'NN':
 							trill_homie = wn.synset(y_tokenized[i][0] + '.n.01').lemmas()[0].name()
-							if trill_homie not in master_dict[(speaker1, speaker2)][0]:
-								magic_counter[(speaker1, speaker2, trill_homie, 0)] = 1
-								master_dict[(speaker1, speaker2)][0][trill_homie] = ['NA', 1, 'NA', 'NA']
-							else:
-								magic_counter[(speaker1, speaker2, trill_homie, 0)] = magic_counter[(speaker1, speaker2, trill_homie, 0)] + 1
-								master_dict[(speaker1, speaker2)][0][trill_homie] = ['NA', magic_counter[(speaker1, speaker2, trill_homie, 0)], 'NA', 'NA']
+							if trill_homie != 'semen':
+								if trill_homie not in master_dict[(speaker1, speaker2)][0]:
+									magic_counter[(speaker1, speaker2, trill_homie, 0)] = 1
+									master_dict[(speaker1, speaker2)][0][trill_homie] = ['NA', 1, 'NA', 'NA']
+								else:
+									magic_counter[(speaker1, speaker2, trill_homie, 0)] = magic_counter[(speaker1, speaker2, trill_homie, 0)] + 1
+									master_dict[(speaker1, speaker2)][0][trill_homie] = ['NA', magic_counter[(speaker1, speaker2, trill_homie, 0)], 'NA', 'NA']
 			except:
 				continue					
 		z_tokenized = nltk.pos_tag(conversation_dictionary[x][1])
@@ -259,12 +260,13 @@ def noun_counter(conversation_dictionary): # calculates number of nouns and tota
 					if d.check(z_tokenized[i][0]) == True:
 						if z_tokenized[i][1] == 'NN':
 							trill_homie = wn.synset(z_tokenized[i][0] + '.n.01').lemmas()[0].name()
-							if trill_homie not in master_dict[(speaker1, speaker2)][1]:
-								magic_counter[(speaker1, speaker2, 0, trill_homie)] = 1
-								master_dict[(speaker1, speaker2)][1][trill_homie] = ['NA', 1, 'NA', 'NA']
-							else:
-								magic_counter[(speaker1, speaker2, 0, trill_homie)] = magic_counter[(speaker1, speaker2, 0, trill_homie)] + 1						
-								master_dict[(speaker1, speaker2)][1][trill_homie] = ['NA', magic_counter[(speaker1, speaker2, 0, trill_homie)], 'NA', 'NA']
+							if trill_homie != 'semen':
+								if trill_homie not in master_dict[(speaker1, speaker2)][1]:
+									magic_counter[(speaker1, speaker2, 0, trill_homie)] = 1
+									master_dict[(speaker1, speaker2)][1][trill_homie] = ['NA', 1, 'NA', 'NA']
+								else:
+									magic_counter[(speaker1, speaker2, 0, trill_homie)] = magic_counter[(speaker1, speaker2, 0, trill_homie)] + 1						
+									master_dict[(speaker1, speaker2)][1][trill_homie] = ['NA', magic_counter[(speaker1, speaker2, 0, trill_homie)], 'NA', 'NA']
 			except:
 				continue
 	return(master_dict)	
