@@ -430,4 +430,454 @@ Checking...
 
 Hmm, it seems like a lot of these conversations should be discarded because they're someone replying multiple times to one tweet. And it looks like it's pretty pervasive - even tweets with < -0.125 alignmenthave multiple replies to one msg.
 
-Could it be because of the cutoff?
+Could it be because of cutoffs? We still want the cutoff regardless. Is there any way to solve this problem? One thing we could do is group all the replies to one message into one tweet. We'd then want to change our formula to incoporate number of tokens. Let's try that
+
+Math stuff...
+
+Cool, we've got a formula for ba:
+
+Am = # of times A says a marker in an utterance
+Bm = # of times B says a marker in an utterance
+At = # of tokens A says in an utterance
+Bt = # of tokens B says in an utterance
+
+aIntb = Am\*Bm/(At\*Bt)
+aIntnb = Am\*(Bt-Bm)/(At\*Bt)
+
+ba = aIntb/(aIntb + aIntnb)
+
+How would this formula affect alignment?
+
+Four cases (assuming A influences B):
+
+1) A uses a lot of tokens, B uses a lot of tokens
+
+```{r}
+  Am = 10
+  Bm = 5
+  At = 100
+  Bt = 100
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+= 0.05
+2) A uses a lot of tokens, B does not use a lot of tokens
+
+```{r}
+  Am = 10
+  Bm = 5
+  At = 100
+  Bt = 50
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+= 0.1
+
+3) 4) A does not use a lot of tokens, B uses a lot of tokens
+```{r}
+  Am = 10
+  Bm = 5
+  At = 50
+  Bt = 100
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+= 0.05
+
+4) A does not use a lot of tokens, B does not use a lot of tokens
+```{r}
+  Am = 10
+  Bm = 5
+  At = 50
+  Bt = 50
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+= 0.1
+
+This is interesting... It seems that alignment ba only depends on the number of tokens B uses. 
+And if B uses a lot of tokens, alignment decreases, which is exactly what we want!!!
+
+Or do we?
+
+Since we'll be aggregating over ba, should longer responses reduce alignment or should they just have less of a weightage on alignment?
+
+Or, what seems like the best option, is to have a higher weightage on words initially spoken in an utterance, than to words spoken later in an tterance. What would something like this look like?
+
+One thing we could is set B's prior words as A's words. Does this make sense though?
+
+If we consider that every single word B utters should show some degree of alignment, and assuming every word (except the marker we're looking at) has a maximum alignment, then yes it does make sense. 
+
+However, B might start self aligning...
+
+Instead what we can do is P(B|A) - P(B|B's priors).
+
+Alas, this might not work because we can't differentiate easily between alignment and self-alignment.
+
+We seem to be on the right track though. Perhaps the solution is to set Bt as the tokens we've seen thus far in B's utterance, and Bm as the markers we've seen thus far.
+
+Let's run some numbers
+
+```{r}
+  Am = 10
+  Bm = 1
+  At = 50
+  Bt = 1
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+
+If b says a marker immediately after A says the marker, we get an alignment of 1
+
+
+```{r}
+  Am = 10
+  Bm = 1
+  At = 50
+  Bt = 3
+  
+  aIntb = Am*Bm/(At*Bt)
+  aIntnb = Am*(Bt-Bm)/(At*Bt)
+  
+  ba = aIntb/(aIntb + aIntnb)
+  
+  ba
+```
+
+If b says a marker 3 words after A says the marker, we get an alignment of 1/3. Exactly as we expect
+
+Averaging the two gives us 
+
+```{r}
+  (1+ 1/3)/2
+```
+a number closer to 1, because it seems like strong alignment. The formula seems like it's the best solution!
+
+Our new formula should also ideally incorporate where A's markers are
+Let's set Am/At as the average of Am/At, where we add a new element to the average starting from the end of A's utterance to the start.
+
+e.g.
+
+For the tweet pair
+
+marker token token marker
+
+token marker token token marker
+
+```{r}
+a = mean(c(1/1,2/4))
+
+
+aIntb = a*(1/2)
+aIntnb = a*(2-1)/(2)
+ba1 = aIntb/(aIntb + aIntnb)
+  
+aIntb = a*(2/5)
+aIntnb = a*(5-2)/(5)
+ba2 = aIntb/(aIntb + aIntnb)
+
+mean(c(ba1, ba2))
+
+```
+
+We should also consider if we should compute on all tokens, not just on all markers
+
+marker token token marker
+
+token marker token token marker
+
+```{r}
+a = mean(c(1/1, 1/2, 1/3, 2/4))
+
+tokens = 1
+markers = 0
+aIntb = aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba1 = aIntb/(aIntb + aIntnb)
+
+tokens = 2
+markers = 1
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba2 = aIntb/(aIntb + aIntnb)
+  
+tokens = 3
+markers = 1
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba3 = aIntb/(aIntb + aIntnb)
+
+tokens = 4
+markers = 1
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba4 = aIntb/(aIntb + aIntnb)
+
+tokens = 5
+markers = 2
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba5 = aIntb/(aIntb + aIntnb)
+
+ba = mean(c(ba1, ba2, ba3, ba4, ba5))
+
+ba
+
+```
+
+Hmm, including every token has a pretty strong effect.
+
+Let's say B has a 100 word reply and only says the markers as the first word and as the last word. 
+
+Averaging across all tokens gives us an alignemnt ~= 0
+
+Averaging across markers gives us an alignment of 
+
+```{r}
+a = mean(c(1/1,2/4))
+
+
+tokens = 1
+markers = 1
+aIntb = aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba1 = aIntb/(aIntb + aIntnb)
+
+tokens = 100
+markers = 2
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba2 = aIntb/(aIntb + aIntnb)
+  
+mean(c(ba1, ba2))
+
+```
+
+Since we know that there is alignment, there is a case to be made for only averagin across markers. However, it still doesn't seem mathematically sound. 
+
+The average words/utterance is at least 14. Therefore, if we average across all tokens, we should get
+
+```{r}
+(1/1 + 1/2 + 1/3 + 1/4 + 1/5 + 1/6 + 1/7 + 1/8 + 1/9 + 1/10 + 1/11 + 1/12 + 1/13 + 1/14)/14
+
+```
+which is 0.2322 - not that bad of a number. 
+
+Let's also try where the marker is in the middle of the utterance
+
+```{r}
+(0/1 + 0/2 + 0/3 + 0/4 + 0/5 + 0/6 + 1/7 + 1/8 + 1/9 + 1/10 + 1/11 + 1/12 + 1/13 + 1/14)/14
+
+```
+
+And now we get 0.05
+
+In the middle just for comparison
+
+```{r}
+(0/1 + 0/2 + 0/3 + 0/4 + 1/5 + 1/6 + 1/7 + 1/8 + 1/9 + 1/10 + 1/11 + 1/12 + 1/13 + 1/14)/14
+
+```
+
+0.083444, so it seems that the position of the marker has a huge impact. Let's use the averaging by tokens for now. 
+
+Putting it all together
+------------------------
+
+Therefore, our two formulas are
+
+a = mean(marker/tokens)
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+ba = mean(aIntb/(aIntb + aIntnb))
+nba = mean(aIntnb/(aIntnb + aIntb))
+
+a = mean((tokens-marker)/tokens)
+aIntb = a*(markers/tokens)
+aIntnb = a*(tokens-markers)/(tokens)
+bna = mean(aIntb/(aIntb + aIntnb))
+nbna = mean(aIntnb/(aIntnb + aIntb))
+
+log(abs(d$ba/(d$ba+d$nba) - d$bna/(d$bna+d$nbna))) - log(abs(d$ba/(d$ba+d$bna) - d$nba/(d$nba+d$nbna)))
+
+Let's check it out!
+
+```{r}
+  df <- fread("debug/results_50.csv")
+
+  ggplot(df, aes(x=paste(verifiedSpeaker, verifiedReplier), y=alignment)) + geom_violin() +  stat_summary(geom="point", fun.y="mean")
+  
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==F)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==F)
+  mean(d$alignment)
+```
+
+Still not seeing expected results...
+
+Here's the problem. 
+
+P(A|nB utterance): Afreq = 1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.9
+P(B|A utterance): Bfreq = 0.5
+
+
+P(A|nB utterance): Afreq = 0.1
+P(B|nA utterance): Bfreq = 0
+P(A|B utterance): Afreq = 0.099999
+P(B|A utterance): Bfreq = 0.99
+
+With our current formula, the top example would be given a higher alignment difference because 
+
+P1(A|B) - P1(B|A) >> P2(B|A) - P2(A|B)
+
+We should instead have been calculating percent differences by doing
+
+(P1(A|B) - P1(B|A))/((P1(A|B)+P1(B|A))/2) = (0.5 - 0.1)/0.3 = 1.3333
+
+(P2(A|B) - P2(B|A))/((P2(A|B)+P2(B|A))/2) = (0.99 - (0.099999-0.1))/((0.99 + (0.099999-0.1))/2) = 2.000004
+
+Let's try it out 
+
+After plotting...
+
+
+Hmm, it seems like we're still seeing unexpected results. Let's take a look at the data
+
+One of the smallest alignment values is:
+
+548141920741244928	100107343	Today is Christmas ?	548142177302614016	69592091	[MENTION] no its jesus ' birthday
+
+Let's add a cutoff that we have to have seen the marker in at least 5 times (doesn't matter if a says it or b says it)
+```{r}
+  df <- fread("debug/results_50.csv") %>%
+    filter(numMarkers >= 5)
+
+  ggplot(df, aes(x=paste(verifiedSpeaker, verifiedReplier), y=alignment)) + geom_violin() +  stat_summary(geom="point", fun.y="mean")
+  
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==F)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==F)
+  mean(d$alignment)
+```
+
+It seems we're still getting unexpected results. Let's take a look
+
+TRUE/FALSE
+
+1) Positive with lot's of exclamations - negative with no exclamations
+  sh ./grepper.sh 140519774 57175268 \!
+  -1.995019
+  
+2) Used a lot of quotes with colons, tweeted opinions (thus didn't use colons)
+  sh ./grepper.sh 40981798 2648534065 \:
+  -1.991485
+  
+3) Someone that just replies "follow me""
+  sh ./grepper.sh 163730859 1163311250 a
+  -1.981122
+  
+4) Legitimate divergence
+  sh ./grepper.sh 180949358 2854184952 \!
+  -1.993327
+  
+5) Legitimate divergence
+  sh ./grepper.sh 310072711 2626722111 \.
+  -1.983079
+  
+6) Legitimate divergence
+  sh ./grepper.sh 39596022 2286250129 a
+  -1.987811
+  
+7) Legitimate divergence
+  sh ./grepper.sh 30495613 70134737 \.
+  -1.975477
+  
+8) Legitimate divergence
+  sh ./grepper.sh 21111883 2900058128 \.
+  -1.973785
+  
+9) Legitimate divergence
+  sh ./grepper.sh 100107343 2274086636 \.
+  -1.964990
+  
+10) Msg tweets what another person said, replier comments about the tweet
+  sh ./grepper.sh 13524182 1365592591 \:
+  -1.966488
+  
+6/10 are legitimate divergences
+
+Let's try FALSE/TRUE
+
+1) Legitimate divergence
+  sh ./grepper.sh 1048642166 1561889707 i
+  -1.935103
+  
+2) Question mark
+  sh ./grepper.sh 17837051 14608335 \?
+  -1.950964
+  
+3) One exclamation mark msg, three exclamation mark reply
+  sh ./grepper.sh 461410856 40981798 \!
+  -1.952903
+  
+4) Legitimate divergence
+  sh ./grepper.sh 2236787785 31611298 a
+  -1.918316
+
+Maybe we should look at by people, instead of treating categories as their own things.
+
+```{r}
+  df <- fread("debug/results_50.csv") %>%
+    filter(numMarkers >= 5) %>%
+    group_by(categoryr) %>%
+    summarize(alignment=mean(alignment))
+  
+  d <- df[with(df, order(-alignment)), ]
+  ggplot(df, aes(x=paste(verifiedSpeaker, verifiedReplier), y=alignment)) + geom_violin() +  stat_summary(geom="point", fun.y="mean")
+  
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==F)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==T&verifiedReplier==T)
+  mean(d$alignment)
+  d <- filter(df, verifiedSpeaker==F&verifiedReplier==F)
+  mean(d$alignment)
+```
+
+Nope, and it seems like we're only getting 8 markers. Let's check why that's the case

@@ -12,11 +12,11 @@ testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/shuffled/"
+outputFile = "debug/results"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 300
+numMarkers = 50
 smoothing = 1
 shouldWriteHeader = True
 
@@ -47,6 +47,7 @@ def processTweetCSVRow(row):
 	toAppend = {}
 	toAppend["docId"] = "TWITTER"
 	toAppend["corpus"] = "TWITTER"
+	toAppend["msgId"] = row[0]
 	toAppend["convId"] = (row[1], row[4])
 	toAppend["msgUserId"] = row[1]
 	toAppend["msg"] = row[2].lower()
@@ -64,6 +65,7 @@ def remove_values_from_list(the_list, val):
 
 # Reads in tweets
 def readCSV(inputFile, users, numOfMarkers):
+	allMessages = {}
 	functionWords = "of, at, in, without, between, he, they, anybody, it, one, the, a, that, my, more, much, either, neither, and, that, when, while, although, or, be, is, am, are, were, was, have, has, had, got, do, did, doing, no, not, nor, as"
 	functionWords = functionWords.split(" ")
 	reciprocities = {}
@@ -98,7 +100,19 @@ def readCSV(inputFile, users, numOfMarkers):
 			freqs[word] = freqs.get(word, 0) + 1
 		for word in row["replyTokens"]:
 			freqs[word] = freqs.get(word, 0) + 1
+		if(row["msgId"] in allMessages):
+			allMessages[row["msgId"]]["reply"] += row["reply"]
+			allMessages[row["msgId"]]["replyTokens"] += row["replyTokens"]
+			allMessages[row["msgId"]]["count"] += 1
+		else:
+			allMessages[row["msgId"]] = row
+			allMessages[row["msgId"]]["count"] = 1
+
+	for key in allMessages:
+		row = allMessages[key]
 		utterances.append(row)
+
+
 	for reciprocity in reciprocities:
 		reverse = (reciprocity[1], reciprocity[0])
 		if reverse in reciprocities:
@@ -320,14 +334,14 @@ def shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleRepl
 
 start = logger1.initialize()
 
-shouldShuffleMsgMarkerFreqs = False
-shouldShuffleReplyMarkerFreqs = False
-shouldShuffleMsgUserIds = False
-shouldShuffleReplyUserIds = False
-shouldShuffleVerifiedSpeaker = False
-shouldShuffleVerifiedReplier = False
-shouldShuffleMsgMarkers = False
-shouldShuffleReplyMarkers = False
+shouldShuffleMsgMarkerFreqs = True
+shouldShuffleReplyMarkerFreqs = True
+shouldShuffleMsgUserIds = True
+shouldShuffleReplyUserIds = True
+shouldShuffleVerifiedSpeaker = True
+shouldShuffleVerifiedReplier = True
+shouldShuffleMsgMarkers = True
+shouldShuffleReplyMarkers = True
 
 
 positives = read("data/positive.txt")

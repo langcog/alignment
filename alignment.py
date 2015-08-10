@@ -13,11 +13,11 @@ def ngrams(input, n):
 def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, extras):
 	markers = checkMarkers(markers)
 	groupedUtterances = group(utterances)
-	sparsities = calculateSparsity(groupedUtterances)
-	metaData = metaDataExtractor(groupedUtterances, markers, extras)
-	results = runFormula(metaData, markers, sparsities, smoothing, extras)
+	#sparsities = calculateSparsity(groupedUtterances)
+	results = metaDataExtractor(groupedUtterances, markers, extras)
+	#results = runFormula(metaData, markers, sparsities, smoothing, extras)
 	writeFile(results, outputFile, shouldWriteHeader)
-	return results
+	#return results
 
 # Groups tweets by conversation numbers
 def group(utterances):
@@ -37,132 +37,146 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 			sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
 	return sparsity_measure
 
+def bayesCalc(aTokens, bTokens, marker):
+	aList = []
+	naList = []
+	aMarkerCount = 0.0
+	for i, aToken in enumerate(aTokens):
+		if(marker == aToken):
+			aMarkerCount += 1
+		aList.append(aMarkerCount/(i+1))
+		naList.append((i+1-aMarkerCount)/(i+1))
+	a = sum(aList)/len(aList)
+	na = sum(naList)/len(naList)
+
+	baList = []
+	nbaList = []
+	bnaList = []
+	nbnaList = []
+
+	bMarkerCount = 0.0
+	for i, bToken in enumerate(bTokens):
+		if(marker == bToken):
+			bMarkerCount += 1
+		baList.append(a*bMarkerCount/(i+1))
+		nbaList.append(a*(i+1-bMarkerCount)/(i+1))
+		bnaList.append(na*bMarkerCount/(i+1))
+		nbnaList.append(na*(i+1-bMarkerCount)/(i+1))
+
+	ba = sum(baList)/len(baList)
+	nba = sum(nbaList)/len(nbaList)
+	bna = sum(bnaList)/len(bnaList)
+	nbna = sum(nbnaList)/len(nbnaList)
+
+	return {"ba": ba, "nba": nba, "bna": bna, "nbna": nbna}
+
+
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers, extras):
 	results = []
-	if("positives" in extras):
-		positives = extras["positives"]
-		negatives = extras["negatives"]
 	for i, convo in enumerate(groupedUtterances):
-		if(i % 1000 is 0):
-			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
-		userMarkers = {}
-		ba = {} # Number of times Person A and person B says the marker["marker"]
-		bna = {}
-		nbna = {}
-		nba = {}
-
-		for marker in markers:
-			ba[marker["category"]] = 0
-			bna[marker["category"]] = 0
-			nbna[marker["category"]] = 0
-			nba[marker["category"]] = 0
-
+		alignments = []
 		a = convo[0]["msgUserId"] # Id of person A
 		b = convo[0]["replyUserId"] # Id of person B
 		numUtterances = len(convo) # Number of total utterances in the conversation
-		convoUtterances = []
-		averageReplySentiment = 0
-		averageMessageSeniment = 0
-		for utterance in convo:
-			if("positives" in extras):
-				msgSentiment = 0
-				for token in utterance["msgTokens"]:
-					if(token in positives):
-						msgSentiment += 1
-					elif token in negatives:
-						msgSentiment -= 1
-
-				replySentiment = 0
-				for token in utterance["replyTokens"]:
-					if(token in positives):
-						replySentiment += 1
-					elif token in negatives:
-						replySentiment -= 1
-
+		for category in markers:
+			marker = category["marker"]
+			baList = []
+			nbaList = []
+			bnaList = []
+			nbnaList = []
+			numMarkers = 0
+			for utterance in convo:
+				msgTokens = utterance["msgTokens"]
+				replyTokens = utterance["replyTokens"]
+				msgMarkers = utterance["msgMarkers"]
+				replyMarkers = utterance["replyMarkers"]
 				if(utterance["msgUserId"] == a):
-					averageMessageSeniment += msgSentiment
-					averageReplySentiment += replySentiment
+					aTokens = utterance["msgTokens"]
+					bTokens = utterance["replyTokens"]
 				else:
-					averageReplySentiment += msgSentiment
-					averageMsgSentiment += replySentiment
+					aTokens = utterance["replyTokens"]
+					bTokens = utterance["msgTokens"]
+				result = bayesCalc(aTokens, bTokens, marker)
+				baList.append(result["ba"])
+				nbaList.append(result["nba"])
+				bnaList.append(result["bna"])
+				nbnaList.append(result["nbna"])
 
-				
-				maxNgram = 1
-				ngramLengths = [2,3,4,5]
-				ngramPercent = 0
-				for ngramLength in ngramLengths:
-					msgTrigrams = set(ngrams(utterance["msgTokens"], ngramLength))
-					replyTrigrams = set(ngrams(utterance["replyTokens"], ngramLength))
-					quoted = set(msgTrigrams).intersection(set(replyTrigrams))
-					if len(quoted) == 0:
-						maxNgram = ngramLength - 1
-						ngramPercent = maxNgram/len(utterance["msgTokens"])
-						break
-				if(maxNgram == 1):
-					ngramPercent = 0
+				if(marker in msgTokens):
+					numMarkers += 1
+				elif(marker in replyTokens):
+					numMarkers += 1
+			
 
-			convoUtterances.append(utterance["msg"])
-			convoUtterances.append(utterance["reply"])
-			completedCategories = {}
-			for j, marker in enumerate(markers):
-				category = marker["category"]
-				if(category in completedCategories):
-					continue
-				msgMarker = False
-				replyMarker = False
-				# Increments values of userMarkers and ba depending on whether a marker["marker"] is in the current utterance
-				if category in utterance["msgMarkers"]:
-					msgMarker = True
-					userMarkers[utterance["msgUserId"] + category] = userMarkers.get(utterance["msgUserId"] + category ,0) + 1
-				if category in utterance["replyMarkers"]:
-					replyMarker = True
-					userMarkers[utterance["replyUserId"] + category] = userMarkers.get(utterance["replyUserId"] + category,0) + 1
-				
-				if msgMarker and replyMarker:
-					ba[category] += 1
-				elif replyMarker and not msgMarker:
-					bna[category] += 1
-				elif not replyMarker and msgMarker:
-					nba[category] += 1
-				else:
-					nbna[category] += 1
-				completedCategories[category] = True
-		toAppend = {}
-		toAppend["nbna"] = nbna
-		toAppend["nba"] = nba
-		toAppend["bna"] = bna
-		toAppend["utterances"] = convoUtterances
-		toAppend["numUtterances"] = numUtterances
-		toAppend["ba"] = ba
-		toAppend["userMarkers"] = userMarkers
-		toAppend["a"] = a
-		toAppend["b"] = b
-		toAppend["conv"] =convo[0]["convId"]
+			ba = sum(baList)/len(baList)
+			nba = sum(nbaList)/len(nbaList)
+			bna = sum(bnaList)/len(bnaList)
+			nbna = sum(nbnaList)/len(nbnaList)
+
+			
+
+			if(len(marker) > 1 and (ba+nba) == 0 and (ba+bna) != 0):
+				print("After loop")
+				for utterance in convo:
+					print(utterance["msg"])
+					print(utterance["reply"])
+					print("-----")
+				print(nbaList)
+				print("Message")
+				print(marker)
+				print("-----------")
+
+			
+			if((ba+nba) == 0): # A never says the marker
+				continue
+			if((ba+bna) == 0): # B never says the marker
+				continue
 
 
-		if("verifiedSpeaker" in convo[0]):
-			if("positives" in extras):
-				if(i%1000 == 0):
-					logger1.log("Adding sentiment")
-				toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
-				toAppend["replySentiment"] = averageReplySentiment/numUtterances
-				toAppend["ngramPercent"] = ngramPercent
-				toAppend["reciprocity"] = convo[0]["reciprocity"]
+			aInfb = abs(ba/(ba+nba) - bna/(bna+nbna))
+			bInfa = abs(ba/(ba+bna) - nba/(nba+nbna))
 
+			#if(aInfb == 0): # A does not influence B
+			#	aInfb = 0
+			#else:
+			#	aInfb = math.log(aInfb)
+
+			#if(bInfa == 0): # B does not influence A
+			#	bInfa = 0
+			#else:
+			#	bInfa = math.log(bInfa)
+
+			if(aInfb + bInfa == 0):
+				alignment = 0
+			else:
+				alignment = (aInfb - bInfa)/((aInfb + bInfa)/2)
+			toAppend = {}
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
-			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
-			toAppend["replierFollowers"] = convo[0]["replierFollowers"]
-			if((convo[0]["replierFollowers"] + convo[0]["speakerFollowers"] > 0) and (convo[0]["speakerFollowers"] != 0) and (convo[0]["replierFollowers"] > 0)):
-				toAppend["percentDiff"] = convo[0]["speakerFollowers"]/(convo[0]["replierFollowers"] + convo[0]["speakerFollowers"])
+			toAppend["alignment"] = alignment
+			toAppend["category"] = marker
+			toAppend["msgUserId"] = a
+			toAppend["replyUserId"] = b
+			toAppend["ba"] = ba
+			toAppend["nba"] = nba
+			toAppend["bna"] = bna
+			toAppend["nbna"] = nbna
+			toAppend["numMarkers"] = numMarkers
+			results.append(toAppend)
 			
-		else:
-			toAppend["corpus"] = utterance["corpus"]
-			toAppend["docId"] = utterance["docId"]
-
-		results.append(toAppend)
 	return results
+
+
+
+
+
+
+
+
+
+
+
 
 def allMarkers(markers):
 	categories = []
@@ -237,6 +251,7 @@ def runFormula(results, markers, sparsities, smoothing, extras):
 
 # Writes stuff to the output file
 def writeFile(results, outputFile, shouldWriteHeader):
+	logger1.log("Writing to " + outputFile)
 	if len(results) == 0:
 		logger1.log("No results to write =(")
 		return
