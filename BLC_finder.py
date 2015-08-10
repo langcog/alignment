@@ -9,7 +9,7 @@ perm_dict = {}
 ref_dict = {}
 branch_list = []
 branch_dict = {}
-hit_list = ['entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
+hit_list = ['artifact', 'organism', 'entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
 
 freq_file_name = r'C:\Users\Aaron\alignment\lemma.num'
 outfilename = r'C:\Users\Aaron\alignment\BLCListViaBNC3.csv'
