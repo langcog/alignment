@@ -116,17 +116,6 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 
 			
 
-			if(len(marker) > 1 and (ba+nba) == 0 and (ba+bna) != 0):
-				print("After loop")
-				for utterance in convo:
-					print(utterance["msg"])
-					print(utterance["reply"])
-					print("-----")
-				print(nbaList)
-				print("Message")
-				print(marker)
-				print("-----------")
-
 			
 			if((ba+nba) == 0): # A never says the marker
 				continue
