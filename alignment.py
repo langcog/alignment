@@ -38,42 +38,23 @@ def calculateSparsity(groupedUtterances): # calculates number of words speaker h
 	return sparsity_measure
 
 def bayesCalc(aTokens, bTokens, marker):
-	aList = []
-	naList = []
-	aMarkerCount = 0.0
-	for i, aToken in enumerate(aTokens):
-		if(marker == aToken):
-			aMarkerCount += 1
-		aList.append(aMarkerCount/(i+1))
-		naList.append((i+1-aMarkerCount)/(i+1))
-	a = sum(aList)/len(aList)
-	na = sum(naList)/len(naList)
+	toReturn = {"ba": 0, "nba": 0, "bna": 0, "nbna": 0}
+	if(marker in aTokens and marker in bTokens):
+		toReturn["ba"] = 1
+	elif(marker in aTokens and marker not in bTokens):
+		toReturn["nba"] = 1
+	elif(marker not in aTokens and marker in bTokens):
+		toReturn["bna"] = 1
+	else:
+		toReturn["nbna"] = 1
 
-	baList = []
-	nbaList = []
-	bnaList = []
-	nbnaList = []
-
-	bMarkerCount = 0.0
-	for i, bToken in enumerate(bTokens):
-		if(marker == bToken):
-			bMarkerCount += 1
-		baList.append(a*bMarkerCount/(i+1))
-		nbaList.append(a*(i+1-bMarkerCount)/(i+1))
-		bnaList.append(na*bMarkerCount/(i+1))
-		nbnaList.append(na*(i+1-bMarkerCount)/(i+1))
-
-	ba = sum(baList)/len(baList)
-	nba = sum(nbaList)/len(nbaList)
-	bna = sum(bnaList)/len(bnaList)
-	nbna = sum(nbnaList)/len(nbnaList)
-
-	return {"ba": ba, "nba": nba, "bna": bna, "nbna": nbna}
+	return toReturn
 
 
 # Computers the power probabilities
 def metaDataExtractor(groupedUtterances, markers, extras):
 	results = []
+	recips = {}
 	for i, convo in enumerate(groupedUtterances):
 		alignments = []
 		a = convo[0]["msgUserId"] # Id of person A
@@ -81,10 +62,10 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 		numUtterances = len(convo) # Number of total utterances in the conversation
 		for category in markers:
 			marker = category["marker"]
-			baList = []
-			nbaList = []
-			bnaList = []
-			nbnaList = []
+			ba = 0.0
+			nba = 0.0
+			bna = 0.0
+			nbna = 0.0
 			numMarkers = 0
 			for utterance in convo:
 				msgTokens = utterance["msgTokens"]
@@ -98,48 +79,23 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 					aTokens = utterance["replyTokens"]
 					bTokens = utterance["msgTokens"]
 				result = bayesCalc(aTokens, bTokens, marker)
-				baList.append(result["ba"])
-				nbaList.append(result["nba"])
-				bnaList.append(result["bna"])
-				nbnaList.append(result["nbna"])
+				ba += (result["ba"])
+				nba += (result["nba"])
+				bna += (result["bna"])
+				nbna += (result["nbna"])
 
 				if(marker in msgTokens):
 					numMarkers += 1
 				elif(marker in replyTokens):
 					numMarkers += 1
 			
-
-			ba = sum(baList)/len(baList)
-			nba = sum(nbaList)/len(nbaList)
-			bna = sum(bnaList)/len(bnaList)
-			nbna = sum(nbnaList)/len(nbnaList)
-
-			
-
-			
 			if((ba+nba) == 0): # A never says the marker
 				continue
-			if((ba+bna) == 0): # B never says the marker
+			if((bna+nbna) == 0): # A always says the marker 
 				continue
 
 
-			aInfb = abs(ba/(ba+nba) - bna/(bna+nbna))
-			bInfa = abs(ba/(ba+bna) - nba/(nba+nbna))
-
-			#if(aInfb == 0): # A does not influence B
-			#	aInfb = 0
-			#else:
-			#	aInfb = math.log(aInfb)
-
-			#if(bInfa == 0): # B does not influence A
-			#	bInfa = 0
-			#else:
-			#	bInfa = math.log(bInfa)
-
-			if(aInfb + bInfa == 0):
-				alignment = 0
-			else:
-				alignment = (aInfb - bInfa)/((aInfb + bInfa)/2)
+			alignment = ba/(ba+nba) - bna/(bna+nbna)
 			toAppend = {}
 			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
 			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
@@ -152,8 +108,27 @@ def metaDataExtractor(groupedUtterances, markers, extras):
 			toAppend["bna"] = bna
 			toAppend["nbna"] = nbna
 			toAppend["numMarkers"] = numMarkers
-			results.append(toAppend)
-			
+			if((b,a) in recips):
+				recips[(b,a)].append(toAppend)
+			else:
+				recips[(a,b)] = [toAppend]
+	for key in recips:
+		value = recips[key]
+		if(len(value) < 2):
+			continue
+		toAppend = {}
+		toAppend["verifiedSpeaker"] = bool(value[0]["verifiedSpeaker"])
+		toAppend["verifiedReplier"] = bool(value[0]["verifiedReplier"])
+		toAppend["alignment1"] = value[0]["alignment"]
+		toAppend["alignment2"] = value[1]["alignment"]
+		toAppend["category"] = value[0]["category"]
+		toAppend["msgUserId"] = value[0]["msgUserId"]
+		toAppend["replyUserId"] = value[0]["replyUserId"]
+		if toAppend["alignment1"] + toAppend["alignment2"] == 0:
+			continue
+		logger1.log(toAppend["alignment1"]/(abs(toAppend["alignment1"])+abs(toAppend["alignment2"])))
+		toAppend["alignment"] = toAppend["alignment1"]/(abs(toAppend["alignment1"])+abs(toAppend["alignment2"]))
+		results.append(toAppend)
 	return results
 
 

@@ -863,7 +863,6 @@ Maybe we should look at by people, instead of treating categories as their own t
 
 ```{r}
   df <- fread("debug/results_50.csv") %>%
-    filter(numMarkers >= 5) %>%
     group_by(msgUserId, replyUserId, verifiedSpeaker, verifiedReplier) %>%
     summarize(alignment=mean(alignment))
   
@@ -969,24 +968,13 @@ Cool, exactly what we expect. Let's try it out on non-shuffled data
   mean(d$alignment)
 ```
 
-Nope. Ok, let's go back to the mean. 
+So there's a problem with how we're calculating the formula.
+
+...Fixing formula...
+
+Ok, now let's check the results
 
 ```{r}
-  df <- fread("debug/results_50.csv") %>%
-    group_by(msgUserId, replyUserId, verifiedSpeaker, verifiedReplier) %>%
-    summarize(alignment=mean(alignment))
+  df <- fread("debug/results_50.csv")
   
-  d <- df[with(df, order(-alignment)), ]
-  ggplot(df, aes(x=paste(verifiedSpeaker, verifiedReplier), y=alignment)) + geom_violin() +  stat_summary(geom="point", fun.y="mean")
-  
-  d <- filter(df, verifiedSpeaker==T&verifiedReplier==F)
-  mean(d$alignment)
-  d <- filter(df, verifiedSpeaker==F&verifiedReplier==T)
-  mean(d$alignment)
-  d <- filter(df, verifiedSpeaker==T&verifiedReplier==T)
-  mean(d$alignment)
-  d <- filter(df, verifiedSpeaker==F&verifiedReplier==F)
-  mean(d$alignment)
-  
-  t.test(filter(df, verifiedSpeaker==T&verifiedReplier==F)$alignment)
 ```
