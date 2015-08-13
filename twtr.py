@@ -28,6 +28,8 @@ def readUserInfo():
 	reader=csv.reader(open(userFile),dialect="excel-tab")
 	next(reader, None)
 	users = []
+	verified = 0
+	unverified = 0
 	for row in reader:
 		toAppend = {}
 		toAppend["uid"] = row[0]
@@ -38,7 +40,14 @@ def readUserInfo():
 		toAppend["numfollowers"] = row[5]
 		toAppend["numlistsin"] = row[6]
 		toAppend["numfavoritesgiven"] = row[7]
+		if(toAppend["verified"]):
+			verified += 1
+		else:
+			unverified += 1
 		users.append(toAppend)
+	logger1.log(verified)
+	logger1.log(unverified)
+	logger1.log("-------------")
 	return users
 
 #Processing the main information in a single row of the tweet TSV file & putting it into a dictionary
@@ -74,6 +83,7 @@ def readCSV(inputFile, users, numOfMarkers):
 	utterances = []
 	toReturn = []
 	freqs = {}
+	totalCount = 0.0
 	for i, row in enumerate(reader):
 		row = processTweetCSVRow(row)
 		reciprocities[row["convId"]] = False
@@ -100,6 +110,7 @@ def readCSV(inputFile, users, numOfMarkers):
 			freqs[word] = freqs.get(word, 0) + 1
 		for word in row["replyTokens"]:
 			freqs[word] = freqs.get(word, 0) + 1
+		totalCount += 2
 		if(row["msgId"] in allMessages):
 			allMessages[row["msgId"]]["reply"] += row["reply"]
 			allMessages[row["msgId"]]["replyTokens"] += row["replyTokens"]
@@ -124,14 +135,16 @@ def readCSV(inputFile, users, numOfMarkers):
 			utterance["reciprocity"] = False
 		toReturn.append(utterance)
 	markers = []
-	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
+	freqs = [(k, freqs[k], freqs[k]/totalCount) for k in sorted(freqs, key=freqs.get, reverse=True)]
 	subset = freqs[0:numOfMarkers]
 	
 	for subsetTuple in subset:
 		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
 			continue
 		else:
-			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0], "freq": subsetTuple[2]})
+	logger1.log(markers)
+	exit()
 	return {"rows": toReturn, "markers": markers}
 
 
@@ -169,12 +182,19 @@ def verifySpeaker(udict,uid):
 	else:
 		return False
 
-#Code to take in the user dictionary & a user ID and return if that user is verified
-#	Note: users with missing data are considered unverified
+# Code to take in the user dictionary & a user ID and return if that user is verified
+# Note: users with missing data are considered unverified
 def numFollowers(udict,uid):
 	msgUser = findUser(udict,uid)
 	if(msgUser != False):
 		return float(msgUser["numfollowers"])
+	else:
+		return 0
+
+def screenName(udict, uid):
+	msgUser = findUser(udict,uid)
+	if(msgUser != False):
+		return msgUser["screenname"]
 	else:
 		return 0
 
@@ -192,6 +212,8 @@ def transformCSVnonP(markers, users, rows):
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
 			row["speakerFollowers"] = numFollowers(udict, row["msgUserId"])
 			row["replierFollowers"] = numFollowers(udict, row["replyUserId"])
+			row["msgScreenname"] = screenName(udict, row["msgUserId"])
+			row["replyScreenname"] = screenName(udict, row["replyUserId"])
 
 			tests[str(row["verifiedSpeaker"]) + str(row["verifiedReplier"])] += 1
 		row["msgMarkers"] = countMarkers(row["msgTokens"],mdict)
@@ -202,9 +224,9 @@ def transformCSVnonP(markers, users, rows):
 
 def read(inputFile):
 	reader=csv.reader(open(inputFile),dialect="excel-tab")
-	toReturn = []
+	toReturn = {}
 	for i, row in enumerate(reader):
-		toReturn.append(row[0])
+		toReturn[row[0]] = True
 	return toReturn
 
 def shuffleUtterances(utterances, shouldShuffleMsgMarkerFreqs, shouldShuffleReplyMarkerFreqs, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers):
@@ -394,6 +416,6 @@ if(outputFile == "debug/shuffled/"):
 
 outputFile += "_" + str(numMarkers) + ".csv"
 
-results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
+results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {"positives": positives, "negatives": negatives})
 
 logger1.finish(start)

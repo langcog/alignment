@@ -28,6 +28,9 @@ if(getwd()=="/Users/jakeprasad"){
   setwd("/Users/jakeprasad/alignment")
 }
 ```
+
+
+
 It seems our plots aren't giving us expected results. Let's try and figure out why that may be
 
 We know that smoothing is affecting our plots - especially because it affects one term more than another.  Maybe instead of subtracting logs, we should move everything inside of the log?
@@ -972,9 +975,53 @@ So there's a problem with how we're calculating the formula.
 
 ...Fixing formula...
 
-Ok, now let's check the results
-
 ```{r}
-  df <- fread("debug/results_50.csv")
+  cutoff = 5
+  df <- fread("debug/results_50.csv") %>%
+    filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+    filter(ba!=0)
+  
+  df$a = df$ba/(df$ba+df$nba)
+  df$alignment =  log(df$ba+df$a)-log(df$ba+df$nba+2*df$a)-log(df$bna+df$a)+log(df$bna+df$nbna+2*df$a)
+  
+  df <- df %>%
+    filter(verifiedReplier==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+    group_by(verifiedSpeaker,verifiedReplier,category) %>%
+    summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),alignment=mean(alignment))
+      
+  ggplot(df, aes(x=verifiedSpeaker, y=alignment)) + geom_violin() + stat_summary(geom="point", fun.y="mean")
+  d <- df %>%
+    filter(msgUserId==813286)
+  d[with(d, order(-alignment)), ]
+```
+
+By category 
+```{r}
+  cutoff = 5
+  df <- fread("debug/results_50.csv") %>%
+    filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+    filter(ba > 0) %>%
+    filter(verifiedReplier==F)
+  df$a = df$ba/(df$ba+df$nba)
+  df$alignment =  log(df$ba+df$a)-log(df$ba+df$nba+2*df$a)-log(df$bna+df$a)+log(df$bna+df$nbna+2*df$a)
+  
+  df <- df %>%
+    group_by(category, verifiedSpeaker) %>%
+    summarize(alignment=mean(alignment), convs=n())
+  ggplot(df, aes(x=verifiedSpeaker, y=alignment)) + geom_violin() + stat_summary(geom="point", fun.y="mean") + geom_text(aes(label=category,color=convs),size=4.5)
+  
+```
+
+By sentiment 
+```{r}
+  cutoff = 5
+  df <- fread("debug/results_50.csv") %>%
+    filter(ba > 0)
+  df$msgSentiment <- df$msgSentiment>0
+  df$replySentiment <- df$replySentiment> 0
+  df$a = df$ba/(df$ba+df$nba)
+  df$alignment =  log(df$ba+df$a)-log(df$ba+df$nba+2*df$a)-log(df$bna+df$a)+log(df$bna+df$nbna+2*df$a)
+  
+  ggplot(df, aes(x=paste(msgSentiment, replySentiment), y=alignment)) + geom_violin() + stat_summary(geom="point", fun.y="mean")
   
 ```
