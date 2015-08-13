@@ -1,0 +1,413 @@
+---
+title: "Results on alignment using p(A) smoothing"
+author: "Gabe & Jake"
+date: "August 11, 2015"
+output: pdf_document
+---
+
+## Overview
+
+This is a collection of results from performing alignment analysis using our the log-space measure with p(A) smoothing (i.e., both conditional probabilities of B have a prior favoring p(A) as their baseline.)  These results have some differences from our original reults on the old smoothing measure, which was strongly biased by edge cases.
+
+## Smoothing method
+
+We need to employ some sort of smoothing to deal with zeroes in our data; specifically, if $p(B|A)$ or $p(B|\neg A)$ would empirically be zero, this would create an undefined quantity in our model as we take the logarithm of both quantities.  DNM's measure does not have this need for smoothing, but has various other shortcomings, icluding its upper limit on alignment of $p(B|A)$, which may artificially limit alignment estimates on rarer markers, and its changing range of alignment values that make it difficult to compare alignment values across markers with different frequencies.
+
+Here we're using $p(A)$ smoothing.  This is similar to the original semi-Bayesian smoothing method, but instead of placing the maximum probability in the prior at $p(B) = .5$, we place it at the empirically estimated value of $p(A)$, derived from the proportion of messages from A to B that use the marker.  Essentially this says that in absence of any data on user B's usage, we assume B has the same distribution as A does.  Note that this smoothing could fail if $p(A)=0$; however, we remove all such cases from our calculations because it is impossible to estimate $p(B|A)$ unless A says the marker at least once, ensuring $p(A)>0$. 
+
+($p(A)$ smoothing is definitely not the optimal method, and we ought to build a proper Bayesian system at some point, possibly modeled after that in the Bayesian Echo Chamber paper. For reasons that we partially understand, $p(A)$ smoothing works better than its conceptual twin, $p(B)$ smoothing. One trouble with $p(B)$ smoothing is that it is too often zero, but even in the non-zero cases, we get much larger negative values in the shuffled data.) 
+
+## Comparing shuffled alignments
+
+Our first test is to examine alignment on the shuffled data.  Ideally, we'd find consistent estimates across different random shufflings and those estiates wouldn't be significantly different from zero.  We test on three shuffled datasets, and find the former but not the latter.  We compare PASmooth to DNM throughout, as the DNM results ought to be comparable to existing results.
+
+```{r,echo=FALSE}
+options(warn=-1)
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(bit64))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(ggplot2))
+
+if (getwd()=="C:/stuff/stanford") {
+  setwd("C:/stuff/stanford/alignment")
+}
+suppressMessages(df <- fread('alignment/debug/shuffled/TTTTTTTT1.csv', header=T))
+df$shuffled <- 'shuffled'
+suppressMessages(tdf <- fread('alignment/debug/shuffled/TTTTTTTT2.csv', header=T))
+tdf$shuffled <- 'shuffled2'
+suppressMessages(t2df <- fread('alignment/debug/shuffled/TTTTTTTT.csv', header=T))
+t2df$shuffled <- 'shuffled3'
+df <- rbind(df,tdf, t2df)
+#suppressMessages(tdf <- fread('alignment/debug/results.csv', header=T))
+#tdf$shuffled <- 'unshuffled'
+#df <- rbind(df,tdf)
+
+
+d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
+              vspeak=verifiedSpeaker,vreply=verifiedReplier,
+              sid=speakerId,rid=replierId,category=category,
+              pyalign=alignment,dnm=dnmalignment,shuffled=shuffled),]
+options(warn=0)
+```
+
+```{r,echo=FALSE}
+cutoff <- 5
+pasm <- 1
+```
+
+```{r,echo=FALSE}
+smoothalign <- function(df,sm,align="logodds") {
+  if (align=="logodds") {
+    return(log(df$ba+sm)-log(df$ba+df$nba+2*sm)-log(df$bna+sm)+log(df$bna+df$nbna+2*sm))
+  } else if (align=="subdnm") {
+    return((df$ba+sm)/(df$ba+df$nba+2*sm)-(df$bna+df$ba+sm)/(df$nba+df$ba+df$bna+df$nbna+2*sm))
+  } else {
+    stop("Invalid alignment type.")
+  }
+} 
+
+d$lo1 <- smoothalign(d,1,"logodds")
+d$sd0 <- smoothalign(d,0,"subdnm")
+
+stopifnot(max(abs(d$lo1-d$pyalign))<.00001)
+```
+
+```{r,echo=FALSE}
+pabsmooth <- function(df,alpha=2,align="logodds",ab="pa") {
+  if (ab=='pa') {
+    pa = (df$ba+df$nba)/(df$ba+df$nba+df$bna+df$nbna) #this is p(A) smoothing
+  } else if (ab=='pb') {  
+    pa = (df$ba+df$bna)/(df$ba+df$nba+df$bna+df$nbna)   #this is p(B) smoothing
+  } else {
+    stop("Invalid baseline probability.")
+  }
+  if (align=="logodds") {
+    return(log(df$ba+alpha*pa)-log(df$ba+df$nba+alpha)-log(df$bna+alpha*pa)+log(df$bna+df$nbna+alpha))
+  } else if (align=="subdnm") {
+    return((df$ba+alpha*pa)/(df$ba+df$nba+alpha)-(df$bna+df$ba+alpha*pa)/(df$nba+df$ba+df$bna+df$nbna+alpha))
+  } else {
+    stop("Invalid alignment type.")
+  }
+} 
+
+d$pa1 <- pabsmooth(d,pasm,"logodds","pa")
+d$pb1 <- pabsmooth(d,pasm,"logodds","pb")
+```
+
+Our first test is to look at the by-marker aggregated estimates of alignment on the shuffled data.  We hoped for the alignment to be distributed around zero but instead have a small negative effect. (DNM is included for comparison.)
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(category,shuffled) %>%
+  summarize(convs=n(),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+ggplot(d2,aes(x=1,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + stat_summary(geom="point",fun.y="mean",color="red") + labs(title=paste("By-marker aggregated alignment (Cutoff=",cutoff,")",sep=''),x="Test run number",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_grid(alignment~shuffled,scales="free") + geom_hline(yintercept=0) + theme_grey() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+```
+
+For slide
+
+#```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(category,shuffled) %>%
+  summarize(convs=n(),PASmooth=mean(pa1))%>%
+  gather(alignment,mean,PASmooth)
+
+ggplot(d2,aes(x=1,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + stat_summary(geom="point",fun.y="mean",color="red") + labs(title=paste("By-marker aggregated alignment (Cutoff=",cutoff,")",sep=''),x="Test run number",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_grid(alignment~shuffled,scales="free") + geom_hline(yintercept=0) + theme_grey() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+```
+
+```{r}
+d2 <- d2 %>%
+  group_by(category,alignment) %>%
+  summarize(mean=mean(mean))
+
+t.test(with(d2[alignment=='PASmooth',],mean))
+t.test(with(d2[alignment=='DNM',],mean))
+```
+
+Now, turning to alignment to power on the shuffled datasets. Again, we hope to see no effect; this time our hopes are met.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  mutate(PASmooth=pa1,DNM=sd0)%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+
+ggplot(d2,aes(x=paste(vspeak,vreply,sep="\n"),y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("Alignments over all\nspeaker-replier-marker triplets (Cutoff=",cutoff,")",sep=''),x="Speaker/replier verification",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_grid(alignment~shuffled,scales="free") + theme_grey()
+```
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(convs=n(),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+  
+
+ggplot(d2,aes(x=paste(vspeak,vreply,sep="\n"),y=mean)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("By-marker aggregated alignment to power (Cutoff=",cutoff,")",sep=''),x="Speaker/replier verification",y="Mean alignment") + facet_grid(alignment~shuffled,scales="free") + theme_grey()
+
+
+```
+
+While there seem to be artifacts in $p(A)$ smoothing that affect the overall means, these do not appear to substantially affect the within-group means for speaker/replier verification.  Lastly, we'd been having a really clear and strong artifactual effect of frequency on alignment under our old smoothing method, but this doesn't seem to be the case in $p(A)$ smoothing; there is only a weak correlation between marker frequency. (Note frequency is plotted on a log-scale.)
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+ggplot(d2,aes(x=prop,y=mean)) + geom_point() +geom_smooth(method='lm') + labs(title=paste("By-marker aggregated alignment\nagainst frequency (Cutoff=",cutoff,")",sep=''),x="Marker frequency",y="Mean alignment",color="Speaker/replier\nverification") + facet_grid(alignment~shuffled,scales="free") + theme_bw() + scale_x_log10(breaks=c(.05,.1,.2,.4))
+```
+
+Intrestingly, whereas our original smoothing method had higher alignments with lower-frequency markers, $p(A)$ smoothing has lower alignments with lower frequency, and alignment approached the desired zero value as the marker frequency increases.
+
+So, in summary, $p(A)$ smoothing has a small but significant non-zero alignment in the shuffled data.  It doesn't appear to have spurious effects of power and only a weak effect of frequency on its alignment estimates
+
+## Shuffled v. unshuffled data
+
+Now let's compare the results on the shuffled datasets to the true, unshuffled dataset.
+
+```{r,echo=FALSE}
+df$shuffled2 <- 'shuffled'
+suppressMessages(tdf <- fread('alignment/debug/results.csv', header=T))
+tdf$shuffled <- 'unshuffled'
+tdf$shuffled2 <- 'unshuffled'
+df <- rbind(df,tdf)
+d <- df[,list(ba=ba,nba=nba,bna=bna,nbna=nbna,
+              vspeak=verifiedSpeaker,vreply=verifiedReplier,
+              sid=speakerId,rid=replierId,category=category,
+              pyalign=alignment,dnm=dnmalignment,shuffled=shuffled2, speakerFollowers=speakerFollowers, replierFollowers=replierFollowers),]
+
+d$lo1 <- smoothalign(d,1,"logodds")
+d$sd0 <- smoothalign(d,0,"subdnm")
+d$pa1 <- pabsmooth(d,pasm,"logodds","pa")
+#d$ad1 <- addsmooth(d,addsm,"logodds")
+```
+
+### General alignment
+
+We start by plotting by-marker aggregated alignment for the shuffled and unshuffled data.  We find a significant positive alignment effect on the unshuffled data.
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(category,shuffled) %>%
+  summarize(convs=n(),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+ggplot(d2,aes(x=shuffled,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + stat_summary(geom="point",fun.y="mean",color="red") + labs(title=paste("By-marker aggregated alignment (Cutoff=",cutoff,")",sep=''),x=" ",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + geom_hline(yintercept=0) + theme_grey()
+
+t.test(d2[alignment=='PASmooth'&shuffled=='unshuffled',]$mean)
+
+```
+
+For slides by marker
+
+#```{r}
+
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(category,shuffled) %>%
+  summarize(convs=n(),PASmooth=mean(pa1))%>%
+  gather(alignment,mean,PASmooth)
+
+ggplot(d2,aes(x=shuffled,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + stat_summary(geom="point",fun.y="mean",color="red") + labs(title=paste("By-marker aggregated alignment (Cutoff=",cutoff,")",sep=''),x=" ",y="Mean alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + geom_hline(yintercept=0) + theme_grey()
+
+t.test(d2[alignment=='PASmooth'&shuffled=='unshuffled',]$mean)
+
+#```
+
+As a test, let's look at what happens when we use the shuffled by-marker alignments as an empirical estimate of the alignment artifact.  Here we subtract the estimated shuffled alignment from the unshuffled alignment, and the positive alignment effect remains significant.
+
+```{r}
+d3 <- inner_join(d2[shuffled=='shuffled',],d2[shuffled=='unshuffled'],by=c('category','alignment')) %>%
+  mutate(mean=mean.y-mean.x,convs=(convs.x+convs.y)/2)
+
+ggplot(d3,aes(x=1,y=mean,color=convs,label=category)) + geom_violin() + geom_text(position=position_jitter(w=0.2),size=4) + stat_summary(geom="point",fun.y="mean",color="red") + labs(title=paste("By-marker aggregated alignment (Cutoff=",cutoff,")",sep=''),x=" ",y="Mean unshuffled minus shuffled alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + geom_hline(yintercept=0) + theme_grey() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+t.test(d3[alignment=='PASmooth',]$mean)
+
+```
+
+Given the similarity in these two results, it seems like removing the estimate of alignment on the shuffled dataset doesn't make anything clearer and is likely to introduce more noise than it removes.  We'll report both the unadjusted and adjusted results here but it's probably more rasonable to rely on the unadjusted.
+
+### Alignment to power
+
+Now turning to the effect of power on alignment.  We'll limit to the case of unverified replier as in our previous analyses. We can't look at the ditribution of speaker-replier-marker triplets in this data because only the marker component of the triplets is unchanged by shuffling.  Instead, we'll look at the distribution of by-marker aggregates with verified and unverified speakers.  Below we plot the by-marker estimated alignment for the unadjusted unshuffled data.
+
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM) %>%
+  select(alignment,mean,vspeak,vreply,category,shuffled)
+
+ggplot(d2,aes(x=vspeak,y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("By-marker aggregated alignments by speaker verification,\nunshuffled minus shuffled (Cutoff=",cutoff,")",sep=''),x="Speaker verified?",y="Mean unshuffled minus shuffled alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + theme_grey()
+```
+
+For slides alignment vs power DNM
+#```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),DNM=mean(sd0))%>%
+  gather(alignment,mean,DNM) %>%
+  select(alignment,mean,vspeak,vreply,category,shuffled)
+
+ggplot(d2,aes(x=vspeak,y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("By-marker aggregated alignments by speaker verification,\nunshuffled minus shuffled (Cutoff=",cutoff,")",sep=''),x="Speaker verified?",y="Mean unshuffled minus shuffled alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + theme_grey()
+```
+
+For slides power vs alignment pa1
+```{r}
+d2 <- d %>%
+  filter(vreply==F,(ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),PASmooth=mean(pa1))%>%
+  gather(alignment,mean,PASmooth) %>%
+  select(alignment,mean,vspeak,vreply,category,shuffled)
+
+ggplot(d2,aes(x=vspeak,y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("By-marker aggregated alignments by speaker verification,\nunshuffled minus shuffled (Cutoff=",cutoff,")",sep=''),x="Speaker verified?",y="Mean unshuffled minus shuffled alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + theme_grey()
+```
+
+So $p(A)$ smoothing has a small positive alignment to power, while DNM's measure has a small negative alignment to power. Both of these are significant effects:
+
+```{r}
+d3 <- d2 %>%
+  filter(shuffled=='unshuffled') %>%
+  select(alignment,vspeak,category,mean) %>%
+  spread(vspeak,mean) %>%
+  transmute(alignment=alignment,category=category,diff=`TRUE`-`FALSE`)
+
+t.test(with(d3[alignment=='PASmooth',],diff))
+t.test(with(d3[alignment=='DNM',],diff))
+
+```
+
+However, this effect is a little brittle. If we use the adjusted values (subtracting off the value in the shuffled dataset), the increased noise yields a null result in $p(A)$ smoothing and a barely significant result in DNM.
+
+```{r}
+d3 <- d2 %>%
+  spread(shuffled,mean) %>%
+  mutate(diff=unshuffled-shuffled) %>%
+  select(alignment,vspeak,category,diff) %>%
+  spread(vspeak,diff) %>%
+  transmute(alignment=alignment,category=category,diff=`TRUE`-`FALSE`)
+
+t.test(with(d3[alignment=='PASmooth',],diff))
+t.test(with(d3[alignment=='DNM',],diff))
+
+```
+
+### Frequency and alignment
+
+Lastly, let's look at the influence of marker frequency.  Interestingly, while in the shuffled case there was a very weak positive correlation between frequency and alignment, in the unshuffled case, there is a stronger negative correlation.  It looks like what's really happening here is that lower frequency markers can take on more extreme values than their higher frequency counterparts.  It's not clear whether this masks a real effect of frequency on alignment.
+
+
+```{r}
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(vspeak,vreply,category,shuffled) %>%
+  summarize(prop=mean((2*ba+nba+bna)/(2*(ba+nba+bna+nbna))),PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+ggplot(d2,aes(x=prop,y=mean)) + geom_point() +geom_smooth(method='lm') + labs(title=paste("By-marker aggregated alignment\nagainst frequency (Cutoff=",cutoff,")",sep=''),x="Marker frequency",y="Mean alignment",color="Speaker/replier\nverification") + facet_grid(alignment~shuffled,scales="free") + theme_bw() + scale_x_log10(breaks=c(.05,.1,.2,.4))
+```
+
+In summary, we see significant positive alignment in general and positive alignment to power in the $p(A)$ smoothed data.  A frequency effect appears, but it's less stark than the one we had under the original smoothing method.  Subtracting off the alignment estimates from the shuffled data appears to add noise and increase the numeric values of the alignment estimates, so we do not think it's appropriate for $p(A)$ smoothed data.
+
+## Further analyses
+
+At this point, we'll look only at the unadjusted, unshuffled data.
+
+### Follower counts and ratios
+
+DNM's analyses didn't have verification status as a metric for power. Verification represents a different kind of power that's generated external from Twitter. Does Twitter-internal power, measured by followers, also show additional alignment?  We calculate this using speaker follower percentage.  This is the ratio of number of followers that the speaker has to the summed number of followers that speaker and replier have. High numbers indicate that the speaker is followed by substantially more people than the replier.  We bin into high and low percentages, cutting at 99% following the speaker (this was found in previous analyses to show a qualitative break in the alignment distributions below and above it).  We find a significant positive effect of follower-based power in the $p(A)$ smoothed data, but a significant negative effect in the DNM data.
+
+```{r}
+d <- df %>%
+  filter(shuffled2=='unshuffled')
+
+d$pa1 <- pabsmooth(d,pasm,"logodds","pa")
+d$sd0 <- smoothalign(d,0,"subdnm")
+
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  mutate(fp=speakerFollowers/(speakerFollowers+replierFollowers)) %>%
+  mutate(fb=cut(fp, breaks=c(-0.01,0.99,1), labels=c("low", "high"))) %>%
+  group_by(category,fb) %>%
+  summarize(PASmooth=mean(pa1),DNM=mean(sd0))%>%
+  gather(alignment,mean,PASmooth,DNM)
+
+ggplot(d2,aes(x=fb,y=mean,label=category)) + geom_violin() + stat_summary(geom="point",fun.y="mean") + labs(title=paste("By-marker aggregated alignments by speaker verification,\nunshuffled minus shuffled (Cutoff=",cutoff,")",sep=''),x="Speaker verified?",y="Mean unshuffled minus shuffled alignment",color="Speaker-replier\npairs using\nthe marker") + facet_wrap(~alignment,scales="free") + theme_grey()
+
+d3 <- d2 %>%
+  spread(fb,mean) %>%
+  mutate(diff=high-low)
+
+t.test(d3[alignment=='PASmooth']$diff)
+t.test(d3[alignment=='DNM']$diff)
+
+```
+
+## Summary
+
+In summary, $p(A)$ smoothing appears to solve many of our problems with artifacts that persisted even with shuffled data while still retaining differences in the alignment on unshuffled data.  Although $p(A)$ smoothing is clearly not perfect, given the small but significant negative effects on the shuffled data, its artifacts appear to be fairly small and consistent, allowing us to use it as a reasonable estimate of alignment on unshuffled data.  We find positive effects on alignment in general, as well as alignment to power in both verification status and follower counts. DNM's measure, which needs no smoothing, finds a small positive effect of alignment in general, but finds negative alignment to power.  The nature of the difference between these two measures needs to be further examined, but our bet is that the $p(A)$ smoothed alignment estimates are better than DNM's.
+
+Tweets
+
+```{r}
+dTweet <- df %>%
+  filter(speakerId==813286, ba>2)
+dTweet[with(dTweet, order(-alignment)), ]
+
+dTweet <- df %>%
+  filter(verifiedSpeaker==T)
+dTweet[with(dTweet, order(-alignment)), ]
+```
+
+
+For slides
+
+```{r}
+(df <- fread('alignment/debug/results_50.csv', header=T))
+
+pabsmooth <- function(df,alpha=2,align="logodds",ab="pa") {
+  if (ab=='pa') {
+    pa = (df$ba+df$nba)/(df$ba+df$nba+df$bna+df$nbna) #this is p(A) smoothing
+  } else if (ab=='pb') {  
+    pa = (df$ba+df$bna)/(df$ba+df$nba+df$bna+df$nbna)   #this is p(B) smoothing
+  } else {
+    stop("Invalid baseline probability.")
+  }
+  if (align=="logodds") {
+    return(log(df$ba+alpha*pa)-log(df$ba+df$nba+alpha)-log(df$bna+alpha*pa)+log(df$bna+df$nbna+alpha))
+  } else if (align=="subdnm") {
+    return((df$ba+alpha*pa)/(df$ba+df$nba+alpha)-(df$bna+df$ba+alpha*pa)/(df$nba+df$ba+df$bna+df$nbna+alpha))
+  } else {
+    stop("Invalid alignment type.")
+  }
+} 
+d <- df
+d$pa1 <- pabsmooth(df,pasm,"logodds","pa")
+d$pb1 <- pabsmooth(df,pasm,"logodds","pb")
+
+d2 <- d %>%
+  filter((ba+nba)>=cutoff,(bna+nbna)>=cutoff) %>%
+  group_by(category, msgSentiment, replySentiment) %>%
+  summarize(convs=n(),PASmooth=mean(pa1)) %>%
+  gather(alignment,mean,PASmooth)
+
+ggplot(d2,aes(x=paste(msgSentiment>0, replySentiment>0),y=mean)) + geom_violin() + labs(title=paste("By-marker follower comparison (Cutoff=",cutoff,")",sep=''),x="Msg Sentiment > 0/Reply Sentiment > 0",y="Mean alignment") + facet_wrap(~alignment,scales="free") + geom_hline(yintercept=0) + theme_grey() + stat_summary(geom="point",fun.y="mean",color="red")
+
+#t.test(d2[alignment=='PASmooth'&shuffled=='unshuffled',]$mean)
+
+```
