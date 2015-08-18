@@ -1,25 +1,68 @@
+#Code to peform alignment calculations on Twitter data
+# Created by Jake Prasad & Gabe Doyle
+# Runs on Python 3, not 2!!
+
 import csv
 import alignment
 from ast import literal_eval
 import cProfile
 import logger1
 import string
+import sys
 from random import shuffle
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 
 inputFile = "data/pairedtweets2.txt"
-markersFile = "wordlists/markers_worldenglish.csv"
-outputFile = "debug/shuffled/shuffled"
+markersFile = "wordlists/LIWC_categories.tsv"
+outputFile = "debug/shuffled/results.csv"
 
 userFile = "data/pairedtweets.txt.userinfo"
 
-numMarkers = 50
 smoothing = 1
 shouldWriteHeader = True
+markersFromData = True			#Should we obtain the markers from the data rather than a pre-specified list?
+numMarkers = 50				#	If so, how many of the most common tokens to use as markers?
+
+#If we want to try different shuffling options
+shouldShuffleMsgUserIds = False
+shouldShuffleReplyUserIds = False
+shouldShuffleVerifiedSpeaker = False
+shouldShuffleVerifiedReplier = False
+shouldShuffleMsgMarkers = False
+shouldShuffleReplyMarkers = False
 
 
+# Processing code options - optional tags to be added as -x=VALUE
+if (len(sys.argv) > 1):
+	for arg in sys.argv[1:]:
+		tag = arg[0:2]
+		featval = arg[3:]
+		if tag == '-i':					#-i: input file
+			inputFile = featval
+		elif tag == '-m':					#-m: marker list file (TODO: not yet implemented)
+			markersFile = featval
+			markersFromData = False
+		elif tag == '-o':					#-o: output file
+			outputFile = featval
+		elif tag == '-u':					#-u: user information file
+			userFile = featval
+		elif tag == '-M':					#-M: derive markers from the data
+			markersFromData = True
+			if featval != '':				#	optional value: number of markers to use from the data
+				numMarkers = int(featval)
+		elif tag == '-S':					#-S: shuffle msgs, userids, and replies (to add: specify what options to shuffle)
+			if featval =='':
+				shouldShuffleMsgUserIds = True
+				shouldShuffleReplyUserIds = True
+				shouldShuffleVerifiedSpeaker = True
+				shouldShuffleVerifiedReplier = True
+				shouldShuffleMsgMarkers = True
+				shouldShuffleReplyMarkers = True
+
+print("Reading from", inputFile)
+print("Printing to", outputFile)
 
 # Reads in info about users
 # Need this function for power proxy
@@ -31,12 +74,12 @@ def readUserInfo():
 		toAppend = {}
 		toAppend["uid"] = row[0]
 		toAppend["screenname"] = row[1]
-		toAppend["verified"] = literal_eval(row[2])
-		toAppend["numtweets"] = row[3]
-		toAppend["numfriends"] = row[4]
-		toAppend["numfollowers"] = row[5]
-		toAppend["numlistsin"] = row[6]
-		toAppend["numfavoritesgiven"] = row[7]
+		toAppend["verified"] = literal_eval(row[2])		#Verified is listed as "True"/"False"; literal_eval converts to boolean
+		toAppend["numtweets"] = int(row[3])
+		toAppend["numfriends"] = int(row[4])
+		toAppend["numfollowers"] = int(row[5])
+		toAppend["numlistsin"] = int(row[6])
+		toAppend["numfavoritesgiven"] = int(row[7])
 		users.append(toAppend)
 	return users
 
@@ -62,19 +105,21 @@ def remove_values_from_list(the_list, val):
    return [value for value in the_list if value != val]
 
 # Reads in tweets
+#	inputFile is a file of tab-separated values representing message-reply pairs
+#	users is the dictionary(?) of user info from readUserInfo()
+#	numOfMarkers is the number of markers to extract if extracting markers from data
 def readCSV(inputFile, users, numOfMarkers):
-	functionWords = "of, at, in, without, between, he, they, anybody, it, one, the, a, that, my, more, much, either, neither, and, that, when, while, although, or, be, is, am, are, were, was, have, has, had, got, do, did, doing, no, not, nor, as"
-	functionWords = functionWords.split(" ")
-	reciprocities = {}
 	reader=csv.reader(open(inputFile,errors="ignore"),dialect="excel-tab")
-	next(reader, None)
+	csvheader = next(reader, None)
 	utterances = []
 	toReturn = []
 	freqs = {}
+	userPairs = {}				#Dictionary with key being msg sender, value being list of repliers
+	
 	for i, row in enumerate(reader):
 		row = processTweetCSVRow(row)
-		reciprocities[row["convId"]] = False
-
+		
+		#removing mentions and urls from tweets, removing line if resulting tweet is empty
 		realMessage = remove_values_from_list(row["msgTokens"], "[mention]")
 		realMessage = remove_values_from_list(realMessage, "[url]")
 		if(len(realMessage) == 0):
@@ -84,7 +129,8 @@ def readCSV(inputFile, users, numOfMarkers):
 		realReply = remove_values_from_list(realReply, "[url]")
 		if(len(realReply) == 0):
 			continue
-
+		
+		#removing retweets that weren't screen out by the Twitter API
 		if("”" in row["reply"] and row["msg"] in row["reply"]):
 			continue
 		if("[mention] :" in row["reply"] and row["msg"] in row["reply"]):
@@ -93,30 +139,49 @@ def readCSV(inputFile, users, numOfMarkers):
 			continue
 		if(row["msgUserId"] == row["replyUserId"]):
 			continue
-		for word in row["msgTokens"]:
-			freqs[word] = freqs.get(word, 0) + 1
-		for word in row["replyTokens"]:
-			freqs[word] = freqs.get(word, 0) + 1
+		
+		#calculating word frequencies in the dataset
+		if markersFromData:
+			for word in row["msgTokens"]:
+				freqs[word] = freqs.get(word, 0) + 1
+			for word in row["replyTokens"]:
+				freqs[word] = freqs.get(word, 0) + 1
 		utterances.append(row)
-	for reciprocity in reciprocities:
-		reverse = (reciprocity[1], reciprocity[0])
-		if reverse in reciprocities:
-			reciprocities[reciprocity] = True
+		
+		#Adding pair to userPairs for reciprocity
+		userPair = row["convId"]
+		if userPair not in userPairs:
+			userPairs[userPair] = False
+	
+	for userPair in userPairs:
+		reverse = (userPair[1], userPair[0])
+		if reverse in userPairs:
+			userPairs[userPair] = True
+	
 	for utterance in utterances:
-		if reciprocities[utterance["convId"]]:
+		if userPairs[utterance["convId"]]:
 			utterance["reciprocity"] = True
 		else:
 			utterance["reciprocity"] = False
 		toReturn.append(utterance)
-	markers = []
-	freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
-	subset = freqs[0:numOfMarkers]
 	
-	for subsetTuple in subset:
-		if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
-			continue
-		else:
-			markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+	if markersFromData:
+		markers = []
+		freqs = [(k, freqs[k]) for k in sorted(freqs, key=freqs.get, reverse=True)]
+		subset = freqs[0:(numOfMarkers+2)]		#up to two types ([mention] & [url]) will be removed
+		count = 0
+		for subsetTuple in subset:
+			if(subsetTuple[0] == "[mention]" or subsetTuple[0] == "[url]"):
+				continue
+			else:
+				markers.append({"marker": subsetTuple[0], "category": subsetTuple[0]})
+				count += 1
+				if count==numOfMarkers:	#if we've gotten up to our marker limit and there are still some left, break out
+					break
+	else:
+		csv.DictReader(open(markersFile,errors="ignore"),dialect="excel-tab")
+		#TODO: add marker processing here
+	
 	return {"rows": toReturn, "markers": markers}
 
 
@@ -257,14 +322,7 @@ def shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUse
 
 start = logger1.initialize()
 
-shouldShuffleMsgUserIds = False
-shouldShuffleReplyUserIds = False
-shouldShuffleVerifiedSpeaker = False
-shouldShuffleVerifiedReplier = False
-shouldShuffleMsgMarkers = False
-shouldShuffleReplyMarkers = False
-
-
+#Basic sentiment analysis 
 positives = read("data/positive.txt")
 negatives = read("data/negative.txt")
 
@@ -303,9 +361,7 @@ if(outputFile == "debug/shuffled/shuffled"):
 	logger1.log(utterances[0])
 	utterances = shuffleUtterances(utterances, shouldShuffleMsgUserIds, shouldShuffleReplyUserIds, shouldShuffleVerifiedSpeaker, shouldShuffleVerifiedReplier, shouldShuffleMsgMarkers, shouldShuffleReplyMarkers)
 	logger1.log(utterances[0])
-
-
-outputFile += ".csv"
+	outputFile += ".csv"
 
 results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
 
