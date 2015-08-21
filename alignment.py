@@ -3,6 +3,9 @@ import operator
 import itertools
 import math
 import logger1
+from copy import copy
+
+from pprint import pprint
 
 def ngrams(input, n):
   output = []
@@ -10,16 +13,15 @@ def ngrams(input, n):
     output.append(tuple(input[i:i+n]))
   return output
 
-def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, extras):
+def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, extras={}):
 	markers = checkMarkers(markers)
 	groupedUtterances = group(utterances)
-	#sparsities = calculateSparsity(groupedUtterances)
-	metaData = metaDataExtractor(groupedUtterances, markers, extras)
+	metaData = metaDataExtractor(groupedUtterances, markers)
 	results = runFormula(metaData, markers, smoothing, extras)
-	writeFile(results, outputFile, shouldWriteHeader)
+	#writeFile(results, outputFile, shouldWriteHeader)
 	return results
 
-# Groups tweets by conversation numbers
+# Groups tweets by conversation ids
 def group(utterances):
 	utterances.sort(key=operator.itemgetter('convId'))
 	list1 = []
@@ -27,117 +29,85 @@ def group(utterances):
 		list1.append(list(items))
 	return list1
 
-#def calculateSparsity(groupedUtterances): # calculates number of words speaker has said to replier/replier to speaker total
-#	sparsity_measure = {}
-#	for convo in groupedUtterances:
-#		a = convo[0]["msgUserId"] # Id of person A
-#		b = convo[0]["replyUserId"] # Id of person B
-#		sparsity_measure[(a, b)] = [0, 0]
-#		for utterance in convo:
-#			sparsity_measure[(a, b)] = [sparsity_measure[(a, b)][0] + len(utterance["msgTokens"]), sparsity_measure[(a, b)][1] + len(utterance["replyTokens"])]
-#	return sparsity_measure
+def makeMarkerDict(markers):
+	mdict = {}
+	for m in markers:
+		mdict[m["marker"]] = m["category"]
+	return(mdict)
+
+def makeMarkerDict2(markers):
+	mdict = {}
+	for m in markers:
+		mdict[m["category"]] = mdict.get(m["category"],[]).append(m["marker"])
+	return(mdict)
+
+def findMarkerInMessage(marker,utterance):
+	# Increments values of userMarkers and ba depending on whether a marker["marker"] is in the current utterance
+	if marker in utterance["replyMarkers"]:
+		result = 'b'
+	else:
+		result = 'nb'
+
+	if marker in utterance["msgMarkers"]:
+		result += 'a'
+	else:
+		result += 'na'
+	
+	return(result)
+
+def findMarkersInMessage(d,markers,utterance):
+	for j,marker in enumerate(markers.keys()):
+		condition = findMarkerInMessage(marker,utterance)
+		d[condition][marker] = d[condition].get(marker,0) + 1
+	return(d)
+
+def findMarkersInConvo(markers,convo):
+	ba = {} # Number of times Person A and person B says the marker["marker"]
+	bna = {}
+	nbna = {}
+	nba = {}
+	for utterance in convo:				
+		for j, marker in enumerate(markers):
+			category = marker["category"]
+			msgMarker = category in utterance["msgMarkers"]
+			replyMarker = category in utterance["replyMarkers"]
+			
+			if msgMarker and replyMarker:
+				ba[category] = ba.get(category,0) + 1
+			elif replyMarker and not msgMarker:
+				bna[category] = bna.get(category,0) + 1
+			elif not replyMarker and msgMarker:
+				nba[category] = nba.get(category,0) + 1
+			else:
+				nbna[category] = nbna.get(category,0) + 1
+	return({'ba': ba,'bna': bna,'nba': nba,'nbna': nbna})
+
+def addFeats(toAppend,utterance):
+	toAppend["speakerId"] = utterance["msgUserId"]
+	toAppend["replierId"] = utterance["replyUserId"]
+	#toAppend["conv"] = utterance["convId"]
+	toAppend["reciprocity"] = utterance["reciprocity"]
+	if("verifiedSpeaker" in utterance):
+		toAppend["verifiedSpeaker"] = bool(utterance["verifiedSpeaker"])
+		toAppend["verifiedReplier"] = bool(utterance["verifiedReplier"])
+		toAppend["speakerFollowers"] = utterance["speakerFollowers"]
+		toAppend["replierFollowers"] = utterance["replierFollowers"]			
+	else:
+		toAppend["corpus"] = utterance["corpus"]
+		toAppend["docId"] = utterance["docId"]
+	return(toAppend)
+
 
 # Computers the power probabilities
-def metaDataExtractor(groupedUtterances, markers, extras):
+def metaDataExtractor(groupedUtterances, markers, extras={}):
 	results = []
-	if("positives" in extras):
-		positives = extras["positives"]
-		negatives = extras["negatives"]
+	#mdict = makeMarkerDict(markers)
 	for i, convo in enumerate(groupedUtterances):
-		if(i % 1000 is 0):
+		if(i % 2500 is 0):
 			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
-		userMarkers = {}
-		ba = {} # Number of times Person A and person B says the marker["marker"]
-		bna = {}
-		nbna = {}
-		nba = {}
-
-		#for marker in markers:
-		#	ba[marker["category"]] = 0
-		#	bna[marker["category"]] = 0
-		#	nbna[marker["category"]] = 0
-		#	nba[marker["category"]] = 0
-
-		#numUtterances = len(convo) # Number of total utterances in the conversation
-		#convoUtterances = []
-		#averageReplySentiment = 0
-		#averageMessageSeniment = 0
-		for utterance in convo:
-			#if("positives" in extras):
-			#	msgSentiment = 0
-			#	for token in utterance["msgTokens"]:
-			#		if(token in positives):
-			#			msgSentiment += 1
-			#		elif token in negatives:
-			#			msgSentiment -= 1
-                  #
-			#	replySentiment = 0
-			#	for token in utterance["replyTokens"]:
-			#		if(token in positives):
-			#			replySentiment += 1
-			#		elif token in negatives:
-			#			replySentiment -= 1
-                  #
-			#	averageMessageSeniment += msgSentiment
-			#	averageReplySentiment += replySentiment
 				
-			completedCategories = {}
-			for j, marker in enumerate(markers):
-				category = marker["category"]
-				if(category in completedCategories):
-					continue
-				msgMarker = False
-				replyMarker = False
-				# Increments values of userMarkers and ba depending on whether a marker["marker"] is in the current utterance
-				if category in utterance["msgMarkers"]:
-					msgMarker = True
-					userMarkers[utterance["msgUserId"] + category] = userMarkers.get(utterance["msgUserId"] + category ,0) + 1
-				if category in utterance["replyMarkers"]:
-					replyMarker = True
-					userMarkers[utterance["replyUserId"] + category] = userMarkers.get(utterance["replyUserId"] + category,0) + 1
-				
-				if msgMarker and replyMarker:
-					ba[category] = ba.get(category,0) + 1
-				elif replyMarker and not msgMarker:
-					bna[category] = bna.get(category,0) + 1
-				elif not replyMarker and msgMarker:
-					nba[category] = nba.get(category,0) + 1
-				else:
-					nbna[category] = nbna.get(category,0) + 1
-				completedCategories[category] = True
-		toAppend = {}
-		toAppend["nbna"] = nbna
-		toAppend["nba"] = nba
-		toAppend["bna"] = bna
-		#toAppend["utterances"] = convoUtterances
-		#toAppend["numUtterances"] = numUtterances
-		toAppend["ba"] = ba
-		#toAppend["userMarkers"] = userMarkers
-		toAppend["msgUserId"] = utterance["msgUserId"]
-		toAppend["replyUserId"] = utterance["replyUserId"]
-		toAppend["conv"] = utterance["convId"]
-		toAppend["reciprocity"] = utterance["reciprocity"]
-
-
-		if("verifiedSpeaker" in convo[0]):
-			#if("positives" in extras):
-			#	if(i%1000 == 0):
-			#		logger1.log("Adding sentiment")
-			#	toAppend["msgSentiment"] = averageMessageSeniment/numUtterances
-			#	toAppend["replySentiment"] = averageReplySentiment/numUtterances
-			#	toAppend["ngramPercent"] = ngramPercent
-
-			toAppend["verifiedSpeaker"] = bool(convo[0]["verifiedSpeaker"])
-			toAppend["verifiedReplier"] = bool(convo[0]["verifiedReplier"])
-			toAppend["speakerFollowers"] = convo[0]["speakerFollowers"]
-			toAppend["replierFollowers"] = convo[0]["replierFollowers"]
-			#if((convo[0]["replierFollowers"] + convo[0]["speakerFollowers"] > 0) and (convo[0]["speakerFollowers"] != 0) and (convo[0]["replierFollowers"] > 0)):
-			#	toAppend["percentDiff"] = convo[0]["speakerFollowers"]/(convo[0]["replierFollowers"] + convo[0]["speakerFollowers"])
-			
-		else:
-			toAppend["corpus"] = utterance["corpus"]
-			toAppend["docId"] = utterance["docId"]
-
+		toAppend = findMarkersInConvo(markers,convo)		
+		toAppend = addFeats(toAppend,convo[0])
 		results.append(toAppend)
 	return results
 
@@ -147,81 +117,110 @@ def allMarkers(markers):
 		categories.append(marker["category"])
 	return list(set(categories))
 
+#def temp2(category,result,smoothing):
+#	toAppend = initializeAlignmentDict(result)
+#	ba = int(result["ba"].get(category, 0))
+#	bna = int(result["bna"].get(category, 0))
+#	nbna = int(result["nbna"].get(category, 0))
+#	nba = int(result["nba"].get(category, 0))
+#	
+#	#Calculating alignment only makes sense if we've seen messages with and without the marker
+#	if (((ba+nba)==0 or (bna+nbna)==0)):
+#		return(None)
+#		
+#	#Calculating Echoes of Power alignment 
+#	powerNum = ba
+#	powerDenom = ba+nba
+#	baseNum = ba+bna
+#	baseDenom = ba+nba+bna+nbna
+#      
+#	if(powerDenom != 0 and baseDenom != 0):
+#		dnmalignment = powerNum/powerDenom - baseNum/baseDenom
+#		toAppend["dnmalignment"] = dnmalignment
+#	else:
+#		raise NameError('DNM incalculable')
+#	
+#	#Calculating log-odds alignment
+#	baseNum = bna
+#	baseDenom = bna+nbna
+#	powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
+#	baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
+#	toAppend["alignment"] = powerProb - baseProb
+#	
+#	toAppend["category"] = category
+#	toAppend["ba"] = ba
+#	toAppend["bna"] = bna
+#	toAppend["nba"] = nba
+#	toAppend["nbna"] = nbna
+#	
+#	return(toAppend)
+
+def createAlignmentDict(category,result,smoothing):
+	toAppend = {}
+	ba = int(result["ba"].get(category, 0))
+	bna = int(result["bna"].get(category, 0))
+	nbna = int(result["nbna"].get(category, 0))
+	nba = int(result["nba"].get(category, 0))
+	
+	#Calculating alignment only makes sense if we've seen messages with and without the marker
+	if (((ba+nba)==0 or (bna+nbna)==0)):
+		return(None)
+	toAppend["speakerId"] = result["speakerId"]
+	toAppend["replierId"] = result["replierId"]
+	
+	if("reciprocity" in result):
+		toAppend["reciprocity"] = result["reciprocity"]
+	if("verifiedSpeaker" in result):
+		toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
+		toAppend["verifiedReplier"] = result["verifiedReplier"]				
+		toAppend["speakerFollowers"] = result["speakerFollowers"]
+		toAppend["replierFollowers"] = result["replierFollowers"]
+	else:
+		toAppend["corpus"] = result["corpus"]
+		toAppend["docId"] = result["docId"]
+	
+	#Calculating Echoes of Power alignment 
+	powerNum = ba
+	powerDenom = ba+nba
+	baseNum = ba+bna
+	baseDenom = ba+nba+bna+nbna
+
+	if(powerDenom != 0 and baseDenom != 0):
+		dnmalignment = powerNum/powerDenom - baseNum/baseDenom
+		toAppend["dnmalignment"] = dnmalignment
+	else:
+		toAppend["dnmalignment"] = False
+	
+	powerNum = ba
+	powerDenom = ba+nba
+	baseDenom = bna+nbna
+	baseNum = bna
+	powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
+	baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
+	alignment = powerProb - baseProb
+	toAppend["alignment"] = alignment
+	
+	toAppend["ba"] = ba
+	toAppend["bna"] = bna
+	toAppend["nba"] = nba
+	toAppend["nbna"] = nbna
+	return(toAppend)
+
+#def initializeAlignmentDict(d):
+#	return({key:d[key] for key in d.keys() if key not in ['ba','bna','nba','nbna']})
+
 # Formula = (utterances that A and B have said with the marker)/(utterances that A has said with marker) - (utterances B has said with marker)/(total utterances)
 def runFormula(results, markers, smoothing, extras):
 	toReturn = []
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
+		#d = initializeAlignmentDict(result)
 		if(i % 1000 is 0):
 			logger1.log("On result " + str(i) + " of " + str(len(results)))
 		for j, category in enumerate(categories):
-			#if((result["msgUserId"]+category) not in result["userMarkers"]):
-			#	continue
-			#sparsity = sparsities[(result["a"], result["b"])]
-			toAppend = {}
-			ba = int(result["ba"].get(category, 0))
-			bna = int(result["bna"].get(category, 0))
-			nbna = int(result["nbna"].get(category, 0))
-			nba = int(result["nba"].get(category, 0))
-			
-			#Calculating alignment only makes sense if we've seen messages with and without the marker
-			#if ((ba+nba)==0 or (bna+nbna)==0):
-			#	continue
-			toAppend["speakerId"] = result["msgUserId"]
-			toAppend["replierId"] = result["replyUserId"]
-			toAppend["category"] = category
-			#toAppend["numUtterances"] = result["numUtterances"]
-			
-			if("reciprocity" in result):
-				toAppend["reciprocity"] = result["reciprocity"]
-
-			
-			if("verifiedSpeaker" in result):
-				toAppend["verifiedSpeaker"] = result["verifiedSpeaker"]
-				toAppend["verifiedReplier"] = result["verifiedReplier"]
-				
-				toAppend["speakerFollowers"] = result["speakerFollowers"]
-				toAppend["replierFollowers"] = result["replierFollowers"]
-				#if("msgSentiment" in result):
-				#	toAppend["msgSentiment"] = result["msgSentiment"]
-				#	toAppend['replySentiment'] = result["replySentiment"]
-				#	toAppend["ngramPercent"] = result["ngramPercent"]
-			else:
-				toAppend["corpus"] = result["corpus"]
-				toAppend["docId"] = result["docId"]
-				#toAppend["sparsityA"] = sparsity[0]
-				#toAppend["sparsityB"] = sparsity[1]
-			
-			#Calculating Echoes of Power alignment 
-			powerNum = ba
-			powerDenom = ba+nba
-			baseNum = ba+bna
-			baseDenom = ba+nba+bna+nbna
-
-			if(powerDenom != 0 and baseDenom != 0):
-				dnmalignment = powerNum/powerDenom - baseNum/baseDenom
-				toAppend["dnmalignment"] = dnmalignment
-			else:
-				toAppend["dnmalignment"] = False
-
-
-
-
-			powerNum = ba
-			powerDenom = ba+nba
-			baseDenom = bna+nbna
-			baseNum = bna
-			powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
-			baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
-			alignment = powerProb - baseProb
-			toAppend["alignment"] = alignment
-			
-			toAppend["ba"] = ba
-			toAppend["bna"] = bna
-			toAppend["nba"] = nba
-			toAppend["nbna"] = nbna
-
-			toReturn.append(toAppend)
+			toAppend = createAlignmentDict(category,result,smoothing)
+			if toAppend is not None:
+				toReturn.append(toAppend)
 	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
 	return toReturn
 
@@ -252,8 +251,6 @@ def readMarkers(markersFile):
 	reader = csv.reader(open(markersFile))
 	markers = []
 	for i, row in enumerate(reader):
-		if(i > 50):
-			break
 		toAppend = {}
 		toAppend["marker"] = row[0]
 		if(len(row) > 1):

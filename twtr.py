@@ -12,6 +12,9 @@ import sys
 import re
 from random import shuffle
 
+from pprint import pprint
+import cProfile
+
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 
@@ -335,10 +338,12 @@ def shuffleUtterances(utterances, shuffleIds, shuffleTweets, shuffleTokens, comb
 start = logger1.initialize()
 
 #Basic sentiment analysis 
-positives = read("data/positive.txt")
-negatives = read("data/negative.txt")
+#positives = read("data/positive.txt")
+#negatives = read("data/negative.txt")
 
+logger1.log("Reading user info...")
 users = readUserInfo()
+logger1.log("Reading messages...")
 result = readCSV(inputFile, users, numMarkers)
 rows = result["rows"]
 markers = result["markers"]
@@ -367,6 +372,6 @@ if(outputFile == "debug/shuffled/shuffled"):
 
 utterances = transformCSV(markers, users, rows)
 
-results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, {})
+cProfile.run('results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)')
 
 logger1.finish(start)
