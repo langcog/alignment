@@ -63,7 +63,8 @@ docs/_build/
 
 # PyBuilder
 target/
-*.py~
+*~
 debug/results2.csv
-*.py#
-#alignment.py#
+#*#
+data/*
+debug/shuffled/*
