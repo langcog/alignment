@@ -5,15 +5,11 @@
 import csv
 import alignment
 from ast import literal_eval
-import cProfile
 import logger1
 import string
 import sys
 import re
 from random import shuffle
-
-from pprint import pprint
-import cProfile
 
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
@@ -38,8 +34,6 @@ shuffleIds = False
 shuffleTweets = False
 shuffleMarkers = False
 combineMsgReply = False
-
-utteranceFile = None
 
 # Processing code options - optional tags to be added as -x=VALUE
 if (len(sys.argv) > 1):
@@ -80,10 +74,7 @@ if (len(sys.argv) > 1):
 				shuffleIds = False
 				shuffleTweets = True
 				shuffleMarkers = False
-				combineMsgReply = False
-		#elif tag == '-U':
-		#	utteranceFile = featval
-				
+				combineMsgReply = False				
 
 print("Reading from", inputFile)
 print("Printing to", outputFile)
@@ -290,9 +281,6 @@ def shuffleUtterances(utterances, shuffleIds, shuffleTweets, shuffleTokens, comb
 	replyLengthsNew = []
 
 	for i, utterance in enumerate(utterances):		
-		#if(i % 10000 is 0):
-		#	logger1.log("Reading " + str(i) + " of " + str(len(utterances)))
-		#	
 		utterances[i]["msg"] = ""
 		utterances[i]["reply"] = ""
 
@@ -328,18 +316,11 @@ def shuffleUtterances(utterances, shuffleIds, shuffleTweets, shuffleTokens, comb
 				replyLengthsNew.append(msgLengths[2*i+1])
 		utterances[i]["convId"] = (utterances[i]["msgUserId"],utterances[i]["replyUserId"])
 		
-	#print('Average # markers / msg:',sum(msgLengthsNew)/len(msgLengthsNew))
-	#if len(replyLengthsNew)>0:
-	#	print('Average # markers / reply:',sum(replyLengthsNew)/len(replyLengthsNew))
 	return utterances
 
 
 
 start = logger1.initialize()
-
-#Basic sentiment analysis 
-#positives = read("data/positive.txt")
-#negatives = read("data/negative.txt")
 
 logger1.log("Reading user info...")
 users = readUserInfo()
@@ -372,6 +353,5 @@ if(outputFile == "debug/shuffled/shuffled"):
 
 utterances = transformCSV(markers, users, rows)
 
-cProfile.run('results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)')
-
+results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
 logger1.finish(start)
