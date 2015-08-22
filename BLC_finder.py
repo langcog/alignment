@@ -9,10 +9,10 @@ perm_dict = {}
 ref_dict = {}
 branch_list = []
 branch_dict = {}
-hit_list = ['entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part' ]
+hit_list = ['artifact', 'organism', 'entity', 'object', 'event', 'quality', 'relation', 'evidence', 'activity', 'action', 'attitdue', 'group', 'condition', 'difference', 'matter', 'part']
 
 freq_file_name = r'C:\Users\Aaron\alignment\lemma.num'
-outfilename = r'C:\Users\Aaron\alignment\BLCListViaBNC.csv'
+outfilename = r'C:\Users\Aaron\alignment\BLCListViaBNC3.csv'
 
 def read_Freq_File(file_name):
 	global fdist
@@ -61,7 +61,8 @@ def branch_finder():
 					else:
 						trill_homie = trill_homie - 1	
 
-				sp_branch = [sp_item.lemmas()[0].name()]
+				sp_branch= []		
+				sp_branch.append(sp_item.lemmas()[0].name())
 				for item in list(sp_item.closure(hyper)):
 					if len(re.findall('.n.01', str(item))) == 1:
 						if item.lemmas()[0].name() not in hit_list:
@@ -84,7 +85,7 @@ def get_branch_values():
 		if len(lst) > 3:
 			temp_dict[lst[0]] = lst
 			#1
-			branch_dict[lst[0]] = [lst[0]]
+			branch_dict[lst[0]] = [(lst[0], lst[1], lst[2])]
 			#2
 			branch_dict[lst[0]].append(len(lst))
 	for key in temp_dict.keys():
@@ -128,7 +129,14 @@ def get_branch_values():
 			branch_dict[key].append('NA')
 		#7
 		if max1 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max1 + '.n.01').closure(hyper))) / branch_dict[key][1]))
+			temp_lista = []
+			temp_lista.append(max1)
+			for item in list(wn.synset(max1 + '.n.01').closure(hyper)):
+				t_item = item.lemmas()[0].name()
+				if len(re.findall('.n.01', str(item))) == 1:
+					if t_item not in hit_list:
+						temp_lista.append(t_item)
+			branch_dict[key].append(len(temp_lista) / branch_dict[key][1])
 		else:
 			branch_dict[key].append('NA')	
 		#8
@@ -142,7 +150,14 @@ def get_branch_values():
 			branch_dict[key].append('NA')
 		#11
 		if max2 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max2 + '.n.01').closure(hyper))) / branch_dict[key][1]))
+			temp_listb = []
+			temp_listb.append(max2)
+			for item in list(wn.synset(max2 + '.n.01').closure(hyper)):
+				t_item = item.lemmas()[0].name()
+				if len(re.findall('.n.01', str(item))) == 1:
+					if t_item not in hit_list:
+						temp_listb.append(t_item)
+			branch_dict[key].append(len(temp_listb) / branch_dict[key][1])
 		else:
 			branch_dict[key].append('NA')
 		#12
@@ -156,7 +171,14 @@ def get_branch_values():
 			branch_dict[key].append('NA')	
 		#15
 		if max3 != 'NA':
-			branch_dict[key].append((len(list(wn.synset(max3 + '.n.01').closure(hyper))) / branch_dict[key][1]))
+			temp_listc = []
+			temp_listc.append(max3)
+			for item in list(wn.synset(max3 + '.n.01').closure(hyper)):
+				t_item = item.lemmas()[0].name()
+				if len(re.findall('.n.01', str(item))) == 1:
+					if t_item not in hit_list:
+						temp_listc.append(t_item)
+			branch_dict[key].append(len(temp_listc) / branch_dict[key][1])
 		else:
 			branch_dict[key].append('NA')	
 	return(branch_dict)			
@@ -185,3 +207,5 @@ print(len(branch_list))
 get_branch_values()
 writeHeader(outfilename)
 write_file(outfilename)
+
+

@@ -14,10 +14,10 @@ from random import shuffle
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 
+
 inputFile = "data/pairedtweets2.txt"
 markersFile = "wordlists/LIWC_categories.tsv"
 outputFile = "debug/shuffled/results.csv"
-
 userFile = "data/pairedtweets.txt.userinfo"
 
 smoothing = 1				#What is our smoothing variable (assuming +1 smoothing on logodds)
@@ -315,7 +315,6 @@ def shuffleUtterances(utterances, shuffleIds, shuffleTweets, shuffleTokens, comb
 				msgMarkerCount += msgLengths[2*i+1]
 				replyLengthsNew.append(msgLengths[2*i+1])
 		utterances[i]["convId"] = (utterances[i]["msgUserId"],utterances[i]["replyUserId"])
-		
 	return utterances
 
 
@@ -346,6 +345,7 @@ if(outputFile == "debug/shuffled/shuffled"):
 		outputFile += "T"
 	else:
 		outputFile += "F"
+
 	logger1.log(rows[0])
 	rows = shuffleUtterances(rows, shuffleIds, shuffleTweets, shuffleMarkers, combineMsgReply)
 	logger1.log(rows[0])
