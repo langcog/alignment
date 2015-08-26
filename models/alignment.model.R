@@ -3,15 +3,28 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 
-num_markers <- 2
+num_markers <- 1
 num_people <- 3
-num_utterances <- c(4,4,4)
-counts <- matrix(c(1,1,1,3,3,3), nrow=3, ncol = 2)
+num_utterances_ab <- matrix(c(0, 5, 5, 5, 0, 5, 5, 5, 0), nrow = 3)
+num_utterances_notab <- num_utterances_ab
+# counts_ab <- array(c(0, 3, 1, 4, 0, 3, 4, 5, 0), 
+#                    dim = c(num_people, num_people, num_markers))
+# counts_notab <- array(c(0, 3, 1, 4, 0, 0, 4, 3, 0),
+#                       dim = c(num_people, num_people, num_markers))
+
+counts_ab <- array(c(0, 4, 4, 3, 0, 5, 1, 3, 0), 
+                   dim = c(num_people, num_people, num_markers))
+counts_notab <- array(c(0, 4, 4, 3, 0, 3, 1, 0, 0),
+                      dim = c(num_people, num_people, num_markers))
+
+
 
 alignment_data <- list(NumMarkers = num_markers,
                        NumPeople = num_people,
-                       NumUtterances = num_utterances,
-                       Counts = counts)
+                       NumUtterancesAB = num_utterances_ab,
+                       NumUtterancesNotAB = num_utterances_notab,
+                       CountsAB = counts_ab,
+                       CountsNotAB = counts_notab)
 
 
 fit <- stan(file = 'alignment.stan', data = alignment_data, 
