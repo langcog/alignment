@@ -1,75 +1,69 @@
 data {
   int<lower=0> NumPeople;
-  int<lower=0> NumMarkers;
-  int<lower=0> NumUtterancesAB[NumPeople,NumPeople];
-  int<lower=0> NumUtterancesNotAB[NumPeople,NumPeople];
-  int<lower=0> CountsAB[NumPeople,NumPeople,NumMarkers];
-  int<lower=0> CountsNotAB[NumPeople,NumPeople,NumMarkers];
+  int<lower=0> NumPairs;
+  int<lower=0> NumUtterancesAB[NumPairs];
+  int<lower=0> NumUtterancesNotAB[NumPairs];
+  int<lower=0> CountsAB[NumPairs];
+  int<lower=0> CountsNotAB[NumPairs];
+  int<lower=0> Speaker[NumPairs];
+  int<lower=0> Replier[NumPairs];
 }
 
 parameters {
-  real<lower=0> alpha_pop[NumMarkers];
-  real<lower=0> beta_pop[NumMarkers];
-  real<lower=0> alpha_person[NumPeople,NumMarkers];
-  real<lower=0> beta_person[NumPeople,NumMarkers];
-  real<lower=0,upper=1> thetaA[NumPeople,NumPeople,NumMarkers];
-  real<lower=0,upper=1> thetaNotA[NumPeople,NumPeople,NumMarkers];
-  real<lower=0>pos_inf[NumPeople,NumPeople];
-  real<lower=0>neg_inf[NumPeople,NumPeople];
+  real eta_ab_pop;
+  real eta_pop;
+  real eta_person[NumPeople];
+  real<lower=0> n_pop;
+  real<lower=0> n_person[NumPeople];
+  real<lower=0,upper=1> thetaA[NumPairs];
+  real<lower=0,upper=1> thetaNotA[NumPairs];
+  real eta_ab[NumPairs];
+
+}
+
+transformed parameters {
+  real<lower=0,upper=1> mu_person[NumPeople];
+  real<lower=0> mu_ab[NumPairs];
+  real<lower=0> alphaA[NumPairs];
+  real<lower=0> alphaNotA[NumPairs];
+  real<lower=0> betaA[NumPairs];
+  real<lower=0> betaNotA[NumPairs];
+
+  for (Person in 1:NumPeople) {
+     mu_person[Person] <- inv_logit(eta_person[Person]);
+  }
+
+  for (Pair in 1:NumPairs) {
+    mu_ab[Pair] <- inv_logit(eta_person[Replier[Pair]] + eta_ab[Pair]);
+    alphaA[Pair] <- mu_ab[Pair] * n_person[Replier[Pair]];
+    alphaNotA[Pair] <- mu_person[Replier[Pair]] * n_person[Replier[Pair]];
+    betaA[Pair] <- (1 - mu_ab[Pair]) * n_person[Replier[Pair]];
+    betaNotA[Pair] <- (1 - mu_person[Replier[Pair]]) * n_person[Replier[Pair]];
+
+ }
 }
 
 model {
-  for (Marker in 1:NumMarkers) {
-        alpha_pop[Marker] ~ exponential(1);
-        beta_pop[Marker] ~ exponential(1);
+  eta_ab_pop ~ normal(0,1);
+  eta_pop ~ normal(0,1);
+  n_pop ~ gamma(5,2);
 
-    for (Person in 1:NumPeople) {
-      alpha_person[Person,Marker] ~ exponential(1);
-      beta_person[Person,Marker] ~ exponential(1);
-
+  for (Person in 1:NumPeople) {
+     eta_person[Person] ~ normal(eta_pop,1);
+     n_person[Person] ~ gamma(5,5/n_pop);
     }
 
-  }
+  for (Pair in 1:NumPairs) {
+    eta_ab[Pair] ~ normal(eta_ab_pop,1);
+  
+    thetaA[Pair] ~ beta(alphaA[Pair], betaA[Pair]);
+    thetaNotA[Pair] ~ beta(alphaNotA[Pair], betaNotA[Pair]);
 
-  for (PersonA in 1:NumPeople) {
-    for (PersonB in PersonA:NumPeople) {
-      pos_inf[PersonA,PersonB] ~ exponential(1);
-      neg_inf[PersonA,PersonB] ~ exponential(1);
-      pos_inf[PersonB,PersonA] ~ exponential(1);
-      neg_inf[PersonB,PersonA] ~ exponential(1);
+    CountsAB[Pair] ~ binomial(NumUtterancesAB[Pair],
+                                         thetaA[Pair]);
 
-      for (Marker in 1:NumMarkers) {
-
-
-        #A -> B
-        thetaA[PersonA,PersonB,Marker] ~ beta(alpha_pop[Marker]+ alpha_person[PersonB,Marker] +
-                                                                 pos_inf[PersonA,PersonB],
-                                         beta_pop[Marker] + beta_person[PersonB,Marker] + 
-                                                                 neg_inf[PersonA,PersonB]);
-        thetaNotA[PersonA,PersonB,Marker] ~ beta(alpha_pop[Marker]+ alpha_person[PersonB,Marker],
-                                                 beta_pop[Marker] + beta_person[PersonB,Marker]);
-
-        CountsAB[PersonA,PersonB,Marker] ~ binomial(NumUtterancesAB[PersonA,PersonB],
-                                                    thetaA[PersonA,PersonB,Marker]);
-
-        CountsNotAB[PersonA,PersonB,Marker] ~ binomial(NumUtterancesNotAB[PersonA,PersonB],
-                                                    thetaNotA[PersonA,PersonB,Marker]);
-
-        #B -> A
-        thetaA[PersonB,PersonA,Marker] ~ beta(alpha_pop[Marker]+ alpha_person[PersonA,Marker] +
-                                                                 pos_inf[PersonB,PersonA],
-                                         beta_pop[Marker] + beta_person[PersonA,Marker] + 
-                                                                 neg_inf[PersonB,PersonA]);
-        thetaNotA[PersonB,PersonA,Marker] ~ beta(alpha_pop[Marker]+ alpha_person[PersonA,Marker],
-                                                 beta_pop[Marker] + beta_person[PersonA,Marker]);
-
-        CountsAB[PersonB,PersonA,Marker] ~ binomial(NumUtterancesAB[PersonB,PersonA],
-                                                    thetaA[PersonB,PersonA,Marker]);
-
-        CountsNotAB[PersonB,PersonA,Marker] ~ binomial(NumUtterancesNotAB[PersonB,PersonA],
-                                                    thetaNotA[PersonB,PersonA,Marker]);
-      }
-    }
+    CountsNotAB[Pair] ~ binomial(NumUtterancesNotAB[Pair],
+                                            thetaNotA[Pair]);
   }
 }
     
