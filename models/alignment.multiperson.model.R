@@ -37,9 +37,21 @@ dt2array = function (x, facts, dims) {
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
+# 
+# d2 <- fread('test50cats.csv')
+# #d2 <- d2[1:1000,]
+# 
+# d2.catgories <- fread('../debug/results.csv') %>%
+#   group_by(category) %>%
+#   summarise(n =n()) %>%
+#   arrange(n)
+# #d2 <- d2[1:1000,]
 
-d2 <- fread('test50cats.csv')
-d2 <- d2[1:1000,]
+
+d2 <- fread('../debug/results.csv') %>%
+  filter(category %in% c("to", "the", ".")) %>%
+  slice(1:15000)
+  
 
 categories <- sort(unique(d2$category))
 num_markers <- length(categories)
@@ -115,7 +127,7 @@ alignment_data <- list(NumMarkers=num_markers,
                        CountsNotAB = counts_notab)
 
 
-fit <- stan(file = 'alignment.individuals.stan', data = alignment_data, 
+fit <- stan(file = 'alignment.subpops.stan', data = alignment_data, 
             iter = 1000, chains =1 )
 
 eta_ab_subpops <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
@@ -170,16 +182,28 @@ alignment_data <- list(NumMarkers=num_markers,
                        CountsAB = counts_ab,
                        CountsNotAB = counts_notab)
 
+aligns <- d2 %>% 
+  filter(verifiedReplier == FALSE) %>%
+  group_by(category,verifiedSpeaker) %>% 
+  summarise(alignment = mean(alignment)) %>%
+  ungroup() %>%
+  arrange(category)
+
+
 
 fit <- stan(file = 'alignment.multiperson.stan', data = alignment_data, 
             iter = 1000, chains =1 )
 
-eta_ab_subpops <- colMeans(rstan:::extract(fit,"eta_ab_subpops")$eta_ab_subpops)
-eta_subpops <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
+eta_ab_subpop <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
+
+
+eta_ab_subpop_m <- apply(rstan:::extract(fit,"eta_ab_subpop_m")$eta_ab_subpop_m,c(2,3,4),mean)
+eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
 
 #These should be very high if the model is learning correctly
-cor(1/(1+exp(-eta_subpops-eta_ab_subpops)),counts_ab/num_utterances_ab)
-cor(1/(1+exp(-eta_subpops)),counts_notab/num_utterances_notab)
+cor(1/(1+exp(-eta_subpop-eta_ab_subpop)),counts_ab/num_utterances_ab)
+cor(1/(1+exp(-eta_subpop)),counts_notab/num_utterances_notab)
 
 dim(1/(1+exp(-eta_subpops)))
 dim(counts_notab/num_utterances_notab)
