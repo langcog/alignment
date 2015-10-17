@@ -139,7 +139,7 @@ Thus, the phenomenon of accommodation has important implications for many fields
 
 But while the basic idea of linguistic alignment has been used in a range of studies across fields, it has been quantified using a wide variety of substantially different measures \cite{IrelandEtAl2011,DNMGamonDumais2011,FusaroliEtAl2012}. Some measures conflate influences that others separate; some combine features that others do not; and some account for individual speaker differences that others do not. In addition, there is fairly limited research into how appropriate these measures are for different types of data, such as the sparse interactional data of social media and other web-based settings (though see \cite{XuReitter2015}).  
 
-Our  goal in this paper is to address this issue. To do so, we begin by describing a set of desiderata for linguistic alignment measures. We then report simulations showing that existing measures of alignment fail when faced with sparse linguistic data of the type that are common on the web. We propose a new model-based alignment metric and show that it fulfills our desiderata. We end by testing this new model using Twitter data and show that it succeeds in detecting the the influence of power dynamics on accommodation behavior where one previous metric failed. 
+Our goal in this paper is to address this issue. To do so, we begin by describing a set of desiderata for linguistic alignment measures. We then report simulations showing that existing measures of alignment fail when faced with sparse linguistic data of the type that are common on the web. We propose a new model-based alignment metric and show that it fulfills our desiderata. We end by testing this new model using Twitter data and show that it succeeds in detecting the the influence of power dynamics on accommodation behavior where one previous metric failed. 
 
 \section{Prior work on Accommodation and Alignment}
 
@@ -255,17 +255,17 @@ LSM fits the marker separability desideratum, as it is independently calculated 
 
 %\paragraph{Repetition Decay} These are good methods, but they're not exactly looking at our problem. Overview of Bayesian Echo Chamber since our measure is sort of a stripped-down version of it.
 
-\section{Our Bayesian Model}
+\section{The Hierarchical Alignment Model}
 
 \begin{figure*}
   \begin{center}
     \input{graphics/model_www2016_alt}
   \end{center}
-  \caption{The alignment-inference model. A chain of normal distributions generates a linear predictor $\eta$, which is converted into a probability $\mu$ for binomial draws of marker presence/absence.}\label{fig:model}
+  \caption{The Hierarchical Alignment Model (HAM). A chain of normal distributions generates a linear predictor $\eta$, which is converted into a probability $\mu$ for binomial draws of marker presence/absence.}\label{fig:model}
 \end{figure*}
 
 \subsection{Motivation}
-Our primary goal in moving to a Bayesian model of alignment is to fulfill the desiderata that the DNM measure does not.  Specifically, we want to improve the measure's consistency across different marker frequencies and its robustness to sparse data.  
+Moving to a hierarchical Bayesian model of alignment fulfills some of the desiderata that the DNM measure does not.  Specifically, our goal to improve the measure's consistency across different marker frequencies and its robustness to sparse data.  
 
 To improve on this first point, we change the form of our alignment estimate from an additive effect in probability space to an additive effect in log-odds space. Having alignment as an additive effect in probability space means that the range of possible alignment strengths moves with the baseline; a more frequent marker can not show as much convergence as a less frequent marker can.  For our measure, we will treat alignment as a linear effect in log-odds space; this defines the alignment effect on the range $(-\infty,+\infty)$ and theoretically frees it from the influence of baseline probability, since even high probabilities can increase by large amounts in log-odds space.
 
