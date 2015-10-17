@@ -346,7 +346,7 @@ Figure \ref{fig:sim2} shows the relationship between true and estimated alignmen
 %\end{figure*}
 
 
-\section{Experiment 2: Twitter and Power}
+\section{Experiment 2: Twitter Data}
 
 We next turn to an examination of alignment on Twitter. Because of its size, the diversity of its userbase, and the public accessibility of its data, Twitter is an important source of data about naturalistic linguistic interaction that overcomes many of the limitations of other more restricted sources. On the other hand, as noted above, the brevity of tweets and the sparsity of individual interactions pose substantial challenges to investigators. 
 
@@ -356,15 +356,15 @@ Alignment on Twitter was initially investigated by \cite{DNMGamonDumais2011}, wh
 
 We use a collection of Twitter conversations collected by \cite{DoyleFrank2015CMCL} to examine information density in conversation. This corpus focuses on conversations within a set of 14 mostly distinct subcommunities on Twitter.  These subcommunities contain all the messages exchanged between Twitter users who sent at least one message to a ``seed user'' with a reasonably large number of followers. This corpus contains 63,673 conversation threads, covering 228,923 total tweets.  We divide these conversations into message pairs, also called conversational turns, which are two consecutive tweets within a conversation thread.  The second tweet is always an explicit reply to the first, and the two tweeters in the pair must be distinct users (i.e., no self replies are included).  
 
-One additional piece of processing is done: while formal retweets (sharing another tweeter's message to one's own timeline) are removed from the data automatically, there are a variety of informal retweeting methods that are not marked by the Twitter API.  We therefore removed all pairs where the reply tweet contained all of the words of its preceding tweet and additionally had either the bigram \textit{RT @username:} (indicative of a ``manual retweet'') or Unicode curly quote characters (indicative of a type of quoting that some Twitter apps use).  In these cases, the entirety of the previous message was included, ensuring maximal alignment, but the words were provided as repetition of a quote rather than being produced as part of the replier's message.  This leaves us with [TODO: count] message pairs, spanning [TODO: count] users.
+One additional piece of processing is done: while formal retweets (sharing another tweeter's message to one's own timeline) are removed from the data automatically, there are a variety of informal retweeting methods that are not marked by the Twitter API.  We therefore removed all pairs where the reply tweet contained all of the words of its preceding tweet and additionally had either the bigram \textit{RT @username:} (indicative of a ``manual retweet'') or Unicode curly quote characters (indicative of a type of quoting that some Twitter apps use).  In these cases, the entirety of the previous message was included, ensuring maximal alignment, but the words were provided as repetition of a quote rather than being produced as part of the replier's message.  This leaves us with 122,693 message pairs, spanning 2,815 users.
 
-The tweets were parsed into word tokens using the Twokenizer \cite{OwoputiEtAl2013}, with usernames and URLs removed.  We then calculated linguistic alignment on the fourteen marker categories used by \cite{DNMGamonDumais2011} in their study of Twitter messages.  These categories come from the Linguistic Inquiry and Word Count (LIWC) system \cite{LIWC}; category names and sample words are shown in Table \ref{tab:LIWC}. These categories were chosen (from the complete set of 74 [TODO: check] LIWC categories) as ``strictly non-topical style dimensions'' as they had limited to no content words in them, and were not focused on specific topics.  These can be roughly divided into four pronoun categories (indefinite, 1st singular, 1st plural, 2nd), four other syntactic categories (article, conjunction, preposition, quantifier), and six conceptual categories (certainty, discrepancy, exclusive, inclusive, negation, tentative).
+The tweets were parsed into word tokens using the Twokenizer \cite{OwoputiEtAl2013}, with usernames and URLs removed.  We then calculated linguistic alignment on the fourteen marker categories used by \cite{DNMGamonDumais2011} in their study of Twitter messages.  These categories come from the Linguistic Inquiry and Word Count (LIWC) system \cite{LIWC}; category names and sample words are shown in Table \ref{tab:LIWC}. These categories were chosen (from the complete set of 74 LIWC categories) as ``strictly non-topical style dimensions'' as they had limited to no content words in them, and were not focused on specific topics.  These can be roughly divided into four pronoun categories (indefinite, 1st singular, 1st plural, 2nd), four other syntactic categories (article, conjunction, preposition, quantifier), and six conceptual categories (certainty, discrepancy, exclusive, inclusive, negation, tentative).
 
 A tweet is counted as containing a given category if it contains at least one word from that category.  Alignment is calculated based on category rather than on specific word types; thus if the first tweet contains \textit{an} and its reply contains \textit{the}, this pair is counted as an example of positive alignment.
 
 \begin{table}
 \centering
-\caption{Marker categories for linguistic alignment, with examples, number of distinct types, and probability of appearing in a tweet.}\label{tab:LIWC}
+\caption{Marker categories for linguistic alignment, with examples, number of distinct word types, and probability of appearing in a tweet.}\label{tab:LIWC}
 \begin{tabular}{|c|c|c|c|} \hline
 Category & Examples & Size & $p(A)$\\ \hline
 Article & \textit{a, an, the} & 3 & .44 \\
@@ -406,10 +406,10 @@ Intuitively, alignment to power captures the idea that we show deference to impo
 
 \subsubsection{Follower ratio as a measure of power} 
 
-% Our internal power measure is based on users' relative numbers of followers.  Unlike verification, this is an intrinsic measure of power, reflecting one's importance within Twitter -- although verified users generally also have more followers than unverified users do. 
-For each pair of users, we calculate their \textit{follower ratio} by dividing the first tweeter's follower count by the sum of their follower count and their replier's follower count.  Numbers above 0.5 indicate that the first tweeter has more followers than the replier.  We take 0.99 as our cutoff, meaning that the first tweeter has at least 99 times as many followers as the replier.  [TODO: calculate percentage] of our pairs have this property.  
-% Under the hypothesis of increased alignment to power, we expect to find increased alignment when the follower ratio is above 0.99. 
+For each pair of users, we calculate their \textit{follower ratio} by dividing the first tweeter's follower count by the sum of their follower count and their replier's follower count.  Numbers above 0.5 indicate that the first tweeter has more followers than the replier.  We use $100/101$ as our cutoff, meaning that the first tweeter has at least 100 times as many followers as the replier, and thus has a substantially larger audience. 38\% of our pairs have this property.  Under the hypothesis of increased alignment to power, we expect to find increased alignment when the follower ratio is high.\footnote{We repeated all of these analyses using the median follower ratio, $.9$, as the cutoff, and found no substantive differences between these two cutoffs.}
+
 % [TODO: note that we do not separately look at low speaker follower count ratios, because high follower count people very rarely talk enough to low follower count people to assess alignment.]
+
 
 \begin{figure}[t]
 \centering
