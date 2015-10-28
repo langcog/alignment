@@ -6,6 +6,9 @@ data/pairedtweets2.txt
 
 debug/results.csv
 
+*.rda
+*.RData
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
