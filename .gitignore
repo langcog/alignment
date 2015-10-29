@@ -8,6 +8,14 @@ debug/results.csv
 
 *.rda
 *.RData
+*.Rhistory
+*.Rapp.history
+
+#TeX stuff
+*.aux
+*.bbl
+*.blg
+*.synctex.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
