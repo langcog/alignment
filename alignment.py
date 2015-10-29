@@ -3,15 +3,29 @@ import operator
 import itertools
 import math
 import logger1
+import re
 
 #main piece of code for calculating & wwriting alignments from processed data
-def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, extras={}):
+def calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader, corpusType='CHILDES'):
 	markers = checkMarkers(markers)
 	groupedUtterances = group(utterances)
-	metaData = metaDataExtractor(groupedUtterances, markers)          
-	results = runFormula(metaData, markers, smoothing, extras)
+	metaData = metaDataExtractor(groupedUtterances,markers,corpusType)          
+	results = runFormula(metaData, markers, smoothing,corpusType)
 	writeFile(results, outputFile, shouldWriteHeader)
 	return results
+
+# Converts list of markers in a message to categories
+def determineCategories(msgMarkers,catdict,useREs=False):
+	msgCats = []
+	#iterate over catdict items {category: [words/REs]}
+	for cd in catdict.items():
+		if useREs:
+			if any(any(wordre.match(marker) for marker in msgMarkers) for wordre in cd[1]):	#if REs, see if any tokens match each RE
+				msgCats.append(cd[0])
+		else:
+			if any(word in msgMarkers for word in cd[1]):			#if just words, see if any word in category also in msg
+				msgCats.append(cd[0])
+	return msgCats
 
 # Groups tweets by conversation ids
 def group(utterances):
@@ -21,18 +35,17 @@ def group(utterances):
 		list1.append(list(items))
 	return list1
 
-#code to revise marker list structure (not currently used)
-def makeMarkerDict(markers):
+#code to convert marker list structure to {category: [words]} structure
+def makeCatDict(markers,useREs=False):
 	mdict = {}
 	for m in markers:
-		mdict[m["marker"]] = m["category"]
-	return(mdict)
-
-#alternate code to revise marker list structure (not currently used)
-def makeMarkerDict2(markers):
-	mdict = {}
-	for m in markers:
-		mdict[m["category"]] = mdict.get(m["category"],[]).append(m["marker"])
+		marker = re.compile(m["marker"]) if useREs else m["marker"]
+		if m["category"] in mdict:
+			mdict[m["category"]].append(marker)
+		else:
+			mdict[m["category"]] = [marker]
+		#mdict[m["category"]] = mdict.get(m["category"],[]).append(m["marker"])	#Need to swap marker and category labels
+		#mdict[m["marker"]] = mdict.get(m["marker"],[]).append(m["category"])
 	return(mdict)
 
 #Given a conversation & the list of markers, extract counts of speaker & replier using each marker 
@@ -43,49 +56,49 @@ def findMarkersInConvo(markers,convo):
 	nba = {}
 	for utterance in convo:				
 		for j, marker in enumerate(markers):
-			category = marker["category"]
-			msgMarker = category in utterance["msgMarkers"]
-			replyMarker = category in utterance["replyMarkers"]
+			word = marker["marker"]
+			msgMarker = word in utterance["msgMarkers"]
+			replyMarker = word in utterance["replyMarkers"]
 			
 			if msgMarker and replyMarker:
-				ba[category] = ba.get(category,0) + 1
+				ba[word] = ba.get(word,0) + 1
 			elif replyMarker and not msgMarker:
-				bna[category] = bna.get(category,0) + 1
+				bna[word] = bna.get(word,0) + 1
 			elif not replyMarker and msgMarker:
-				nba[category] = nba.get(category,0) + 1
+				nba[word] = nba.get(word,0) + 1
 			else:
-				nbna[category] = nbna.get(category,0) + 1
+				nbna[word] = nbna.get(word,0) + 1
 	return({'ba': ba,'bna': bna,'nba': nba,'nbna': nbna})
 
 #Copying portions of one dictionary to another (faster than copy(), if you can believe it!)
-def addFeats(toAppend,utterance,renameIds=True):
+def addFeats(toAppend,utterance,renameIds=True,corpusType=''):
 	if renameIds:
 		toAppend["speakerId"] = utterance["msgUserId"]
 		toAppend["replierId"] = utterance["replyUserId"]
 	else:
 		toAppend["speakerId"] = utterance["speakerId"]
 		toAppend["replierId"] = utterance["replierId"]		
-	toAppend["reciprocity"] = utterance["reciprocity"]
-	if("verifiedSpeaker" in utterance):
+	if(corpusType=='Twitter'):
+		toAppend["reciprocity"] = utterance["reciprocity"]
 		toAppend["verifiedSpeaker"] = bool(utterance["verifiedSpeaker"])
 		toAppend["verifiedReplier"] = bool(utterance["verifiedReplier"])
 		toAppend["speakerFollowers"] = utterance["speakerFollowers"]
 		toAppend["replierFollowers"] = utterance["replierFollowers"]			
-	else:
+	elif(corpusType=='CHILDES'):
 		toAppend["corpus"] = utterance["corpus"]
 		toAppend["docId"] = utterance["docId"]
 	return(toAppend)
 
 
 # calculates the marker usage counts from conversations
-def metaDataExtractor(groupedUtterances, markers, extras={}):
+def metaDataExtractor(groupedUtterances, markers,corpusType=''):
 	results = []
 	for i, convo in enumerate(groupedUtterances):
-		if(i % 2500 is 0):
+		if(i % 2500 is 10):
 			logger1.log("On " + str(i) + " of " + str(len(groupedUtterances)))
 				
 		toAppend = findMarkersInConvo(markers,convo)		
-		toAppend = addFeats(toAppend,convo[0])
+		toAppend = addFeats(toAppend,convo[0],True,corpusType)
 		results.append(toAppend)
 	return results
 
@@ -93,11 +106,11 @@ def metaDataExtractor(groupedUtterances, markers, extras={}):
 def allMarkers(markers):
 	categories = []
 	for marker in markers:
-		categories.append(marker["category"])
+		categories.append(marker["marker"])
 	return list(set(categories))
 
 # creates a dictionary corresponding to a single row of the final output (speaker-replier-marker triplet)
-def createAlignmentDict(category,result,smoothing):
+def createAlignmentDict(category,result,smoothing,corpusType=''):
 	toAppend = {}
 	ba = int(result["ba"].get(category, 0))
 	bna = int(result["bna"].get(category, 0))
@@ -108,7 +121,8 @@ def createAlignmentDict(category,result,smoothing):
 	if (((ba+nba)==0 or (bna+nbna)==0)):
 		return(None)
 	
-	toAppend = addFeats(toAppend,result,False)
+	toAppend = addFeats(toAppend,result,False,corpusType)
+	toAppend["category"] = category
 		
 	#Calculating Echoes of Power alignment 
 	powerNum = ba
@@ -126,8 +140,8 @@ def createAlignmentDict(category,result,smoothing):
 	powerDenom = ba+nba
 	baseDenom = bna+nbna
 	baseNum = bna
-	powerProb = math.log(float((powerNum+smoothing)/(powerDenom+2*smoothing)))
-	baseProb = math.log(float((baseNum+smoothing)/(baseDenom+2*smoothing)))
+	powerProb = math.log((powerNum+smoothing)/float(powerDenom+2*smoothing))
+	baseProb = math.log((baseNum+smoothing)/float(baseDenom+2*smoothing))
 	alignment = powerProb - baseProb
 	toAppend["alignment"] = alignment
 	
@@ -138,17 +152,17 @@ def createAlignmentDict(category,result,smoothing):
 	return(toAppend)
 
 # Gets us from the meta-data to the final output file
-def runFormula(results, markers, smoothing, extras):
+def runFormula(results, markers, smoothing,corpusType):
 	toReturn = []
 	categories = allMarkers(markers)
 	for i, result in enumerate(results):
-		if(i % 1000 is 0):
+		if(i % 1000 is 10):
 			logger1.log("On result " + str(i) + " of " + str(len(results)))
 		for j, category in enumerate(categories):
-			toAppend = createAlignmentDict(category,result,smoothing)
+			toAppend = createAlignmentDict(category,result,smoothing,corpusType)
 			if toAppend is not None:
 				toReturn.append(toAppend)
-	toReturn = sorted(toReturn, key=lambda k: -k["alignment"])
+	toReturn = sorted(toReturn, key=lambda k: (k["speakerId"],k["replierId"],k["category"]))
 	return toReturn
 
 # Writes stuff to the output file
@@ -174,9 +188,13 @@ def writeFile(results, outputFile, shouldWriteHeader):
 	f.close()
 
 # Reads a list of markers from the markersFile
-def readMarkers(markersFile):
-	reader = csv.reader(open(markersFile))
+def readMarkers(markersFile,dialect=None):
+	if dialect is None:
+		reader = csv.reader(open(markersFile))
+	else:
+		reader = csv.reader(open(markersFile),dialect=dialect)
 	markers = []
+	#print('marker\tcategory')
 	for i, row in enumerate(reader):
 		toAppend = {}
 		toAppend["marker"] = row[0]
@@ -185,6 +203,7 @@ def readMarkers(markersFile):
 		else:
 			toAppend["category"] = row[0]
 		markers.append(toAppend)
+		#print(toAppend["marker"]+'\t'+toAppend["category"])
 	return markers
 
 # checks & adapts the structure of the marker list to the appropriate one 
@@ -193,5 +212,6 @@ def checkMarkers(markers):
 	for marker in markers:
 		if isinstance(marker, str):
 			toReturn.append({"marker": marker, "category": marker})
-		toReturn.append(marker)
+		else:
+			toReturn.append(marker)
 	return toReturn

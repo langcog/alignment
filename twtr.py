@@ -1,6 +1,7 @@
 #Code to peform alignment calculations on Twitter data
 # Created by Jake Prasad & Gabe Doyle
 # Runs on Python 3, not 2!
+#This version allows you to specify regular expressions for the words in a category
 
 import csv
 import alignment
@@ -11,6 +12,8 @@ import sys
 import re
 from random import shuffle
 
+from pprint import pprint
+
 testMarkers = "debug/test_markers.csv"
 testFile = "debug/toy.users"
 
@@ -20,16 +23,20 @@ markersFile = "wordlists/LIWC_categories.tsv"
 outputFile = "debug/shuffled/results.csv"
 userFile = "data/pairedtweets.txt.userinfo"
 
+useCategories = False		#use categories or words to calculate alignment?
+useREs = False				#allow words to be defined as REs
+
 smoothing = 1				#What is our smoothing variable (assuming +1 smoothing on logodds)
 shouldWriteHeader = True		#Should the output have header row?
 markersFromData = True			#Should we obtain the markers from the data rather than a pre-specified list?
-numMarkers = 50				#	If so, how many of the most common tokens to use as markers?
+numMarkers = 50						#If so, how many of the most common tokens to use as markers?
 
 #words that we want to remove, and words that we want to check as potential signs of manual RT
 badwords = re.compile(r"(\[mention\]|\[url\])")
 quotewords = re.compile(r"(\brt\b|“|”|\[mention\] :)")
 
 #If we want to try different shuffling options
+someShuffling = False
 shuffleIds = False
 shuffleTweets = False
 shuffleMarkers = False
@@ -42,19 +49,26 @@ if (len(sys.argv) > 1):
 		featval = arg[3:]
 		if tag == '-i':					#-i: input file
 			inputFile = featval
-		elif tag == '-m':					#-m: marker list file (TODO: not yet implemented)
-			markersFile = featval
-			markersFromData = False
 		elif tag == '-o':					#-o: output file
 			outputFile = featval
 		elif tag == '-u':					#-u: user information file
 			userFile = featval
-		elif tag == '-M':					#-M: derive markers from the data
+		elif tag == '-m':					#-m: use a marker file to get the markers (+ optional categories)
+			markersFromData = False
+			markersFile = featval
+			print('Will load markers from',markersFile)
+		elif tag == '-M':					#-M: specify number of markers to use (from data, not file)
 			markersFromData = True
-			if featval != '':				#	optional value: number of markers to use from the data
-				numMarkers = int(featval)
+			numMarkers = int(featval)
+			print('Using',numMarkers,'markers (from data)')
+		elif tag == '-c':					#-c: match messages on categories rather than individual words
+			useCategories = True
+		elif tag == '-r':					#-r: match words defined by regular expressions (will automatically use categories)
+			useREs = True
+			useCategories = True
 		elif tag == '-S':					#-S: shuffle msgs, userids, and replies (to add: specify what options to shuffle)
-			outputFile = 'debug/shuffled/shuffled'
+			#outputFile = 'debug/shuffled/shuffled'
+			someShuffling = True
 			if featval == 'ids':
 				shuffleIds = True
 				shuffleTweets = False
@@ -74,7 +88,11 @@ if (len(sys.argv) > 1):
 				shuffleIds = False
 				shuffleTweets = True
 				shuffleMarkers = False
-				combineMsgReply = False				
+				combineMsgReply = False	
+			else:
+				raise ValueError(featval+' is not a recognized shuffling option')
+		else:
+			raise ValueError(tag+' is not a recognized flag')
 
 print("Reading from", inputFile)
 print("Printing to", outputFile)
@@ -178,8 +196,7 @@ def readCSV(inputFile, users, numOfMarkers):
 		for word in subset:
 			markers.append({"marker": word, "category": word})
 	else:
-		csv.DictReader(open(markersFile,errors="ignore"),dialect="excel-tab")
-		#TODO: add marker processing here
+		markers = alignment.readMarkers(markersFile,"excel-tab")
 	
 	return {"rows": toReturn, "markers": markers}
 
@@ -221,8 +238,9 @@ def transformCSV(markers, users, rows):
 	utterances = []
 	udict = makeDict(users, "uid")
 	mdict = makeDict(markers, "marker")
+	usersExists = (users is not False)
 	for i, row in enumerate(rows):
-		if(users is not False):
+		if(usersExists):
 			row["verifiedSpeaker"] = verifySpeaker(udict,row["msgUserId"])
 			row["verifiedReplier"] = verifySpeaker(udict,row["replyUserId"])
 			row["speakerFollowers"] = numFollowers(udict, row["msgUserId"])
@@ -318,9 +336,10 @@ def shuffleUtterances(utterances, shuffleIds, shuffleTweets, shuffleTokens, comb
 	return utterances
 
 
-
+#Core calls
 start = logger1.initialize()
 
+#Reading in user info and tweets
 logger1.log("Reading user info...")
 users = readUserInfo()
 logger1.log("Reading messages...")
@@ -328,30 +347,25 @@ result = readCSV(inputFile, users, numMarkers)
 rows = result["rows"]
 markers = result["markers"]
 
-if(outputFile == "debug/shuffled/shuffled"):
-	if(shuffleIds):
-		outputFile += "T"
-	else:
-		outputFile += "F"
-	if(shuffleTweets):
-		outputFile += "T"
-	else:
-		outputFile += "F"
-	if(shuffleMarkers):
-		outputFile += "T"
-	else:
-		outputFile += "F"
-	if(combineMsgReply):
-		outputFile += "T"
-	else:
-		outputFile += "F"
-
+#Shuffling tweets if any shuffling has been requested
+if(someShuffling):
 	logger1.log(rows[0])
 	rows = shuffleUtterances(rows, shuffleIds, shuffleTweets, shuffleMarkers, combineMsgReply)
 	logger1.log(rows[0])
-	outputFile += ".csv"
 
+#Adding user info & extracting markers from messages
 utterances = transformCSV(markers, users, rows)
 
-results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader)
+#If we're using categories, re-process markers into their category labels before calculating alignment
+if (useCategories):
+	catdict = alignment.makeCatDict(markers,useREs)
+	pprint(catdict)
+	for i in range(0,len(utterances)):
+		utterances[i]["msgMarkers"] = alignment.determineCategories(utterances[i]["msgMarkers"],catdict,useREs)
+		utterances[i]["replyMarkers"] = alignment.determineCategories(utterances[i]["replyMarkers"],catdict,useREs)
+	pprint(utterances[0]["msgMarkers"])
+	markers = list(catdict.keys())
+
+#Calculate alignment, print & finish
+results = alignment.calculateAlignments(utterances, markers, smoothing, outputFile, shouldWriteHeader,corpusType='Twitter')
 logger1.finish(start)
