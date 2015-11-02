@@ -263,7 +263,7 @@ runsim2b_crossiter <- function(pmean,pa,npairs,alpha,sd,minwords,maxwords,maxtri
 
 Generate data & run inference if not already done
 
-```{r,eval=FALSE}
+```{r,eval=TRUE}
 df <- data.table(sd=vector(mode="numeric"),
                  pa=vector(mode="numeric"),
                  alpha=vector(mode="numeric"),
@@ -288,7 +288,7 @@ for (sd in c(.5)) {
 save(df,file="results/www2016_simulation2b.RData")
 ```
 
-Load data if pre-run:
+Load & edit data:
 
 ```{r,eval=TRUE,echo=FALSE}
 load("../results/www2016_simulation2b.RData")
