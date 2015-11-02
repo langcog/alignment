@@ -135,12 +135,12 @@ d2 %>%
 
 ## Follower-ratio results (Fig. 5,6)
 
-Running inference
+Running inference (slow; run once and then set eval=FALSE). [Note that it is random and there will be slightly different results each time.]
 
-```{r,eval=FALSE}
+```{r,eval=TRUE}
 sd <- .5
 
-d2 <- fread('../../data/liwc_wildcards.csv') %>%
+d2 <- fread('../data/liwc_wildcards.csv') %>%
   rename(sid=speakerId,rid=replierId,vspeak=verifiedSpeaker,vreply=verifiedReplier) %>%
   na.omit() %>%
   mutate(fratio=(speakerFollowers/(speakerFollowers+replierFollowers))>=(100/101)) %>%
@@ -163,20 +163,20 @@ alignment_data <- list(NumMarkers=num_markers,
                        CountsNotAB = d2$bna,
                        StdDev = sd)
 
-fit <- stan(file = 'alignment.vectorized5.stan', data = alignment_data, 
-            iter = 200, chains =1 )
+fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
+            iter = 500, chains =1 )
 
 d3 <- d2
 d3$model_eta <- colMeans(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation)
 d3$model_mu <- log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab))-log(colMeans(rstan:::extract(fit,"mu_notab")$mu_notab))
 
-save(d3,fit,file='../results/www2016_twitter_nopop_fratio.RData')
+save(d3,fit,file='../results/www2016_twitter_fratio.RData')
 ```
 
 Plotting HAM-estimated alignments by marker category with 1 SD intervals. (Not in paper)
 
 ```{r}
-load('../results/www2016_twitter_nopop_fratio.RData')
+load('../results/www2016_twitter_fratio.RData')
 
 etas <- rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop
 meandiffs <- colMeans(etas[,2,]-etas[,1,])  #mean difference between the TRUE (powerful) and FALSE (nonpowerful) alignments
@@ -277,13 +277,12 @@ ggplot(aes(y=category,x=mean,color=color),data=df3) +
 
 ## Verification status results (Fig. 7,8)
 
-First, analyzing and plotting the overall alignment effects (not broken down by power).
+First, analyzing and plotting the overall alignment effects (not broken down by power).  (slow; run once and then set eval=FALSE). [Note that it is random and there will be slightly different results each time.]
 
-```{r,eval=FALSE}
+```{r,eval=TRUE}
 sd <- .5
 
 d2 <- fread('../data/liwc_wildcards.csv') %>%
-#d2 <- fread('../test50cats.csv') %>%
   rename(sid=speakerId,rid=replierId,vspeak=verifiedSpeaker,vreply=verifiedReplier) %>%
   group_by(vspeak,rid,vreply,category) %>%
   summarise_each(funs(sum), ba, nba, bna, nbna) %>%
@@ -306,8 +305,8 @@ alignment_data <- list(NumMarkers=num_markers,
                        CountsNotAB = d2$bna,
                        StdDev = sd)
 
-fit <- stan(file = 'alignment.vectorized5.stan', data = alignment_data, 
-            iter = 250, chains =1 )
+fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
+            iter = 500, chains =1 )
 
 d3 <- d2
 d3$model_eta <- colMeans(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation)
@@ -315,13 +314,13 @@ d3$model_mu <- log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab))-log(colMeans(rs
 
 etas <- rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop
 
-save(d3,fit,file='../results/www2016_twitter_verif_final.RData')
+save(d3,fit,file='../results/www2016_twitter_verif.RData')
 ```
 
 Plotting HAM-estimated alignments by marker category with 1 SD intervals. (Not in paper)
 
 ```{r}
-load('../results/www2016_twitter_verif_final.RData')
+load('../results/www2016_twitter_verif.RData')
 
 #extract the by group eta values
 etas <- rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop
@@ -360,7 +359,7 @@ df <- convertcategories2(addcategories(df)) %>%
   mutate(color = ifelse(ci_lower<0&ci_upper<0,"less alignment",ifelse(ci_lower>0,"more alignment","n.s."))) %>%
   mutate(color = factor(color,c("more alignment","n.s.","less alignment")))
 
-#pdf(file="results/www2016_ourpowerdiff_verif_final95.pdf",height=6,width=6)
+#pdf(file="../results/www2016_ourpowerdiff_verif_final95.pdf",height=6,width=6)
 ggplot(aes(y=category,x=mean,color=color),data=df) +
   geom_point(size=3) +
   geom_errorbarh(aes(xmin=ci_lower,xmax=ci_upper,height=0),size=1.25) +
@@ -424,7 +423,7 @@ ggplot(aes(y=category,x=mean,color=color),data=df3) +
 ## Overall alignment results (Fig. 4)
 
 ```{r}
-load('../results/www2016_twitter_verif_final.RData')
+load('../results/www2016_twitter_verif.RData')
 
 etas2 <- apply(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop,c(1,3),mean)
 meandiffs <- apply(etas2,2,'mean')
