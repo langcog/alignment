@@ -1,0 +1,313 @@
+---
+title: "WWW2016 Simulations"
+author: "Doyle, Yurovsky, and Frank"
+date: "October 17, 2015"
+output: html_document
+---
+
+This document contains the code for the WWW2016 simulations.
+
+<!-- Load preliminiaries -->
+
+```{r,echo=FALSE}
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(langcog)
+library(readr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(directlabels)
+library(lme4)
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+```
+
+Load general functions
+
+```{r,echo=FALSE}
+invlogit <- function(p) { return(-log(1/p-1))}
+logit <- function(x) { return(exp(x)/(1+exp(x)))}
+
+addmodelvalues_notab <- function(df,fit) {
+  df <- bind_rows(df,list(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method='model_eta',
+                          value=mean(colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop))))
+  df <- bind_rows(df,list(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method='model_eta_ab',
+                          value=mean(colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop))))
+  df <- bind_rows(df,list(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method='model_mu',
+                          value=mean(log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)) -
+                                     log(colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)))))
+  df <- bind_rows(df,list(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method='model_sub',
+                          value=mean(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab) -
+                                     colMeans(rstan:::extract(fit,"mu_notab")$mu_notab))))
+  return(df)
+}
+```
+
+Load simulation 1 functions
+
+```{r}
+genmsgs <- function(pmean,pa,npairs,maxtrials=20000,cutoff=0) {
+  nmsgs <- rgeom(maxtrials,1/pmean)+1
+  na <- rbinom(length(nmsgs),nmsgs,pa)
+  nna <- nmsgs-na
+  goodones <- sample.int(maxtrials,maxtrials,F)
+  goodones <- goodones[na[goodones]>cutoff&nna[goodones]>cutoff]
+  
+  while (npairs>length(goodones)) {
+    nmsgs2 <- rgeom(maxtrials,1/pmean)+1
+    nmsgs <- c(nmsgs,nmsgs2)
+    na <- rbinom(length(nmsgs),nmsgs,pa)
+    nna <- nmsgs-na
+    goodones <- sample.int(length(nmsgs),length(nmsgs),F)
+    goodones <- goodones[na[goodones]>cutoff&nna[goodones]>cutoff]
+  }
+  
+  goodones <- goodones[1:npairs]
+  ma <- na[goodones]
+  mna <- nna[goodones]
+  
+  return(list(ma=ma,mna=mna))
+}
+
+runsim1_crossiter <- function(pmean,pa,npairs,alpha,sd,maxtrials=20000,cutoff=0,cdf=FALSE) {
+  temp <- genmsgs(pmean,pa,npairs)
+  ma <- temp$ma
+  mna <- temp$mna
+  
+  pba <- logit(invlogit(pa)+alpha)
+  mba <- rbinom(length(ma),ma,pba)
+  mnba <- ma-mba
+  mbna <- rbinom(length(mna),mna,pa)
+  mnbna <- mna-mbna
+  
+  dnm <- mba/ma - (mba+mbna)/(ma+mna)
+  df <- as.data.frame(dnm) %>%
+    mutate(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method='DNM') %>%
+    group_by(sd,pa,alpha,npairs,method) %>%
+    multi_boot_standard("dnm")
+
+  alignment_data <- list(NumMarkers=1,
+                         NumSubPops = 1,
+                         NumObservations = length(mba),
+                         SpeakerSubPop = rep(1,length(mba)),
+                         MarkerType = rep(1,length(mba)),
+                         NumUtterancesAB = ma,
+                         NumUtterancesNotAB = mna,
+                         CountsAB = mba,
+                         CountsNotAB = mbna,
+                         StdDev = sd)
+  fit <- sampling(mod, data = alignment_data, 
+                  iter = 200, chains =1 )
+  
+  a <- melt(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+  colnames(a) <- c("iteration","subpop","marker","model_eta")
+  
+  markeraligns <- a %>% group_by(marker) %>% multi_boot_standard("model_eta",nboot=100)
+  markeraligns %<>% mutate(sd=sd,pa=pa,alpha=alpha,npairs=npairs,method="model_eta") %>%
+    bind_rows(df)
+  
+  return(markeraligns)
+}
+```
+
+## Simulation 1
+
+Generating data & running inference (slow; skip if you've already got the inference run)
+
+```{r,eval=TRUE}
+df <- data.table(sd=vector(mode="numeric"),
+                 pa=vector(mode="numeric"),
+                 alpha=vector(mode="numeric"),
+                 npairs=vector(mode="numeric"),
+                 method=vector(mode="character"),
+                 mean=vector(mode="numeric"),
+                 ci_lower=vector(mode="numeric"),
+                 ci_upper=vector(mode="numeric"))
+mod <- stan_model('../stan/alignment.www2016.stan')
+pmean <- 5
+for (sd in c(.5)) {
+  for (pa in c(.1,.3,.5,.7,.9)) {
+    for (npairs in c(500)) {
+      for (alpha in seq(-1.5,1.5,.25)) {
+        for (i in c(1:5)) {
+          print(c(pmean,sd,pa,npairs,alpha,i))
+          df <- bind_rows(df,runsim1_crossiter(pmean,pa,npairs,alpha,sd))
+        }}}}}
+
+save(df,file="../results/www2016_simulation1.RData")
+
+
+```
+
+Load data if already run
+
+```{r,eval=TRUE,echo=FALSE}
+load("../results/www2016_simulation1.RData")
+
+df$method[df$method=='DNM'] <- 'SCP'
+df$method[df$method=='model_eta'] <- 'HAM'
+df$method <- factor(df$method,levels=c('SCP','HAM'))
+```
+
+This plot generates Figure 2 (www2016_simulation1_crossiter.pdf)
+
+```{r}
+#pdf('../results/www2016_simulation1_crossiter.pdf',width=5,height=5)
+ggplot(aes(x=alpha,y=mean,color=as.factor(pa)),data=df) +
+  #geom_pointrange(aes(ymin=ci_lower,ymax=ci_upper),position=position_dodge(width=0.1)) + 
+  geom_point(position=position_dodge(width=0.1)) +
+  geom_smooth(method='loess',se=FALSE) +
+  theme_bw(base_size = 25) +
+  facet_grid(method~.,scales='free') +
+  scale_color_manual(values=c('#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04')) +
+  labs(x="true alignment (in logit space)",y="estimated alignment (in method's space)",color="  marker\nfrequency") +
+  theme_bw()
+#dev.off()
+
+```
+
+## Simulation 2
+
+Loading simulation 2 functions
+
+```{r}
+runsim2b_crossiter <- function(pmean,pa,npairs,alpha,sd,minwords,maxwords,maxtrials=2000,cutoff=0,cdf=FALSE) {
+  #pa2 <- logit(rnorm(maxtrials,invlogit(pa),usersd))
+  nmsgs <- NULL
+  goodones <- NULL
+  tdf <- NULL
+  repeat {
+    nmsgs2 <- rgeom(maxtrials,1/pmean)+1
+    ba <- rep(0,maxtrials)
+    bna <- rep(0,maxtrials)
+    nba <- rep(0,maxtrials)
+    nbna <- rep(0,maxtrials)
+    lsm <- rep(0,maxtrials)
+    lla <- rep(0,maxtrials)
+    for (pairnum in seq(1,length(nmsgs2))) {
+      nmsg <- nmsgs2[pairnum]
+      if (nmsg>1) {
+        nwordsa <- round(runif(nmsg,minwords,maxwords))
+        nwordsb <- round(runif(nmsg,minwords,maxwords))
+        ca <- rbinom(length(nwordsa),nwordsa,pa)
+        if (sum(ca>0)&sum(ca==0)) {
+          cb <- rbinom(length(nwordsb),nwordsb,logit((ca>0)*alpha+invlogit(pa)))
+          ba[pairnum] <- sum(cb>0&ca>0)
+          bna[pairnum] <- sum(cb>0&ca==0)
+          nba[pairnum] <- sum(cb==0&ca>0)
+          nbna[pairnum] <- sum(cb==0&ca==0)
+          pa1 <- sum(ca)/sum(nwordsa)
+          pb1 <- sum(cb)/sum(nwordsb)
+          lsm[pairnum] <- 1 - abs(pa1-pb1)/(pa1+pb1)
+          lla[pairnum] <- sum((cb*(ca>0))/(nwordsa*nwordsb))
+        }
+      }
+    }
+    tdf <- data.frame(ba,nba,bna,nbna,lsm,lla) %>%
+      mutate(na=ba+nba,nna=bna+nbna,dnm=(ba/(ba+nba)-(ba+bna)/(ba+bna+nba+nbna))) %>%
+      filter(na>0&nna>0) %>%
+      bind_rows(tdf)
+    if (nrow(tdf)>=npairs) {
+      tdf %<>% sample_n(npairs)
+      break
+    }
+  }  
+  tdf$temp <- 1
+  
+  dnmdf <- tdf %>% group_by(temp) %>%
+    multi_boot_standard("dnm",nboot=100) %>%
+    select(-temp) %>%
+    mutate(method='DNM')
+  
+  lsmdf <- tdf %>% group_by(temp) %>%
+    multi_boot_standard("lsm",nboot=100) %>%
+    select(-temp) %>%
+    mutate(method='LSM')
+  
+  lladf <- tdf %>% group_by(temp) %>%
+    multi_boot_standard("lla",nboot=100) %>%
+    select(-temp) %>%
+    mutate(method='LLA')
+  
+  df <- bind_rows(dnmdf,lsmdf) %>%
+    bind_rows(lladf) %>%
+    mutate(sd=sd,pa=pa,alpha=alpha,npairs=npairs,minwords=minwords,maxwords=maxwords)
+  
+  alignment_data <- list(NumMarkers=1,
+                         NumSubPops = 1,
+                         NumObservations = npairs,
+                         SpeakerSubPop = rep(1,npairs),
+                         MarkerType = rep(1,npairs),
+                         NumUtterancesAB = tdf$na,
+                         NumUtterancesNotAB = tdf$nna,
+                         CountsAB = tdf$ba,
+                         CountsNotAB = tdf$bna,
+                         StdDev = sd)
+  fit <- sampling(mod, data = alignment_data, 
+                  iter = 200, chains =1 )
+  
+  a <- melt(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+  colnames(a) <- c("iteration","subpop","marker","model_eta")
+  
+  markeraligns <- a %>% group_by(marker) %>% multi_boot_standard("model_eta",nboot=100)
+  markeraligns %<>% mutate(sd=sd,pa=pa,alpha=alpha,npairs=npairs,minwords=minwords,maxwords=maxwords,method="model") %>%
+    bind_rows(df)
+  
+  return(markeraligns)
+}
+```
+
+Generate data & run inference if not already done
+
+```{r,eval=FALSE}
+df <- data.table(sd=vector(mode="numeric"),
+                 pa=vector(mode="numeric"),
+                 alpha=vector(mode="numeric"),
+                 npairs=vector(mode="numeric"),
+                 method=vector(mode="character"),
+                 mean=vector(mode="numeric"),
+                 ci_lower=vector(mode="numeric"),
+                 ci_upper=vector(mode="numeric"))
+mod <- stan_model('../stan/alignment.www2016.stan')
+pmean <- 2
+minwords <- 1
+maxwords <- 25
+for (sd in c(.5)) {
+  for (pa in c(.005,.01,.05,.1,.2)) {
+    for (npairs in c(500)) {
+      for (alpha in seq(-1.25,1.25,.5)) {
+        for (i in c(1:5)) {
+          print(c(pmean,sd,pa,npairs,alpha,i))
+          df <- bind_rows(df,runsim2b_crossiter(pmean,pa,npairs,alpha,sd,minwords,maxwords))
+        }}}}}
+
+save(df,file="results/www2016_simulation2b.RData")
+```
+
+Load data if pre-run:
+
+```{r,eval=TRUE,echo=FALSE}
+load("../results/www2016_simulation2b.RData")
+df$method[df$method=='DNM'] <- 'SCP'
+df$method[df$method=='model'] <- 'HAM'
+df$method <- factor(df$method,levels=c('SCP','LLA','LSM','HAM'))
+```
+
+Plotting Figure 3 (www2016_simulation2b_crossiter.pdf):
+
+```{r}
+#pdf('../results/www2016_simulation2b_crossiter.pdf',width=5,height=6)
+ggplot(aes(x=alpha,y=mean,color=as.factor(pa)),data=df) +
+  geom_point(position=position_dodge(width=0.1)) + 
+  geom_smooth(method='loess',se=FALSE) +
+  theme_bw(base_size = 25) +
+  facet_grid(method~.,scales='free') +
+  scale_color_manual(values=c('#fec44f','#fe9929','#ec7014','#cc4c02','#8c2d04')) +
+  labs(x="true alignment (in log-odds space)",y="estimated alignment (in method's space)",color="  marker\nfrequency") +
+  theme_bw()
+#dev.off()
+```
