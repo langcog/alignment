@@ -1,0 +1,481 @@
+---
+title: "CHILDES Redux with the WWW2016 model"
+author: "Doyle, Yurovsky, and Frank"
+date: "November 1, 2015"
+output: html_document
+---
+
+This document contains code for analyzing CHILDES data on the top 50(ish) words in Wordbank.  A first attempt at getting at content/learning/pedagogical alignment.
+
+<!-- Load preliminiaries -->
+
+```{r load_prelims,echo=FALSE,message=FALSE}
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(langcog)
+library(readr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(directlabels)
+library(lubridate)
+library(lme4)
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+convert.age <- function(childes.age) {
+  age <- as.numeric(unlist(strsplit(childes.age, "[PYMD]"))[2:4])
+  age[2] <- ifelse(is.na(age[2]), 0, age[2])
+  age[3] <- ifelse(is.na(age[3]), 0, age[3])
+  
+  return((age[1]*365+age[2]*30.5+age[3])/30.5)
+}
+
+read.data.file <- function(file) {
+  read_csv(paste0('../../Childes_results/', file)) %>%
+    mutate(type = ifelse(str_count(file,"Stem") > 0, "Stemmed", "Unstemmed")) %>%
+    rename(marker = category)
+}
+
+read.marker.file <- function(file) {
+  read_csv(paste0('../../Marker_Lists/', file)) %>%
+    mutate(type = ifelse(str_count(file,"Stem") > 0, "Stemmed", "Unstemmed"),
+           corpus = sub("Marker.*","",file),"") %>%
+    select(Word,Frequency,type,corpus) %>%
+    rename(marker = Word)
+}
+
+userinfo.files <- list.files(path = "../../Childes_userinfo", 
+                             pattern = '*.csv', all.files = FALSE)
+
+result.files <- list.files(path = "../../Childes_results", 
+                           pattern = '*Results.wordbank_top50_20mos.csv', all.files = FALSE)
+
+childes.userinfo <- bind_rows(lapply(userinfo.files, function(file) {
+  read_csv(paste0('../../Childes_userinfo/',
+                  file))})) %>%
+  rename(Child = role) %>%
+  rowwise() %>%
+  mutate(Age = convert.age(Age))
+
+childes.results <- bind_rows(lapply(result.files, read.data.file)) %>%
+  rename(DocId = docId)
+
+childes.data <- left_join(childes.results,childes.userinfo) %>%
+  rename(Speaker = speakerId, Replier = replierId) %>%
+  filter(Speaker %in% c("CHI", "MOT", "FAT", "INV"), Replier %in% c("CHI","MOT","FAT","INV")) 
+```
+
+<!-- Function to clean up marker labels -->
+
+```{r load_convertcat,echo=FALSE}
+convertcategories2 <- function(d) {
+  return (d %>%
+            mutate(marker = factor(marker,levels=c("i",
+                                                       "we",
+                                                       "you",
+                                                       "ipron",
+                                                       "article",
+                                                       "conj",
+                                                       "preps",
+                                                       "quant",
+                                                       "certain",
+                                                       "discrep",
+                                                       "excl",
+                                                       "incl",
+                                                       "negate",                                                                                             "tentat"))) %>%
+            #mutate(marker = factor(marker,levels=rev(levels(as.factor(marker))))) %>%
+            mutate(group = ifelse(marker %in% c("i","we","you","ipron"),"pronominal",ifelse(marker %in% c("article","quant","conj","preps"),"syntactic","conceptual"))) %>%
+            mutate(group = factor(group,levels=c("conceptual","syntactic","pronominal"))) %>%
+            mutate(marker = plyr:::revalue(as.factor(marker),
+                                             c("certain"="certainty",
+                                               "discrep"="discrepancy",
+                                               "excl"="exclusion",
+                                               "incl"="inclusion",
+                                               "negate"="negation",
+                                               "quant"="quantifier",
+                                               "tentat"="tentative",
+                                               "conj"="conjunction",
+                                               "preps"="preposition",
+                                               "ipron"="indefinites",
+                                               "i"="1st singular",
+                                               "we"="1st plural",
+                                               "you"="2nd person"))))
+}
+
+```
+
+We start by inferring the model alignment (run once, then set eval=FALSE). We're looking at the following CHILDES corpora: `r paste(unique(childes.data$corpus),collapse=', ')`.
+
+```{r infer_childes,eval=FALSE}
+sd <- 0.5
+for (currcorpus in unique(childes.data$corpus)) {
+#for (currcorpus in c('Brown','Kuczaj','Manchester')) {
+d2 <- childes.data %>%
+  filter(corpus==currcorpus) %>%
+  mutate(Age = floor(Age)) %>%
+  group_by(Child,Age,Speaker,Replier,corpus,marker) %>%
+  summarise_each(funs(sum), ba, nba, bna, nbna) %>%
+  unite(sid, Speaker,Replier, Age)
+
+num_subpops <- length(unique(d2$sid))
+num_markers <- length(unique(d2$marker))
+
+alignment_data <- list(NumMarkers=num_markers,
+                       NumSubPops = num_subpops,
+                       NumObservations = nrow(d2),
+                       SpeakerSubPop = as.numeric(as.factor(d2$sid)),
+                       MarkerType = as.numeric(as.factor(d2$marker)),
+                       NumUtterancesAB = d2$ba+d2$nba,
+                       NumUtterancesNotAB = d2$bna+d2$nbna,
+                       CountsAB = d2$ba,
+                       CountsNotAB = d2$bna,
+                       StdDev=sd)
+
+#Number of observations in this corpus
+print(c(currcorpus,nrow(d2)))
+
+fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
+            iter = 500, chains =1 )
+
+
+mu_notab <- colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
+mu_ab <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)
+
+#checking in on the learned subpopulation values
+eta_ab_subpop <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
+
+d3 <- d2 %>%
+  mutate(model_eta = colMeans(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation))
+
+d3$model_mu <- log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)) - 
+    log(colMeans(rstan:::extract(fit,"mu_notab")$mu_notab))
+
+d3$model_dnm <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab) - 
+  colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
+
+save(d3,file=paste0('../results/',currcorpus,'_wordbank50.RData'))
+
+}
+
+```
+
+<!-- Re-loading and analyzing data -->
+
+```{r reload_childes,echo=FALSE,message=FALSE}
+rm(d3all)
+for (currcorpus in unique(childes.data$corpus)) {
+#for (currcorpus in c('Brown')) {
+  load(paste0('../results/',currcorpus,'_wordbank50.RData'))
+  if (exists('d3all')) {
+    d3all %<>% bind_rows(d3)    
+  } else {
+    d3all <- d3
+  }
+}
+
+
+adultchild <- function(x) {
+  x[x!='CHI'] <- 'ADU'
+  return(x)
+}
+```
+
+### Alignments for each child in the CHILDES datasets
+
+```{r plot_bychild,fig.height=8,fig.width=6}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(Child, Speaker, Replier, Age, corpus) %>%
+  multi_boot_standard("model_eta", na.rm = T)
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult"))) %>%
+  filter(Speaker=='Child'|Replier=='Child')
+  
+ggplot(aes(x = as.numeric(Age), y = mean, colour = Replier,
+           group = interaction(Child, Replier)), data = d4) +
+           #), data=d4) + 
+  facet_wrap(~Child) + 
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
+  geom_smooth(method = "loess") +
+  scale_color_brewer(palette = "Set1") +
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme_bw(base_size = 14) +
+  theme(panel.grid = element_blank()) +
+  labs(title='HAM alignment by child',
+       x='Child\'s Age (months)',
+       y='Alignment (delta log-odds)',
+       colour='Alignment by')
+
+```
+
+Plotting alignments for each child's data. "Adult" here collects the "MOT", "FAT", and "INV" roles (mother, father, investigator). The dashed green line is the mean alignment between adults, averaged over all ages, as adult-adult alignment appeared to be consistent regardless of the child's age.
+
+
+### Aggregating over all markers, plotting by age
+
+```{r plot_aggbyage,fig.width=6}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(Speaker,Replier,Age) %>%
+  multi_boot_standard("model_eta", na.rm = T)
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- mean((d4 %>% filter(Speaker!='Child'&Replier!='Child'))$mean)
+
+d5 <- d4 %>% filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60)
+
+ggplot(aes(x = Age, y = mean, colour = Replier,
+           #group = interaction(Child, Speaker)), data = d4) +
+            ), data=d5) + 
+  #facet_wrap(~Child) + 
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower),size=.8) +
+  geom_smooth(method = "loess",size=.8) +
+  geom_hline(yintercept=adultadultmean,linetype='longdash',color="#3daf3a",size=2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw(base_size = 20) +
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  labs(title='Aggregated HAM Alignment',
+       x='Child\'s Age (months)',
+       y='Alignment',
+       colour='Alignment by')+
+  theme(legend.position = "bottom")
+
+```
+
+Aggregating alignment over all markers, to show the trajectory of alignment changes. The green line is the mean adult-to-adult alignment within these corpora. Adults start out aligning much more to children than to other adults, and slowly reduce their alignment. Adults align to children like they align to other adults around age 5. Children, on the other hand, start out barely aligning at all, but quickly (by around 20 months) begin to align like adult-adult interaction and stay there for the rest of our analysis.
+
+### Plotting alignment separately by each marker
+
+```{r plot_bymarkersorted,fig.height=8,fig.width=6}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(marker, Speaker, Replier, Age) %>%
+  multi_boot_standard("model_eta", na.rm = T)
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(marker) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60) #%>%
+  #convertcategories2()
+
+#Only look at markers that appear in at least 6 months & have alignment for both CHI-to-Adu and v.v.
+goodmarkers <- d5 %>% group_by(marker,Speaker,Replier) %>%
+  summarize(n=n()) %>%
+  group_by(marker) %>%
+  summarize(n2=n(),min=min(n)) %>%
+  filter(n2==2&min>5)
+
+d5 %<>% semi_join(goodmarkers,by="marker")
+  
+
+ggplot(aes(x = Age, y = mean, colour = Replier,
+           #group = interaction(Child, Speaker)), data = d4) +
+            ), data=d5) + 
+  #facet_wrap(~Child) + 
+  geom_point() +
+  geom_smooth(method = "loess",size=.6,se=F) +
+  geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~marker) + #,scale='free_y') + 
+  labs(title='HAM Alignment by Marker Category',
+       x='Child\'s Age (months)',
+       y='HAM Alignment',
+       colour='Alignment by')
+```
+
+We also want to separate out our data by marker; in adult data, we and others have found substantial differences in alignment depending on the marker. Marker categories, based on LIWC, are organized into groups: first row is pronominals; second row is other syntactic categories; last two rows are conceptual categories.
+
+On all markers, the adult-to-child and child-to-adult alignments end up at approximately the same level at age 5, though it looks like adults continue to align a little bit more than children.  Interestingly, this level is about the same as adult-to-adult alignment except on two pronominal markers: 1st plural (_we_) and 2nd person (_you_). It's not clear that this is a significant result, nor anything more than random noise from havng 14 marker categories, but it seems reasonable to me that parents and children align more on _we_ and less on _you_ than adults do generally.
+
+### Combining marker categories into groups
+
+```{r plot_bygroup}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  convertcategories2() %>%
+  group_by(group, Speaker, Replier, Age) %>%
+  multi_boot_standard("model_eta", na.rm = T)
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(group) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60)
+
+ggplot(aes(x = Age, y = mean, colour = Replier,
+           #group = interaction(Child, Speaker)), data = d4) +
+            ), data=d5) + 
+  #facet_wrap(~Child) + 
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower),size=.6) +
+  geom_smooth(method = "loess",size=.6) +
+  geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  #theme_bw(base_size = 20) +
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group) + #,scale='free_y') + 
+  labs(#title='Model-estimated Alignment to Mother and Child by Age',
+       x='Child\'s Age (months)',
+       y='HAM Alignment',
+       colour='Alignment by')
+```
+
+Looking by LIWC category groups; the WWW2016 paper results suggested that there was a little bit of a pattern in that tended to be greater alifgnment on more semantically informative marker categories.  We use the same groupings determined row membership above. Overall alignment is in fact higher on conceptual markers (things like inclusion, exclusion) than syntactic/pronominal alignment. Interestingly, while the 5-year alignment is similar on syntactic and pronominal groups, pronominals appear to have a lower alignment value over the course of early development and may approach the adult-adult level a little more slowly?
+
+There is also a clear view of something Dan has pointed out a couple times; that alignment may have a little hump in development, with parents starting out low just as their children start speaking, then maximizing alignment around 18 months before slowly declining to the 5-year level. Children also seem like they might have a little bit of a bump here, later than the parents, more around 24 months. 
+
+## CHILDES with other alignment measures (SCP for now)
+
+For completeness, let's look at the alignment estimated by SCP, the $p(B|A)-p(B)$ measure from DNM et al's papers.  The same basic patterns show up here, but the patterns in the children's alignment are much less clear.  This, I suspect, is a result of the smaller alignment effects and greater data sparsity causing problems for the SCP measure.
+
+### SCP alignment by markers
+
+```{r plot_bymarker_scp,fig.height=8,fig.width=6}
+df2 <- as.data.frame(d3all) %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(marker,Speaker,Replier,Age) %>%
+  filter((ba+bna+nba+nbna)>=10) %>%
+  mutate(dnm=(ba/(ba+nba))-((ba+bna)/(ba+bna+nba+nbna))) %>%
+  multi_boot_standard("dnm", na.rm = T)
+
+d4 <- df2 %>% ungroup()  %>%
+  convertcategories2() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(group) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60)
+
+
+
+#pdf(file="../results/www2016_dnmpowerdiff_fratio_final.pdf",height=6,width=6)
+ggplot(aes(x = Age, y = mean, colour = Replier,
+           #group = interaction(Child, Speaker)), data = d4) +
+            ), data=d5) + 
+  #facet_wrap(~Child) + 
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower),size=.6) +
+  geom_smooth(method = "loess",size=.6) +
+  geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  #theme_bw(base_size = 20) +
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~marker) + #,scale='free_y') + 
+  labs(#title='Model-estimated Alignment to Mother and Child by Age',
+       x='Child\'s Age (months)',
+       y='SCP Alignment',
+       colour='Alignment by')
+
+```
+
+The longitudinal pattern in SCP looks very much like HAM, although the child's changes are pretty hard to discern.  All of the adult-to-adult and child-to-adult alignment effects are reduced, and we see little variation across markers.  The 1st plural and 2nd person pronoun effects mentioned above for HAM remain in SCP.
+
+### SCP alignment by marker group
+
+```{r plot_bygroup_scp}
+df2 <- as.data.frame(d3all) %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  convertcategories2() %>%
+  group_by(group,Speaker,Replier,Age) %>%
+  filter((ba+bna+nba+nbna)>=10) %>%
+  mutate(dnm=(ba/(ba+nba))-((ba+bna)/(ba+bna+nba+nbna))) %>%
+  multi_boot_standard("dnm", na.rm = T)
+
+d4 <- df2 %>% ungroup()  %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(group) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60)
+
+
+
+#pdf(file="../results/www2016_dnmpowerdiff_fratio_final.pdf",height=6,width=6)
+ggplot(aes(x = Age, y = mean, colour = Replier,
+           #group = interaction(Child, Speaker)), data = d4) +
+            ), data=d5) + 
+  #facet_wrap(~Child) + 
+  geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower),size=.6) +
+  geom_smooth(method = "loess",size=.6) +
+  geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  #theme_bw(base_size = 20) +
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group) + #,scale='free_y') + 
+  labs(title='SCP Alignment by Marker Group',
+       x='Child\'s Age (months)',
+       y='SCP Alignment',
+       colour='Alignment by')
+```
+
+Let's also look at the SCP alignment on groups of markers (i.e., average alignment over all marker categories within a group, not alignment on all markers within a group). The adults aligning to children look more or less the same, but the children have a slow constant rise to adult-to-adult alignment (green line) rather than the quick (by 20-ish months) rise we saw in HAM.
+
+## Conclusions
+
+Our high-level longitudinal effects look really robust. They appear across different markers, and look similar in each. Adults and children approach the level of alignment between adults on most markers by 5 years old, and this convergence happens at each marker's idiosyncratic alignment value.
+
+There are some enticing patterns in this data as well, both in terms of how alignment occurs for different markers (and semantic groups of markers) and in the specifics of the longitudinal process (e.g., the possible humps in alignment).

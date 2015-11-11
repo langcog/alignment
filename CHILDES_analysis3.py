@@ -214,7 +214,9 @@ def convo_converter(corpusname, filename, conversation_dictionary, marker_list):
 	for x in range(0, (len(conversation_dictionary) - 1)):
 		speaker1 = convo_dict[x][0][0]
 		speaker2 = convo_dict[x][1][0]
-		toAppend = ({'corpus': corpusname, 'docId': filename, 'convId': (speaker1, speaker2), 'msgUserId': speaker1, 'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [], 'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
+		toAppend = ({'corpus': corpusname, 'docId': filename, 'convId': (speaker1, speaker2), 'msgUserId': speaker1,
+		             'msg': convo_dict[x][0], 'replyUserId': speaker2, 'reply': convo_dict[x][1], 'msgMarkers': [],
+		             'replyMarkers': [], 'msgTokens': convo_dict[x][0], 'replyTokens': convo_dict[x][1]})
 		for marker in marker_list:
 			if marker["marker"] in convo_dict[x][0]:
 				toAppend["msgMarkers"].append(marker["marker"])
@@ -250,6 +252,7 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 		#	return
 	else:
 		get_childes_stemmed(directory_location, input_file_name)
+
 	determine_speakers(ordered_utterance_list)
 	determine_possible_conversations(speaker_list)
 	squisher(ordered_utterance_list)
@@ -260,8 +263,8 @@ def document_stuff(directory_location, input_file_name, marker_list, output_file
 		catdict = alignment.makeCatDict(marker_list,useREs)
 		#pprint(catdict)
 		for i in range(0,len(utterances)):
-			utterances[i]["msgMarkers"] = alignment.determineCategories(utterances[i]["msgMarkers"],catdict,useREs)
-			utterances[i]["replyMarkers"] = alignment.determineCategories(utterances[i]["replyMarkers"],catdict,useREs)
+			utterances[i]["msgMarkers"] = alignment.determineCategories(utterances[i]["msgTokens"],catdict,useREs)
+			utterances[i]["replyMarkers"] = alignment.determineCategories(utterances[i]["replyTokens"],catdict,useREs)
 		#pprint(utterances[0]["msgMarkers"])
 		marker_list = list(catdict.keys())
 	results = alignment.calculateAlignments(utterances, marker_list, 1, output_file_name, var_x, 'CHILDES')	
