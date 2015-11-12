@@ -1,4 +1,5 @@
 module load python/3.3.2
+cd ../
 
 python CHILDES_analysis.py -C=Brown
 python CHILDES_analysis.py -C=Kuczaj
