@@ -227,6 +227,7 @@ save(d3,file=paste0('../results/',currcorpus,'_wordbank_byage.RData'))
 
 Trying with age formally marked in model:
 
+
 ```{r infer_childes,eval=FALSE}
 sd <- 0.5
 for (currcorpus in unique(childes.data$corpus)) {
@@ -281,6 +282,7 @@ save(d3,file=paste0('../results/',currcorpus,'_wordbank50.RData'))
 
 ```
 
+
 <!-- Re-loading and analyzing data -->
 
 ```{r reload_childes,echo=FALSE,message=FALSE}
@@ -309,7 +311,8 @@ d4 <- d3all %>%
   separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
   mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
   mutate(Age = as.numeric(Age)) %>%
-  group_by(Child, Speaker, Replier, Age, corpus) %>%
+  mutate(newgroup=ifelse(group=="1_50"|group=="51_100","content","liwc")) %>%
+  group_by(Child, Speaker, Replier, Age, corpus, newgroup) %>%
   #multi_boot_standard("model_eta", na.rm = T)
   mutate(mean = mean(model_eta))
 
@@ -318,14 +321,14 @@ d4 %<>% ungroup() %>%
   mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult"))) %>%
   filter(Speaker=='Child'|Replier=='Child')
   
-ggplot(aes(x = as.numeric(Age), y = mean, colour = Replier,
-           group = interaction(Child, Replier)), data = d4) +
+ggplot(aes(x = as.numeric(Age), y = mean, colour = paste(Replier,newgroup),
+           group = interaction(Child, Replier, newgroup)), data = d4) +
            #), data=d4) + 
   facet_wrap(~Child) + 
   geom_point() +
   #geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower)) +
   geom_smooth(method = "loess") +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Paired") +
   geom_hline(yintercept=0,linetype='dotted',size=1) +
   theme_bw(base_size = 14) +
   theme(panel.grid = element_blank()) +

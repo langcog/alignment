@@ -1,0 +1,267 @@
+---
+title: "CHILDES Word and Category Comparison"
+author: "Doyle, Yurovsky, and Frank"
+date: "November 13, 2015"
+output: html_document
+---
+
+Hey guys, so we've been talking about the issue of alignment at the category versus alignment at the word/lemma level.  I've put together a quick set of experiments to get at this problem, and I think it looks like while there are some differences between word-level and category-level alignment, they're pretty similar in most ways.
+
+So here's what I did: I went through the words in the 14 LIWC categories we've been looking and (more or less) manually lemmatized them, focusing on splitting apart contractions (so all of the can'ts, won'ts, etc. in the "negation" catgeory get coded as the same word "nt", for instance).  I fed in a word list that had each of these words both as an example of the category as a whole and as the specific lemma so we can get catgeory alignment and word alignment in the same run. Words that appear in multiple categories are included once as a member of each category so we can plot all of the words within each category against the category-level alignment.
+
+As for the model, I didn't impose any hierarchy on the categories and words because I want to see what, if any, differences there are between them rather than imposing a relationship upon them.  Instead, categories and words are just treated as separate markers.  To compare the word-level alignment to category-level alignment, I ran loess on the all of the words in a category, and compared that to the loess on the category-level alignment.  In all the plots, the dashed line is the category-level alignment (what we've been working with), the dark solid line is the mean word-level alignment for that category, and the light solid lines are the individual lemmas within the category.
+
+It's a little hard to visualize these differences, so I'm doing three tests/plots. First, looking at the difference between adult-to-child and child-to-adult alignment over time. This allows us to compare the individual words' alignments to the category alignment clearly, and I hoped that this will remove some of the noise in the word-specific data.  The second plot shows the adult and child alignments in a single plot for each category, similar to previous plots, so we can compare the patterns.  This is a bit messier than the first plot, and we do see some noticeable differences between words and categories -- although I'm not sure if that's due to noise in the word-level alignment.  The last plot is the same data as the second, but I separated adult & child so it's easier to see the relationship between the individual words and the categories.
+
+<!-- Load preliminiaries -->
+
+```{r load_prelims,echo=FALSE,message=FALSE}
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(langcog)
+library(readr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(directlabels)
+library(lubridate)
+library(lme4)
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+convert.age <- function(childes.age) {
+  age <- as.numeric(unlist(strsplit(childes.age, "[PYMD]"))[2:4])
+  age[2] <- ifelse(is.na(age[2]), 0, age[2])
+  age[3] <- ifelse(is.na(age[3]), 0, age[3])
+  
+  return((age[1]*365+age[2]*30.5+age[3])/30.5)
+}
+
+read.data.file <- function(file) {
+  read_csv(paste0('../../Childes_results/', file)) %>%
+    mutate(type = ifelse(str_count(file,"Stem") > 0, "Stemmed", "Unstemmed")) %>%
+    rename(marker = category)
+}
+
+read.marker.file <- function(file) {
+  read_csv(paste0('../../Marker_Lists/', file)) %>%
+    mutate(type = ifelse(str_count(file,"Stem") > 0, "Stemmed", "Unstemmed"),
+           corpus = sub("Marker.*","",file),"") %>%
+    select(Word,Frequency,type,corpus) %>%
+    rename(marker = Word)
+}
+
+userinfo.files <- list.files(path = "../../Childes_userinfo", 
+                             pattern = '*.csv', all.files = FALSE)
+
+result.files <- list.files(path = "../../Childes_results", 
+                           pattern = '*wordsandcats.csv', all.files = FALSE)
+
+childes.userinfo <- bind_rows(lapply(userinfo.files, function(file) {
+  read_csv(paste0('../../Childes_userinfo/',
+                  file))})) %>%
+  rename(Child = role) %>%
+  rowwise() %>%
+  mutate(Age = convert.age(Age))
+
+childes.results <- bind_rows(lapply(result.files, read.data.file)) %>%
+  rename(DocId = docId)
+
+childes.data <- left_join(childes.results,childes.userinfo) %>%
+  rename(Speaker = speakerId, Replier = replierId) %>%
+  filter(Speaker %in% c("CHI", "MOT", "FAT", "INV"), Replier %in% c("CHI","MOT","FAT","INV")) %>%
+  separate(marker,c("group","marker"),sep="_")
+```
+
+Inferring the model. We're looking at the following CHILDES corpora: `r paste(unique(childes.data$corpus),collapse=', ')`. 
+
+```{r infer_childes,eval=FALSE}
+adultchild <- function(x) {
+  x[x!='CHI'] <- 'ADU'
+  return(x)
+}
+
+
+sd <- 0.5
+for (currcorpus in unique(childes.data$corpus)) {
+#for (currcorpus in c('Brown','Kuczaj','Manchester')) {
+d2 <- childes.data %>%
+  filter(corpus==currcorpus) %>%
+  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = floor(Age)) %>%
+  group_by(Child,Age,Speaker,Replier,corpus,marker,group) %>%
+  summarise_each(funs(sum), ba, nba, bna, nbna) %>%
+  unite(sid, Speaker,Replier, Age)
+
+num_subpops <- length(unique(d2$sid))
+num_markers <- length(unique(d2$marker))
+
+alignment_data <- list(NumMarkers=num_markers,
+                       NumSubPops = num_subpops,
+                       NumObservations = nrow(d2),
+                       SpeakerSubPop = as.numeric(as.factor(d2$sid)),
+                       MarkerType = as.numeric(as.factor(d2$marker)),
+                       NumUtterancesAB = d2$ba+d2$nba,
+                       NumUtterancesNotAB = d2$bna+d2$nbna,
+                       CountsAB = d2$ba,
+                       CountsNotAB = d2$bna,
+                       StdDev=sd)
+
+#Number of observations in this corpus
+print(c(currcorpus,nrow(d2)))
+
+fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
+            iter = 500, chains =1 )
+
+
+mu_notab <- colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
+mu_ab <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)
+
+#checking in on the learned subpopulation values
+eta_ab_subpop <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
+
+d3 <- d2 %>%
+  mutate(model_eta_obs = colMeans(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation))
+
+#d3$model_mu <- log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)) - 
+#    log(colMeans(rstan:::extract(fit,"mu_notab")$mu_notab))
+
+#d3$model_dnm <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab) - 
+#  colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
+
+save(d3,file=paste0('../results/',currcorpus,'_wordsandcats.RData'))
+
+}
+
+```
+
+
+<!-- Re-loading and analyzing data -->
+
+```{r reload_childes,echo=FALSE,message=FALSE}
+rm(d3all)
+for (currcorpus in unique(childes.data$corpus)) {
+#for (currcorpus in c('Brown')) {
+  load(paste0('../results/',currcorpus,'_wordsandcats.RData'))
+  if (exists('d3all')) {
+    d3all %<>% bind_rows(d3)    
+  } else {
+    d3all <- d3
+  }
+}
+
+
+```
+
+
+### Comparing words and categories
+
+```{r plot_bymarkersorted,fig.height=7,fig.width=10.5}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  #mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(marker, Speaker, Replier, Age) %>%
+  #multi_boot_standard("model_eta", na.rm = T)
+  mutate(mean = mean(model_eta_obs))
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(marker) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60) #%>%
+  #convertcategories2()
+
+#Only look at markers that appear in at least 20 months & have alignment for both CHI-to-Adu and v.v.
+goodmarkers <- d5 %>% group_by(marker,Speaker,Replier) %>%
+  summarize(n=n()) %>%
+  group_by(marker) %>%
+  summarize(n2=n(),min=min(n)) %>%
+  filter(n2==2&min>=20)
+
+d5 %<>% semi_join(goodmarkers,by="marker")
+
+d5minus <- d5 %>%
+  #select(-Speaker,-ba,-bna,-nba,-nbna,-mean,-aamean) %>%
+  rename(x=Child) %>%
+  group_by(x,Replier,Age,corpus,marker,group) %>%
+  summarize(mean=mean(model_eta_obs)) %>%
+  spread(Replier,mean) %>%
+  mutate(diff=Adult-Child) %>%
+  select(-Adult,-Child) %>%
+  rename(Child=x) %>%
+  mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches')) %>%
+  mutate(wordorcat=factor(wordorcat,levels=rev(levels(as.factor(wordorcat))))) %>%
+  filter(!is.na(diff))
+
+ggplot(aes(x = Age, y = diff, group=paste(group,marker)), data=d5minus) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.1,size=.6) +
+  geom_smooth(aes(group=wordorcat,linetype=wordorcat),method = "loess") +
+  #geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  #scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group,scale='free_y') + 
+  labs(title='Plot 1: The changing difference between adult and child alignment over time',
+       x='Child\'s Age (months)',
+       y='Difference in Alignment by Adult and by Child') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.25))
+```
+
+```{r plot2,fig.height=7,fig.width=10.5}
+d5comp <- d5 %>%
+  #select(-Speaker,-ba,-bna,-nba,-nbna,-mean,-aamean) %>%
+  select(Child,Replier,Age,corpus,marker,group,model_eta_obs) %>%
+  mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches')) %>%
+  mutate(wordorcat=factor(wordorcat,levels=rev(levels(as.factor(wordorcat)))))
+
+#d5temp <- d5comp %>% sample_frac(.25)
+  
+ggplot(aes(x = Age, y = model_eta_obs, group=paste(group,marker,Replier),color=Replier), data=d5comp) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.2,size=.6) +
+  geom_smooth(aes(group=paste(group,wordorcat,Replier),linetype=wordorcat),method = "loess",se=F,size=1.1) +
+  #geom_hline(aes(yintercept=aamean),linetype='d  ashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group) + 
+  labs(title='Plot 2: Comparing Parent and Child Alignments',
+       x='Child\'s Age (months)',
+       y='Alignment for Word or Category') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.25))
+```
+
+```{r plot3,fig.height=7,fig.width=10.5}
+ggplot(aes(x = Age, y = model_eta_obs, group=paste(group,marker,Replier),color=Replier), data=d5comp) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.2,size=.6) +
+  geom_smooth(aes(group=paste(group,wordorcat,Replier),linetype=wordorcat),method = "loess",se=F,size=1.1) +
+  #geom_hline(aes(yintercept=aamean),linetype='d  ashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(group~Replier,scale='free_y') + 
+  labs(title='Plot 3: Comparing Word & Category Alignments\nfor Parents and Children',
+       x='Child\'s Age (months)',
+       y='Alignment for Word or Category') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.2))
+```
+
+### Conclusions
+
+So here's the most interesting thing to me about the word- vs. category-level alignment: one's not consistently higher than the other. However, there does seem to be a generally less extreme value for the word-level alignment (see Plot 3). The big differences are strongest early on, when only a couple of words are being used and so we're probably getting weird results from giving them equal weight in the mean word-level alignment values, which could be partially rectified with a hierarchical system of marker category then marker word.  What do you guys think?
