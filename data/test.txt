@@ -1,4 +1,0 @@
-msgid	msguid	msg	replyid	replyuid	reply
-111	1	the	222	2	the for
-111	1	the of	223	2	of it
-222	2	the	224	3	it it
