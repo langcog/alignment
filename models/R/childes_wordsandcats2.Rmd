@@ -134,7 +134,25 @@ d3 <- d2 %>%
 #d3$model_dnm <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab) - 
 #  colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
 
-save(d3,file=paste0('../results/',currcorpus,'_wordsandcats.RData'))
+a <- melt(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+colnames(a) <- c("iteration","sid","marker","model_subpop")
+a$category <- factor(a$marker,labels=levels(as.factor(d2$category)))
+a$sid <- NULL
+
+b <- a %>%
+  group_by(category) %>%
+  summarize(subpop_m=mean(model_subpop),
+            subpop_u=ci_upper(model_subpop),
+            subpop_l=ci_lower(model_subpop))
+
+a <- d3 %>%
+  group_by(category) %>%
+  mutate(freq=2*ba+nba+bna) %>%
+  summarize(freq=sum(freq)) %>%
+  inner_join(b) %>%
+  separate(category,c('category','marker'),sep="_")
+
+save(d3,b,file=paste0('../results/',currcorpus,'_wordsandcats.RData'))
 
 }
 
@@ -536,158 +554,3 @@ ggplot(aes(x = Age, y = model_eta_obs, group=paste(group,marker,Replier),color=R
 ### Conclusions from Part 2
 
 Part 2 looked at the data with two major changes: first, word-level and category-level parameters were fit by separate models; second, the loess fits were calculated on a by-token rather than by-type weighting.  I think the word and category alignments diverge a bit more in these calculations, especially at very early ages, but they're still pretty similar. It's worth noting that these results are consistent with the possibility that alignment happens mostly at the word level (except, possibly, at very early ages) but we'd have to put together a different experiment if we really want to determine whether alignment happens mostly at the word level or mostly at the category level (specifically, I think we'd want to calculate the number of message pairs where the response contains a member of the same category but NOT the same lemma).
-
-## Part 3: Looking at the effects when we collapse to just parents and children but age
-
-I want to try comparing this against the Twitter results on categories.
-
-
-```{r infer_childes,eval=FALSE}
-adultchild <- function(x) {
-  x[x!='CHI'] <- 'ADU'
-  return(x)
-}
-
-
-sd <- 0.5
-for (currcorpus in unique(childes.data$corpus)) {
-#for (currcorpus in c('Brown','Kuczaj','Manchester')) {
-d2 <- childes.data %>%
-  filter(corpus==currcorpus) %>%
-  mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
-  #mutate(Age = floor(Age)) %>%
-  group_by(Child,Speaker,Replier,corpus,marker,group) %>%
-  summarise_each(funs(sum), ba, nba, bna, nbna) %>%
-  unite(sid, Speaker,Replier)
-
-num_subpops <- length(unique(d2$sid))
-num_markers <- length(unique(d2$marker))
-
-alignment_data <- list(NumMarkers=num_markers,
-                       NumSubPops = num_subpops,
-                       NumObservations = nrow(d2),
-                       SpeakerSubPop = as.numeric(as.factor(d2$sid)),
-                       MarkerType = as.numeric(as.factor(d2$marker)),
-                       NumUtterancesAB = d2$ba+d2$nba,
-                       NumUtterancesNotAB = d2$bna+d2$nbna,
-                       CountsAB = d2$ba,
-                       CountsNotAB = d2$bna,
-                       StdDev=sd)
-
-#Number of observations in this corpus
-print(c(currcorpus,nrow(d2)))
-
-fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
-            iter = 500, chains =1 )
-
-
-mu_notab <- colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
-mu_ab <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)
-
-#checking in on the learned subpopulation values
-eta_ab_subpop <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
-eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
-
-d3 <- d2 %>%
-  mutate(model_eta_obs = colMeans(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation))
-
-#d3$model_mu <- log(colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)) - 
-#    log(colMeans(rstan:::extract(fit,"mu_notab")$mu_notab))
-
-#d3$model_dnm <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab) - 
-#  colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
-
-a <- melt(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
-colnames(a) <- c("iteration","sid","marker","model_subpop")
-a$marker <- factor(a$marker,labels=levels(as.factor(d2$marker)))
-a$sid <- factor(a$sid,labels=levels(as.factor(d2$sid)))
-
-b <- a %>%
-  group_by(marker,sid) %>%
-  summarize(subpop_m=mean(model_subpop),
-            subpop_u=ci_upper(model_subpop),
-            subpop_l=ci_lower(model_subpop))
-
-a <- d3 %>%
-  group_by(marker,group,sid) %>%
-  mutate(freq=2*ba+nba+bna) %>%
-  summarize(freq=sum(freq)) %>%
-  inner_join(b) %>%
-  unite(category,group,marker,sep="_")
-
-save(d3,a,file=paste0('../results/',currcorpus,'_wordsandcats_noage.RData'))
-
-}
-
-```
-
-
-<!-- Re-loading and analyzing data -->
-
-```{r reload_childes,echo=FALSE,message=FALSE}
-rm(d3all)
-rm(aall)
-for (currcorpus in unique(childes.data$corpus)) {
-#for (currcorpus in c('Brown')) {
-  load(paste0('../results/',currcorpus,'_wordsandcats_noage.RData'))
-  if (exists('d3all')) {
-    d3all %<>% bind_rows(d3)    
-    aall %<>% bind_rows(a)    
-  } else {
-    d3all <- d3
-    aall <- a
-  }
-}
-
-
-```
-
-
-```{r}
-aall <- aall %>%
-  filter(sid!='ADU_ADU') %>%
-  group_by(category,sid) %>%
-  summarize(freq=sum(freq),subpop_m=mean(subpop_m)) %>%
-  separate(category,c('category','marker'),sep='_')
-
-aw <- aall %>%
-  group_by(category,sid) %>%
-  filter(marker!='as.category') %>%
-  summarize(wmean=weighted.mean(subpop_m,freq),freq=sum(freq)) %>%
-  ungroup() %>%
-  mutate(marker='weighted.mean')
-
-pdf(file="../results/childes_wordsandcats_wmean_adult.pdf",height=7,width=10)
-ggplot(aes(y=marker,x=subpop_m,color=(marker=='as.category'),alpha=log10(freq)),data=filter(aall,sid=='CHI_ADU')) +
-  geom_point(size=2) +
-  #geom_errorbarh(aes(xmin=subpop_l,xmax=subpop_u,height=0),size=1) +
-  geom_point(aes(y=marker,x=wmean,color='#dc322f'),data=filter(aw,sid=='CHI_ADU')) +
-  geom_vline(xintercept=0,lty=2) +
-  theme_bw(base_size = 10) +
-  theme(panel.grid = element_blank(),axis.title.y= element_blank()) +
-  guides(color=FALSE,alpha=FALSE) +
-  #scale_color_brewer(palette="Set1") +
-  scale_color_manual(values=c('#dc322f','#779977','#0022ff')) +
-  #facet_grid(category~.,space='free',scale='free') +
-  facet_wrap(~category,scale='free') +
-  labs(y="marker category",x="overall mean alignment by adults")
-dev.off()
-
-pdf(file="../results/childes_wordsandcats_wmean_child.pdf",height=7,width=10)
-ggplot(aes(y=marker,x=subpop_m,color=(marker=='as.category'),alpha=log10(freq)),data=filter(aall,sid=='ADU_CHI')) +
-  geom_point(size=2) +
-  #geom_errorbarh(aes(xmin=subpop_l,xmax=subpop_u,height=0),size=1) +
-  geom_point(aes(y=marker,x=wmean,color='#dc322f'),data=filter(aw,sid=='ADU_CHI')) +
-  geom_vline(xintercept=0,lty=2) +
-  theme_bw(base_size = 10) +
-  theme(panel.grid = element_blank(),axis.title.y= element_blank()) +
-  guides(color=FALSE,alpha=FALSE) +
-  #scale_color_brewer(palette="Set1") +
-  scale_color_manual(values=c('#dc322f','#779977','#0022ff')) +
-  #facet_grid(category~.,space='free',scale='free') +
-  facet_wrap(~category,scale='free') +
-  labs(y="marker category",x="overall mean alignment by children")
-dev.off()
-
-```
-

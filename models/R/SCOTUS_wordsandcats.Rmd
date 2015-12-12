@@ -1,0 +1,358 @@
+---
+title: "SCOTUS Words and Categories Comparison"
+author: "Doyle, Yurovsky, and Frank"
+date: "November 13, 2015"
+output: html_document
+---
+
+This is a follow-up to the CHILDES word/category alignment investigation. CHILDES is in many ways an especially tricky case for word vs. category alignment since we expect the kids to use fewer of the words in the categories than the adults do. SCOTUS oral arguments, while being a weird type of interaction, has interactions between adults & thus is an interesting follow-up case.  I'm also hopeful it will help explain some of the messy behaviors we saw in the earlier SCOTUS investigations.
+
+<!-- Load preliminiaries -->
+
+```{r load_prelims,echo=FALSE,message=FALSE}
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(langcog)
+library(readr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(directlabels)
+library(lubridate)
+library(lme4)
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+ci_32 <- function(x) { return(quantile(x,.32))}
+ci_68 <- function(x) { return(quantile(x,.32))}
+
+convertcategories2 <- function(d) {
+  nocats <- FALSE
+  if(is.null(d$category)) {
+    d$category <- d$marker
+    nocats <- TRUE
+  }
+  d %<>%
+            mutate(category = factor(category,levels=rev(levels(as.factor(category))))) %>%
+            mutate(category = factor(category,levels=c("ipron",
+                                                       "you",
+                                                       "we",
+                                                       "i",
+                                                       "quant",
+                                                       "preps",
+                                                       "conj",
+                                                       "article",
+                                                       "tentat",
+                                                       "negate",
+                                                       "incl",
+                                                       "excl",
+                                                       "discrep",
+                                                       "certain"))) %>%
+            mutate(group = ifelse(category %in% c("i","we","you","ipron"),"pronominal",ifelse(category %in% c("article","quant","conj","preps"),"syntactic","conceptual"))) %>%
+            mutate(group = factor(group,levels=c("conceptual","syntactic","pronominal"))) %>%
+            mutate(category = plyr:::revalue(as.factor(category),
+                                             c("certain"="certainty",
+                                               "discrep"="discrepancy",
+                                               "excl"="exclusion",
+                                               "incl"="inclusion",
+                                               "negate"="negation",
+                                               "quant"="quantifier",
+                                               "tentat"="tentative",
+                                               "conj"="conjunction",
+                                               "preps"="preposition",
+                                               "ipron"="indefinite",
+                                               "i"="1st singular",
+                                               "we"="1st plural",
+                                               "you"="2nd person")))
+  if(nocats) { return(d %>% mutate(marker=category) %>% select(-category)) } 
+  return(d)
+}
+
+convertcategoriesnum <- function(d) {
+  return (d %>%
+            mutate(category = factor(marker,levels=rev(levels(as.factor(marker))))) %>%
+            mutate(category = plyr:::revalue(category,
+                                             c("1"="article",
+                                               "2"="certain",
+                                               "3"="conj",
+                                               "4"="discrep",
+                                               "5"="excl",
+                                               "6"="i",
+                                               "7"="incl",
+                                               "8"="ipron",
+                                               "9"="negate",
+                                               "10"="preps",
+                                               "11"="quant",
+                                               "12"="tentat",
+                                               "13"="we",
+                                               "14"="you"))))
+}
+
+addcategories <- function(d) {
+  d$category <- c("article","certain","conj","discrep","excl","i","incl","ipron","negate","preps","quant","tentat","we","you")
+  return(d)
+}
+
+
+resultsdir <- "../../results/"
+
+read.data.file <- function(file) {
+  read_csv(paste0(resultsdir, file)) %>%
+    rename(marker=category)
+}
+
+userinfo.files <- list.files(path = resultsdir, 
+                             pattern = 'SCOTUS_1979-2014_Roles.csv', all.files = FALSE)
+
+result.files <- list.files(path = resultsdir, 
+                           pattern = 'SCOTUSResults.liwc2007_14cats_wordsandcats.csv', all.files = FALSE)
+
+scotus.userinfo <- bind_rows(lapply(userinfo.files, function(file) {
+  read_csv(paste0(resultsdir,
+                  file))})) %>%
+  mutate(year=substr(rootdir,nchar(rootdir)-3,nchar(rootdir))) %>%
+  #mutate(docId=paste(year,docId,sep="/")) %>%
+  select(year,docId,id,role,sex)
+
+#Temporary fix for the files that appear in multiple years - remove once they are handled correctly
+scotus.userinfo %<>% 
+  select(year,docId) %>%
+  group_by(docId) %>%
+  summarize(numyears=n_distinct(year)) %>%
+  filter(numyears==1) %>%
+  select(-numyears) %>%
+  inner_join(scotus.userinfo,by="docId")
+  
+scotus.results <- bind_rows(lapply(result.files, read.data.file))
+
+scotus.data <- left_join(scotus.results,scotus.userinfo,by=c("docId"="docId","replierId"="id")) %>%
+   rename(replierRole=role,replierSex=sex) %>%
+   left_join(scotus.userinfo,by=c("docId"="docId","speakerId"="id","year"="year")) %>%
+   rename(speakerRole=role,speakerSex=sex) %>%
+   filter(speakerRole!='Unidentified',replierRole!='Unidentified')
+
+#Something weird is happening in the pre-1998 data, so removing it for now.
+# (to see: ggplot(aes(x=year),data=scotus.data) + geom_histogram() )
+# note: this isn't a result of removing the files that have names in multiple folders.
+scotus.data %<>% filter(as.numeric(year)>=1998)
+```
+
+Inferring the model. Note we're only looking at post-1997 data because too many of the comments by the justices are listed as coming from an unidentified speaker in the earlier data.
+
+```{r infer_childes,eval=FALSE}
+sd <- 0.5
+
+d2 <- scotus.data %>%
+  filter(speakerRole!=replierRole) %>%
+  unite(sid,speakerRole,replierRole) %>%
+  mutate(justice=ifelse(sid=='Justice_Attorney',speakerId,replierId)) %>%
+  mutate(speakerId=as.factor(speakerId),replierId=as.factor(replierId),
+         sid=as.factor(sid),justice=as.factor(justice)) %>%
+  group_by(justice,sid,year,marker) %>%
+  summarise_each(funs(sum), ba, nba, bna, nbna)
+  
+
+# d2 <- scotus.data %>%
+#   group_by(speakerId,replierId,speakerRole,speakerSex,replierRole,replierSex,marker) %>%
+#   summarise_each(funs(sum), ba, nba, bna, nbna) %>%
+#   unite(sid, speakerRole,speakerSex,replierRole,replierSex)
+
+num_subpops <- length(unique(d2$sid))
+num_markers <- length(unique(d2$marker))
+#num_repliers <- length(unique(d2$rid))
+
+alignment_data <- list(NumMarkers=num_markers,
+                       NumSubPops = num_subpops,
+                       NumObservations = nrow(d2),
+                       SpeakerSubPop = as.numeric(as.factor(d2$sid)),
+                       MarkerType = as.numeric(as.factor(d2$marker)),
+                       NumUtterancesAB = d2$ba+d2$nba,
+                       NumUtterancesNotAB = d2$bna+d2$nbna,
+                       CountsAB = d2$ba,
+                       CountsNotAB = d2$bna,
+                       StdDev=sd)
+
+
+fit <- stan(file = '../stan/alignment.www2016.stan', data = alignment_data, 
+            iter = 500, chains =1, 
+            include=T, pars=c("eta_subpop","eta_ab_subpop","eta_ab_observation"))
+
+#mu_notab <- colMeans(rstan:::extract(fit,"mu_notab")$mu_notab)
+#mu_ab <- colMeans(rstan:::extract(fit,"mu_ab")$mu_ab)
+
+#If the model works, its mu_ values should be "smoothed" estimates of p(B|A) & p(B|notA)
+#plot(mu_ab,d2$ba/(d2$ba+d2$nba))
+#plot(mu_notab,d2$bna/(d2$bna+d2$nbna))
+
+#checking in on the learned subpopulation values
+eta_ab_subpop <- colMeans(rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop)
+eta_subpop <- colMeans(rstan:::extract(fit,"eta_subpop")$eta_subpop)
+
+#Calculating 95% 
+etas2 <- rstan:::extract(fit,"eta_ab_subpop")$eta_ab_subpop
+meanetas <- apply(etas2,c(2,3),'mean')
+ci_upper <- apply(etas2,c(2,3),'ci_upper')
+ci_lower <- apply(etas2,c(2,3),'ci_lower')
+
+
+table(alignment_data$SpeakerSubPop,d2$sid)
+
+d <- bind_rows(data.frame(sid='Attorney_Justice',marker=levels(as.factor(d2$marker)),
+                          model_subpop_mean=meanetas[1,],
+                          model_subpop_ciu=ci_upper[1,],
+                          model_subpop_cil=ci_lower[1,]),
+               data.frame(sid='Justice_Attorney',marker=levels(as.factor(d2$marker)),
+                          model_subpop_mean=meanetas[2,],
+                          model_subpop_ciu=ci_upper[2,],
+                          model_subpop_cil=ci_lower[2,]))
+
+d3 <- d2 %>%
+  ungroup() %>%
+  mutate(model_eta_mean = apply(rstan:::extract(fit,"eta_ab_observation")$eta_ab_observation,2,'mean')) %>%
+  left_join(d,by=c('sid','marker')) %>%
+  separate(marker,c("group","marker"),sep="_")
+
+#d <- convertcategories2(d)
+
+#d3 <- convertcategories2(d3)
+
+save(d3,d,file='../results/SCOTUS_wordsandcats.RData')
+
+```
+
+
+<!-- Re-loading and analyzing data -->
+
+```{r reload_childes,echo=FALSE,message=FALSE}
+load('../results/SCOTUS_wordsandcats.RData')
+
+d %<>% separate(marker,c('group','marker'),sep='_') %>%
+  mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches'))
+
+ggplot(aes(x=sid,y=model_subpop_mean),data=d) +
+  geom_violin() +
+  facet_wrap(~group) +
+  stat_summary(aes(color=wordorcat),fun.y = "mean",geom="point")
+
+```
+
+```{r}
+d3all <- d3 %>%
+  #mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches')) %>%
+  #mutate(wordorcat=factor(wordorcat,levels=rev(levels(as.factor(wordorcat))))) %>%
+  mutate(justice=ifelse(sid=='Justice_Attorney',speakerId,replierId)) %>%
+  mutate(speakerId=as.factor(speakerId),replierId=as.factor(replierId),
+         sid=as.factor(sid),justice=as.factor(justice)) %>%
+  group_by(sid,justice,marker,group) %>%
+  summarize(model_subpop_mean=mean(model_subpop_mean))
+```
+
+### Comparing words and categories
+
+```{r plot_bymarkersorted,fig.height=7,fig.width=10.5}
+d4 <- d3all %>%
+  separate(sid, c("Speaker", "Replier", "Age"), sep = "_") %>%
+  #mutate(Speaker = adultchild(Speaker),Replier=adultchild(Replier)) %>%
+  mutate(Age = as.numeric(Age)) %>%
+  group_by(marker, Speaker, Replier, Age) %>%
+  #multi_boot_standard("model_eta", na.rm = T)
+  mutate(mean = mean(model_eta_obs))
+
+d4 %<>% ungroup() %>%
+  mutate(Speaker = plyr:::revalue(as.factor(Speaker),c("CHI"="Child","ADU"="Adult"))) %>%
+  mutate(Replier = plyr:::revalue(as.factor(Replier),c("CHI"="Child","ADU"="Adult")))
+
+adultadultmean <- d4 %>% 
+  filter(Speaker!='Child'&Replier!='Child') %>%
+  group_by(marker) %>%
+  summarize(aamean=mean(mean))
+
+d5 <- left_join(d4,adultadultmean) %>%
+  filter(Speaker=='Child'|Replier=='Child') %>%
+  mutate(Age=as.numeric(Age)) %>%
+  filter(Age<60) #%>%
+  #convertcategories2()
+
+#Only look at markers that appear in at least 20 months & have alignment for both CHI-to-Adu and v.v.
+goodmarkers <- d5 %>% group_by(marker,Speaker,Replier) %>%
+  summarize(n=n()) %>%
+  group_by(marker) %>%
+  summarize(n2=n(),min=min(n)) %>%
+  filter(n2==2&min>=20)
+
+d5 %<>% semi_join(goodmarkers,by="marker")
+
+d5minus <- d5 %>%
+  #select(-Speaker,-ba,-bna,-nba,-nbna,-mean,-aamean) %>%
+  rename(x=Child) %>%
+  group_by(x,Replier,Age,corpus,marker,group) %>%
+  summarize(mean=mean(model_eta_obs)) %>%
+  spread(Replier,mean) %>%
+  mutate(diff=Adult-Child) %>%
+  select(-Adult,-Child) %>%
+  rename(Child=x) %>%
+  mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches')) %>%
+  mutate(wordorcat=factor(wordorcat,levels=rev(levels(as.factor(wordorcat))))) %>%
+  filter(!is.na(diff))
+
+ggplot(aes(x = Age, y = diff, group=paste(group,marker)), data=d5minus) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.1,size=.6) +
+  geom_smooth(aes(group=wordorcat,linetype=wordorcat),method = "loess") +
+  #geom_hline(aes(yintercept=aamean),linetype='dashed',color="#3daf3a",size=1.2) +
+  #scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group,scale='free_y') + 
+  labs(title='Plot 1: The changing difference between adult and child alignment over time',
+       x='Child\'s Age (months)',
+       y='Difference in Alignment by Adult and by Child') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.25))
+```
+
+```{r plot2,fig.height=7,fig.width=10.5}
+d5comp <- d5 %>%
+  #select(-Speaker,-ba,-bna,-nba,-nbna,-mean,-aamean) %>%
+  select(Child,Replier,Age,corpus,marker,group,model_eta_obs) %>%
+  mutate(wordorcat=ifelse(marker=='as.category','Category Matches','Word (Lemma) Matches')) %>%
+  mutate(wordorcat=factor(wordorcat,levels=rev(levels(as.factor(wordorcat)))))
+
+#d5temp <- d5comp %>% sample_frac(.25)
+  
+ggplot(aes(x = Age, y = model_eta_obs, group=paste(group,marker,Replier),color=Replier), data=d5comp) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.2,size=.6) +
+  geom_smooth(aes(group=paste(group,wordorcat,Replier),linetype=wordorcat),method = "loess",se=F,size=1.1) +
+  #geom_hline(aes(yintercept=aamean),linetype='d  ashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~group) + 
+  labs(title='Plot 2: Comparing Parent and Child Alignments',
+       x='Child\'s Age (months)',
+       y='Alignment for Word or Category') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.25))
+```
+
+```{r plot3,fig.height=7,fig.width=10.5}
+ggplot(aes(x = Age, y = model_eta_obs, group=paste(group,marker,Replier),color=Replier), data=d5comp) + 
+  geom_line(stat="smooth",method='loess',se=F,alpha=.2,size=.6) +
+  geom_smooth(aes(group=paste(group,wordorcat,Replier),linetype=wordorcat),method = "loess",se=F,size=1.1) +
+  #geom_hline(aes(yintercept=aamean),linetype='d  ashed',color="#3daf3a",size=1.2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + 
+  geom_hline(yintercept=0,linetype='dotted',size=1) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(group~Replier,scale='free_y') + 
+  labs(title='Plot 3: Comparing Word & Category Alignments\nfor Parents and Children',
+       x='Child\'s Age (months)',
+       y='Alignment for Word or Category') +
+  theme(legend.justification=c(0,1),legend.position = c(.75,.2))
+```
+
+### Conclusions
+
+So here's the most interesting thing to me about the word- vs. category-level alignment: one's not consistently higher than the other. However, there does seem to be a generally less extreme value for the word-level alignment (see Plot 3). The big differences are strongest early on, when only a couple of words are being used and so we're probably getting weird results from giving them equal weight in the mean word-level alignment values, which could be partially rectified with a hierarchical system of marker category then marker word.  What do you guys think?
