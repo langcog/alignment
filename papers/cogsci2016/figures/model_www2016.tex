@@ -1,0 +1,103 @@
+% model_lda.tex
+%
+% Copyright (C) 2010,2011 Laura Dietz
+% Copyright (C) 2012 Jaakko Luttinen
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU General Public License.
+%
+% See the files LICENSE_LPPL and LICENSE_GPL for more details.
+
+% Latent Diriclet allocation model
+
+%\beginpgfgraphicnamed{model-lda}
+\begin{tikzpicture}[x=1.7cm,y=1.8cm]
+
+  % Nodes
+
+  \node[const] (base) {$\mathcal{U}$};
+  \node[latent,right=.6 of base] (n_b_m) {$\eta^{base}_m$}; 
+  \node[latent,right=.8 of n_b_m] (n_b_ms) {$\eta^{base}_{m,s}$};
+  \node[latent,right=.8 of n_b_ms] (n_b_mab) {$\eta^{base}_{m,a,b}$};
+  \node[latent,right=.8 of n_b_mab] (m_b_mab) {$\mu^{base}_{m,a,b}$};
+  \node[obs,right=.8 of m_b_mab] (C_b_mab) {$C^{base}_{m,a,b}$};
+
+  \node[const,below=.8 of base] (align) {$\mathcal{N}$};
+  \node[latent,right=.6 of align] (n_a_m) {$\eta^{align}_m$}; 
+  \node[latent,right=.75 of n_a_m] (n_a_ms) {$\eta^{align}_{m,s}$};
+  \node[latent,right=.75 of n_a_ms] (n_a_mab) {$\eta^{align}_{m,a,b}$};
+  \node[latent,right=.75 of n_a_mab] (m_a_mab) {$\mu^{align}_{m,a,b}$};
+  \node[obs,right=.8 of m_a_mab] (C_a_mab) {$C^{align}_{m,a,b}$};
+  
+  %\node[latent] (n_a_m) {$\eta^{base}_m$};
+
+
+  % Factors
+  
+  \factor[right=of n_b_m] {n_b_m_f} {above:$\mathcal{N}$} {} {};
+  \factor[right=of n_b_ms] {n_b_ms_f} {above:$\mathcal{N}$} {} {};
+  \factor[right=of n_b_mab] {n_b_mab_f} {above:$\textrm{logit}^{-1}$} {} {};
+  \factor[right=of m_b_mab] {m_b_mab_f} {below:Binom} {} {};
+
+  \factor[right=of n_a_m] {n_a_m_f} {above:$\mathcal{N}$} {} {};
+  \factor[right=of n_a_ms] {n_a_ms_f} {above:$\mathcal{N}$} {} {};
+  \factor[right=of n_a_mab] {n_a_mab_f} {below:$\textrm{logit}^{-1}$} {} {};
+  \factor[right=of m_a_mab] {m_a_mab_f} {above:Binom} {} {};
+
+  %\factor[right=of C_b_mab] {C_b_mab_f} {above:Binom$} {} {};
+  
+  %\factor[above=of X]     {X-f}     {Multi} {} {} ; %
+  %\factor[above=of T]     {T-f}     {left:Multi} {} {} ; %
+  %\factor[above=of theta] {theta-f} {left:Dir} {} {} ; %
+
+  % More nodes
+  %\node[latent, right=of X-f] (phi)  {$\phi$}; %
+  %\node[const, above=of phi]  (aphi) {$\alpha_\phi$}; %
+
+  %\factor[above=of phi] {phi-f} {right:Dir} {} {} ; %
+
+  \node[obs,above=.35 of m_b_mab_f] (N_b_mab) {$N^{base}_{m,a,b}$};
+  \node[obs,below=.35 of m_a_mab_f] (N_a_mab) {$N^{align}_{m,a,b}$};
+
+
+  \edge{base}{n_b_m};
+  \factoredge {n_b_m}  {n_b_m_f}     {n_b_ms} ; %
+  \factoredge {n_b_ms}  {n_b_ms_f}     {n_b_mab} ; %
+  \factoredge {n_b_mab}  {n_b_mab_f}     {m_b_mab} ; %
+  \factoredge {m_b_mab,N_b_mab} {m_b_mab_f} {C_b_mab}; %
+ 
+   \edge{align}{n_a_m};
+  \factoredge {n_a_m}  {n_a_m_f}     {n_a_ms} ; %
+  \factoredge {n_a_ms}  {n_a_ms_f}     {n_a_mab} ; %
+  \factoredge {n_a_mab,n_b_mab}  {n_a_mab_f}     {m_a_mab} ; %
+  \factoredge {m_a_mab,N_a_mab} {m_a_mab_f} {C_a_mab}; %
+ %\factoredge {atheta} {theta-f} {theta} ; %
+  %\factoredge {phi}    {X-f}     {X} ; %
+  %\factoredge {aphi}   {phi-f}   {phi} ; %
+
+  %\gate {X-gate} {(X-f)(X-f-caption)} {T}
+
+  \plate {pairplate} { %
+    (N_b_mab)(C_b_mab) %
+    (m_b_mab)(n_b_mab) %
+    (N_a_mab)(C_a_mab) %
+    (m_a_mab)(n_a_mab) %
+  } {$(a,b) \in s$}; %
+  \plate {subpopplate} { %
+    (pairplate) %
+    (n_b_ms) (n_a_ms) %
+  } {$s \in S$} ; %
+  \plate {} { %
+    (subpopplate) %
+    (n_b_m) (n_a_m)
+  } {$m \in M$} ; %
+
+\end{tikzpicture}
+%\endpgfgraphicnamed
+
+%%% Local Variables: 
+%%% mode: tex-pdf
+%%% TeX-master: "example"
+%%% End: 
