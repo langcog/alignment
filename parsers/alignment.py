@@ -39,7 +39,7 @@ def group(utterances):
 def makeCatDict(markers,useREs=False):
 	mdict = {}
 	for m in markers:
-		marker = re.compile(m["marker"]) if useREs else m["marker"]
+		marker = re.compile(''.join([m["marker"], '$'])) if useREs else m["marker"]
 		if m["category"] in mdict:
 			mdict[m["category"]].append(marker)
 		else:
