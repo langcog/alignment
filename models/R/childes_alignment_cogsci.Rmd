@@ -1,0 +1,488 @@
+---
+title: Linguistic input is coordinated to children's developmental level
+author: Daniel Yurovsky, Gabe Doyle, & Michael C Frank
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    highlight: tango
+    theme: spacelab
+---
+
+<style type="text/css">
+.table {
+
+    width: 40%;
+}
+</style>
+
+```{r setup, echo = FALSE}
+library(knitr)
+opts_chunk$set(message = FALSE, warning = FALSE, cache = TRUE, fig.align = "center")
+```
+
+```{r libraries, cache = FALSE, echo = FALSE}
+library(ggplot2)
+library(dplyr)
+library(langcog)
+library(readr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(directlabels)
+library(lubridate)
+library(lme4)
+library(rstan)
+library(purrr)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+```
+
+```{r load_data, cache = FALSE}
+
+convert_age <- function(childes_age) {
+  age <- as.numeric(unlist(strsplit(childes_age, "[PYMD]"))[2:4])
+  age[2] <- ifelse(is.na(age[2]), 0, age[2])
+  age[3] <- ifelse(is.na(age[3]), 0, age[3])
+  
+  return((age[1]*365+age[2]*30.5+age[3])/30.5)
+}
+
+read_child_info <- function(filename) {
+  corpus_dir <- sub(".csv","",filename)
+  split_corpus <- unlist(strsplit(corpus_dir, "/"))
+  corpus <- split_corpus[length(split_corpus)]
+  read_csv(filename) %>%
+    mutate(corpus = corpus)
+}
+
+userinfo_files <- list.files(path = "../../Childes_childinfo", 
+                             pattern = '*.csv', all.files = FALSE,
+                             full.names = TRUE, recursive = TRUE)
+
+childes_userinfo <- lapply(userinfo_files, read_child_info) %>%
+  bind_rows() %>%
+  rename(Child = role) %>%
+  rowwise() %>%
+  mutate(Age = convert_age(Age))
+
+result_files <-  list.files(path = "../../Childes_liwc",recursive = TRUE,
+                       all.files = FALSE, full.names = TRUE,
+                       pattern = "*liwc2007_converted.csv")
+
+childes_results <- lapply(result_files, read_csv) %>%
+  bind_rows() %>%
+  rename(DocId = docId)
+
+MLUs <- read_csv("../../MLUs.csv")
+
+childes_data <- left_join(childes_results, childes_userinfo) %>%
+  rename(Speaker = speakerId, Replier = replierId) %>%
+  filter(Speaker %in% c("CHI", "MOT", "FAT"), 
+         Replier %in% c("CHI", "MOT", "FAT")) %>%
+  mutate(Speaker = ifelse(Speaker == "CHI", "Child", "Adult"),
+         Replier = ifelse(Replier == "CHI", "Child", "Adult")) %>%
+  left_join(MLUs)
+```
+
+```{r category_demos}
+category_ps <- childes_data %>%
+  group_by(Replier, category) %>%
+  summarize(p = sum(ba+bna)/sum(ba + bna + nba + nbna)) %>%
+  spread(Replier, p)
+
+kable(category_ps)
+```
+
+```{r alignment_fit_helpers}
+setup_alignment_data <- function(corpus_df) {
+  corpus_df %>%
+    group_by(corpus, Child, category, Age) %>%
+    summarise_each(funs(sum), ba, nba, bna, nbna) %>%
+    filter(ba + bna > 1) %>%
+    ungroup() %>%
+    unite(sid, corpus, Child, sep="-") %>%
+    mutate(subpop_num = as.numeric(as.factor(sid)),
+           category_num = as.numeric(as.factor(category)),
+           age_num = as.numeric(as.factor(Age))) 
+}
+
+fit_alignment <- function(alignment_df, sd = .5) {
+  
+  alignment_data <- list(NumMarkers = length(unique(alignment_df$category)),
+                         NumSubPops = length(unique(alignment_df$sid)),
+                         NumObservations = nrow(alignment_df),
+                         SpeakerSubPop = alignment_df$subpop_num,
+                         MarkerType = alignment_df$category_num,
+                         NumUtterancesAB = alignment_df$ba + alignment_df$nba,
+                         NumUtterancesNotAB = alignment_df$bna+alignment_df$nbna,
+                         CountsAB = alignment_df$ba,
+                         CountsNotAB = alignment_df$bna,
+                         StdDev=sd,
+                         SpeakerAge = alignment_df$age_num,
+                         MidAge = mean(unique(alignment_df$age_num)))
+  
+
+
+  fit_model <- sampling(alignment_model, data = alignment_data, 
+                     iter = 500, warmup = 100, chains = 3 ,
+                     control = list(adapt_delta = .95))
+  
+  return(fit_model)
+  
+}
+```
+
+```{r alignment_analysis_helpers}
+subpop_parameters <- c("eta_ab_subpop", "alpha_subpop", "beta_subpop")
+pop_parameters <- c("eta_ab_pop", "alpha_pop", "beta_pop")
+
+CI_UPPER <- .975
+CI_LOWER <- .025
+
+SE_UPPER <- .84
+SE_LOWER <- .16
+  
+extract_subpop_samples <- function(model) {
+
+  extract_helper <- function(var) {
+    data.frame(extract(model, var)) %>% 
+      bind_rows() %>%
+      mutate(sample = 1:n()) %>%
+      gather_("subpop_num", var, names(.)[1:(length(names(.))-1)]) %>%
+      ungroup() %>%
+      mutate(subpop_num = as.numeric(sub(paste0(var, "."), "", subpop_num)))
+  }
+  
+  Reduce(left_join, lapply(subpop_parameters, extract_helper))
+}
+
+extract_pop_samples <- function(model) {
+
+  extract_helper <- function(var) {
+    data.frame(extract(model, var)) %>% 
+      bind_rows() %>%
+      mutate(sample = 1:n())
+  }
+  
+  Reduce(left_join, lapply(pop_parameters, extract_helper))
+}
+```
+
+```{r demos}
+demos <- childes_data %>%
+  distinct(corpus, Child, Gender, Age) %>%
+  select(corpus, Child, Gender, Age) 
+
+num_per_child <- demos %>% 
+  group_by(corpus, Child) %>%
+  summarise(num_transcripts = n()) %>%
+  group_by(num_transcripts) %>%
+  summarise(count = n())
+
+per_child_summary <- num_per_child %>%
+  filter(num_transcripts == min(num_transcripts) | 
+           num_transcripts == max(num_transcripts))
+median_num_transcripts <- median(num_per_child$num_transcripts)
+
+```
+
+```{r fit_model}
+alignment_model = stan_model(file = "../stan/alignment_ageboth_cogsci2016.stan")
+
+age_binned_data <- childes_data %>%
+  mutate(Age = floor(as.numeric(Age))) %>%
+  filter(Age >= 12, Age < min(floor(max(Age, na.rm=T)/6)*6,60)) %>%
+  mutate(Age = cut(Age, breaks = seq(12,max(Age+1),6), 
+                   right = F, ordered_result = T)) 
+
+developmental_data <- age_binned_data %>%
+  filter(Speaker != Replier) %>%
+  split(.$Replier) %>%
+  map(setup_alignment_data)
+
+developmental_fit <- map(developmental_data, fit_alignment)
+
+adult_data <- age_binned_data %>%
+  filter(Speaker == "Adult", Replier == "Adult") %>%
+  mutate(Age = 0) %>%
+  setup_alignment_data
+  
+adult_fit <- fit_alignment(adult_data) 
+```
+
+```{r parameters}
+developmental_samples_pop <- developmental_fit %>%
+  map(extract_pop_samples) %>%
+  bind_rows(.id = "group")
+
+adult_samples_pop <- adult_fit %>%
+  extract_pop_samples %>%
+  bind_rows(.id = "group")
+
+developmental_parameters <- developmental_samples_pop %>%
+  group_by(group) %>%
+  gather_("parameter", "value", pop_parameters) %>%
+  group_by(group, parameter) %>%
+  summarize_each(funs(mean = mean, 
+                      ci_lower = quantile(., CI_LOWER), 
+                      ci_upper = quantile(., CI_UPPER)), 
+                 value)
+
+kable(developmental_parameters)
+
+adult_parameters <- adult_samples_pop %>%
+  mutate(group = "Baseline") %>%
+  group_by(group) %>%
+  gather_("parameter", "value", pop_parameters) %>%
+  group_by(group, parameter) %>%
+  summarize_each(funs(mean = mean, 
+                      ci_lower = quantile(., CI_LOWER), 
+                      ci_upper = quantile(., CI_UPPER)), 
+                 value) %>%
+  filter(parameter == "eta_ab_pop")
+
+kable(adult_parameters)
+```
+
+```{r parameters_plot, fig.width = 4, fig.height = 6}
+all_parameters <- bind_rows(developmental_parameters, adult_parameters) %>%
+  mutate(parameter = factor(parameter, 
+                            levels = c("beta_pop","alpha_pop","eta_ab_pop"),
+                            labels = c("Coarse~Tuning~(beta)",
+                                       "Fine~Tuning~(alpha)", 
+                                       "Alignment~(eta[align])")),
+         group = factor(group, levels = c("Adult", "Child", "Baseline")))
+
+quartz(width = 4, height = 6)
+ggplot(aes(x = group, y = mean, fill= group, 
+            label = group),
+        data = all_parameters) +
+  facet_grid(parameter ~ ., scales = "free_x", space = "free_x", 
+             labeller = label_parsed) +
+  geom_bar(position = position_dodge(.5), stat = "identity") +
+  geom_linerange(aes(ymax = ci_upper, ymin = ci_lower),
+                   position = position_dodge(.5)) +
+  geom_hline(yintercept = 0) + 
+  scale_fill_brewer(palette = "Set1", guide = FALSE) +
+  scale_x_discrete(name = "Group", drop = T) +
+  scale_y_continuous(name = "Population paremeter estimate", limits = c(-.3, 1),
+                     breaks = seq(-2, 1, .2)) +
+   theme_bw(base_size = 16) +
+   theme(panel.grid = element_blank(), legend.position = c(.8,.8),
+       axis.title.x=element_text(vjust=-.5), axis.title.y=element_text(vjust=1))
+```   
+
+```{r subpop_parameters, fig.width = 8.5, fig.height = 4}
+subpops <- bind_rows(developmental_data, .id = "Replier") %>%
+  select(Replier, sid, subpop_num, age_num) %>%
+  rename(group = Replier) %>%
+  distinct()
+
+developmental_samples_subpop <- developmental_fit %>%
+  map(extract_subpop_samples) %>%
+  bind_rows(.id = "group") %>%
+  left_join(subpops) %>%
+  separate(sid, c("Corpus", "Child"), "-") 
+
+developmental_subpop_parameters <- developmental_samples_subpop %>%
+  group_by(group, Corpus, Child) %>%
+  gather_("parameter", "value", subpop_parameters) %>%
+  group_by(group, Corpus, Child, parameter) %>%
+   summarize_each(funs(mean = mean, 
+                      ci_lower = quantile(., CI_LOWER)), 
+                      ci_upper = quantile(., CI_UPPER), 
+                 value)
+
+#quartz(width = 7, height = 3.5)
+ggplot(aes(x = Child, y = mean, fill= group, 
+            label = group),
+        data = developmental_subpop_parameters) +
+  facet_grid(group ~ parameter, scales = "free_x", space = "free_x", 
+             labeller = label_parsed) +
+  geom_bar(position = position_dodge(.5), stat = "identity") +
+  geom_linerange(aes(ymax = ci_upper, ymin = ci_lower),
+                   position = position_dodge(.5)) +
+  geom_hline(yintercept = 0) + 
+  scale_fill_brewer(palette = "Set1", guide = FALSE) +
+#   scale_x_discrete(name = "Group", drop = T) +
+#   scale_y_continuous(name = "Population paremeter estimate", limits = c(-.3, 1),
+#                      breaks = seq(-2, 1, .2)) +
+   theme_bw(base_size = 16) +
+   theme(panel.grid = element_blank(), legend.position = c(.8,.8),
+       axis.title.x=element_text(vjust=-.5), axis.title.y=element_text(vjust=1))
+```
+
+```{r hpds, fig.width = 8.5, fig.height = 4}
+ages <- age_binned_data %>%
+  select(Age) %>%
+  distinct() %>%
+  arrange(Age) %>%
+  mutate(age_num = 1:n())
+
+mid_age <- mean(ages$age_num)
+
+hpds <- map(1:nrow(ages), 
+            function(x) mutate(developmental_samples_pop, age_num = x)) %>%
+  bind_rows() %>%
+  group_by(group, age_num) %>%
+  mutate(prediction = eta_ab_pop + ((age_num-mid_age) * alpha_pop)) %>%
+  summarize_each(funs(mean = mean, 
+#                       ci_lower = quantile(., .025), 
+#                       ci_upper = quantile(., .975)), 
+                      se_lower = quantile(., SE_LOWER), 
+                      se_upper = quantile(., SE_UPPER)), 
+                 prediction) %>%
+  left_join(ages)
+
+adult_parameters_se <- adult_samples_pop %>%
+  mutate(group = "Baseline") %>%
+  group_by(group) %>%
+  gather_("parameter", "value", pop_parameters) %>%
+  group_by(group, parameter) %>%
+  summarize_each(funs(mean = mean, 
+                      se_lower = quantile(., SE_LOWER), 
+                      se_upper = quantile(., SE_UPPER)), 
+                 value) %>%
+  filter(parameter == "eta_ab_pop")
+
+adult_hpds <- map(1:nrow(ages), 
+            function(x) mutate(adult_parameters_se, age_num = x)) %>%
+  bind_rows() %>%
+  mutate(group = "Baseline") %>%
+  left_join(ages) %>%
+  select(-parameter)
+
+all_hpds <- bind_rows(hpds, adult_hpds) %>%
+  mutate(group = factor(group, levels = c("Adult", "Child", "Baseline")))
+
+ #quartz(width = 8.5, height = 4)
+ ggplot(aes(x = age_num, y = mean, label = group, 
+            group = group, color = group, fill = group),
+        data = all_hpds) +
+   geom_pointrange(aes(ymax = se_upper, ymin = se_lower),
+                   size = .5) +
+   geom_ribbon(aes(ymax = se_upper, ymin = se_lower),
+               alpha = .3, size = 0) +
+   geom_line() +
+   scale_color_brewer(palette = "Set1", guide = FALSE) +
+   scale_fill_brewer(palette = "Set1", guide = FALSE) +
+   theme_bw(base_size = 16) +
+   scale_x_continuous(name = "Child\'s Age (months)",
+                      breaks=seq(.5,8.5,1), limits=c(.5,8.2),
+                       labels=seq(12,60,6))+
+   scale_y_continuous(limits = c(-.5, 1.8), breaks = seq(-.5,1.8,.2),
+                      name = "Linguistic Alignment") +
+   geom_hline(yintercept=0,linetype='dashed') +
+   theme(panel.grid = element_blank(), legend.position = c(.8,.8),
+         axis.title.x=element_text(vjust=-.5), axis.title.y=element_text(vjust=1)) +
+     geom_dl(method = list(dl.trans(x = x -.2), "first.qp", cex=1.1))
+``` 
+
+```{r providence_hpds, fig.width = 8.5, fig.height = 4}
+subpop_hpds <- developmental_samples_subpop %>%
+  mutate(prediction = eta_ab_subpop + ((age_num - mid_age) * alpha_subpop)) %>%
+  group_by(group, Corpus, Child, age_num) %>%
+  summarize_each(funs(mean = mean, 
+                      se_lower = quantile(., SE_LOWER), 
+                      se_upper = quantile(., SE_UPPER)), 
+                 prediction) %>%
+  left_join(ages)
+
+
+ quartz(width = 5, height = 6)
+ ggplot(aes(x = age_num, y = mean, label = group, 
+            group = group, color = group, fill = group),
+        data = filter(subpop_hpds, Corpus == "Providence")) +
+   facet_wrap(~ Child, ncol = 2) +
+   geom_pointrange(aes(ymax = se_upper, ymin = se_lower),
+                   size = .5) +
+   geom_ribbon(aes(ymax = se_upper, ymin = se_lower),
+               alpha = .3, size = 0) +
+   geom_line() +
+   scale_color_brewer(palette = "Set1", guide = FALSE) +
+   scale_fill_brewer(palette = "Set1", guide = FALSE) +
+   theme_bw(base_size = 16) +
+   scale_x_continuous(name = "Child\'s Age (months)",
+                      breaks=seq(.5,6.5,1), limits=c(.5,6.5),
+                       labels=seq(12,48,6))+
+   scale_y_continuous(limits = c(-.1,3), breaks = seq(0,3,1),
+                      name = "Linguistic Alignment") +
+   geom_hline(yintercept=0,linetype='dashed') +
+   theme(panel.grid = element_blank(), legend.position = c(.8,.8),
+         axis.title.x=element_text(vjust=-.5), axis.title.y=element_text(vjust=1)) +
+     geom_dl(method = list("smart.grid", cex=1.1))
+```
+
+ 
+```{r shuffled}
+# alignments_combined <- bind_rows(mutate(alignments_fit,measure = "empirical"),
+#                                  mutate(alignments_shuffled,measure = "shuffled"))
+# 
+# %>%
+#   
+#   
+#   
+#   mutate(Age = as.numeric(Age))
+# # 
+# # 
+# # corpus_df <- childes_data %>%
+# #   mutate(Age = floor(as.numeric(Age))) %>%
+# #   filter(Age >= 10, Age <= 60) %>%
+# #   split(.$Age) %>%
+# #   map(fit_alignment) %>%
+# #   bind_rows() %>%
+# #   mutate(Age = as.numeric(Age))
+# # 
+# # 
+# # alignments_fit_shuffled <- childes_data %>%
+# #   mutate(Age = floor(as.numeric(Age))) %>%
+# #   filter(Age >= 12, Age <= 60) %>%
+# #   mutate(Age = cut(Ag)) %>%
+# #   split(.$Age) %>%
+# #   map(fit_alignment) %>%
+# #   bind_rows() %>%
+# #   mutate(Age = factor(Age, levels = unique(Age)))
+# 
+# 
+# alignment_comp <- bind_rows(mutate(alignments_fit, measure = "empirical"),
+#                             mutate(alignments_fit_shuffled, measure = "shuffled"))
+# 
+# 
+# quartz(width = 8, height = 4)
+# ggplot(aes(x = Age_num, y = mean, color = Replier, fill = Replier,
+#            label = Replier, shape = measure, linetype = measure),
+#        data = filter(alignment_comp, measure == "empirical")) +
+#    geom_pointrange(aes(ymax = ci_upper, ymin = ci_lower),
+#                    position = position_dodge(.2)) +
+#   geom_smooth(method = "lm", size=1, position = position_dodge(.2), se = FALSE) +
+#   scale_color_brewer(palette = "Set1", guide = FALSE) +
+#   scale_fill_brewer(palette = "Set1", guide = FALSE) +
+#   theme_bw(base_size = 16) +
+#   scale_x_continuous(name = "Age (months)",
+#                      breaks=seq(.5,8.5,1), limits=c(.5,8.5),
+#                      labels=seq(12,60,6))+
+#  # expand_limits(x = 10) +
+#   #scale_x_continuous(limits = c(0,15), breaks = seq(10,60,5)) +
+#   scale_y_continuous(limits = c(-.1, 1.2), breaks = seq(-.1,1.2,.1)) +
+#   geom_hline(yintercept=0,linetype='dotted',size=1) +
+#   theme(panel.grid = element_blank(), legend.position = c(.8,.8),
+#         axis.title.x=element_text(vjust=-.5), axis.title.y=element_text(vjust=1)) +
+#   geom_dl(method = list("smart.grid", cex=1.2)) +
+#   labs(x='Child\'s Age (months)',
+#        y='Linguistic Alignment')
+# # 
+# # 
+# # alignments_shuffled <- childes_data %>%
+# #   split(.$Corpus) %>%
+# #   map(fit_alignment) %>%
+# #   bind_rows() %>%
+# #   mutate(Age = as.numeric(Age),
+# #          MLU = as.numeric(MLU)) %>%
+# 
+# baselines <- alignments %>%
+#   filter(Speaker == "Adult", Replier == "Adult") %>%
+#   group_by(corpus) %>%
+#   multi_boot_standard("model_eta")
+# 
+# 

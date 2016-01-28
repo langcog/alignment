@@ -1,0 +1,68 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+  
+        \node[obs, ]   (C_align)   {$C^{align}$}; %
+        \node[obs, right = of C_align]   (N_align) {$N^{align}$}; %
+         \node[latent, above = 2 of C_align]   (eta_align_c)   {$\eta^{align}$}; %
+         \node[latent, above = of eta_align_c]   (eta_align_p)   {$\eta^{align}$}; %
+        \node[latent, above = of eta_align_p]   (eta_align)   {$\eta^{align}$}; %
+ 	 \factor[above = 0.8 of C_align]       {C_align-f} {$logit^{-1}$} {} {}; %
+      
+               
+          \node[latent, right = of eta_align_p] (age_align_p) {$\alpha$};
+          \node[latent, above = of age_align_p] (age_align) {$\alpha$};
+      
+      
+         \gate {logit_align} {(C_align-f)(C_align-f-caption)} {eta_align_c, age_align_p} ; %
+         
+          \node[obs, right =  1.5 of C_align-f] (Age) {$Age$};
+
+      
+       % Nodes
+        \node[latent, left = 2 of C_align-f]   (eta_base_p)   {$\eta^{base}$}; %
+        \node[obs, below = 2 of eta_base_p]   (C_base)   {$C^{base}$}; %
+        \node[latent, above = .65 of eta_base_p]   (eta_base_c)   {$\eta^{base}$}; %
+%        \node[latent, above = of eta_base_p]   (eta_base)   {$\eta^{base}$}; %
+        \factor[above = 0.8 of C_base]       {C_base-f} {$logit^{-1}$} {} {}; %
+        \node[obs, left = of C_base]   (N_base) {$N^{base}$}; %
+
+          \node[obs, left =  1.5 of C_base-f] (Age_base) {$Age$};
+      
+        \edge{C_base-f}{C_base};
+      %  \factoredge {age_align_p} {C_align-f} {C_align} ; 
+        \factoredge {Age} {C_align-f} {C_align} ; 
+         \factoredge {Age_base} {C_base-f} {C_base} ; 
+         
+        \node[latent, left = of eta_base_p] (beta_p) {$\beta$};
+        \node[latent, above = 2.75 of beta_p] (beta) {$\beta$};
+
+        \edge{eta_base_c}{eta_base_p};
+        \edge{age_align}{age_align_p};
+  %      \edge{eta_base}{eta_base_p};
+        
+        \edge{eta_align_p}{eta_align_c};
+        \edge{eta_align}{eta_align_p};
+        
+         \edge{beta}{beta_p};
+
+        \edge {N_base} {C_base};
+        \edge {N_align} {C_align};
+	 \edge{C_base-f}{C_base};
+	 
+        \gate {logit_base} {(C_base-f)(C_base-f-caption)} {eta_base_p,beta_p} ; %
+
+        
+        \factoredge {eta_base_p} {C_align-f} {C_align} ; %
+
+	\plate {plate_a} {(C_align)(C_align-f)(N_align)(logit_align)(Age)} {Age}; %
+	\plate {plate_c} {(C_align)(eta_align_c)(C_align-f)(N_align)(logit_align)(Age)(plate_a)} {Category}; %
+
+
+
+	\plate {} {(eta_align_c)(C_align-f)(logit_align)(eta_align_p)(plate_c)(C_align)(N_align)(age_align_p) (Age)(plate_a)}{Person}; %
+
+	
+	\plate {plate_a_base} {(C_base)(C_base-f)(N_base)(logit_base)} {Age}; %
+	\plate {plate_p_base} {(beta_p)(C_base)(eta_base_p)(C_base-f)(N_base)(logit_base)(plate_a_base)} {Person}; %
+	\plate {} {(eta_base_c)(C_base-f)(logit_base)(eta_base_p)(plate_p_base)(C_base)(N_base)(plate_a_base)(eta_base_p)} {Category}; 
+
+\end{tikzpicture}
